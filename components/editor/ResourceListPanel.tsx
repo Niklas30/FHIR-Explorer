@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, MoreVertical, Plus, Search } from "lucide-react";
+import { AlertTriangle, ChevronRight, MoreVertical, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +11,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { DatasetResource } from "@/lib/datasets/content";
+import {
+  buildDatasetReferenceIndex,
+  collectBrokenReferences,
+} from "@/lib/fhir-editor/references";
 
 type ResourceListPanelProps = {
   resources: DatasetResource[];
@@ -45,6 +49,10 @@ type SortMode = "lastSelected" | "lastCreated" | "alphabetic";
 
 const SORT_STORAGE_KEY = "health-compose-resource-sort";
 const SEARCH_VISIBLE_KEY = "health-compose-resource-search-visible";
+const brokenReferenceIssueCache = new Map<
+  string,
+  { updatedAt: number; referenceIndexSignature: string; issueCount: number }
+>();
 
 export const ResourceListPanel = ({
   resources,
@@ -117,6 +125,52 @@ export const ResourceListPanel = ({
 
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [resources, sortMode, query]);
+
+  const brokenReferenceIssuesByResourceId = useMemo(() => {
+    const referenceIndex = buildDatasetReferenceIndex(resources);
+    const referenceIndexSignature = Array.from(referenceIndex).sort().join("|");
+    const byResourceId = new Map<string, number>();
+    const nextIds = new Set(resources.map((resource) => resource.id));
+
+    for (const resource of resources) {
+      const updatedAt = resource.updatedAt ?? resource.createdAt ?? 0;
+      const cached = brokenReferenceIssueCache.get(resource.id);
+      if (
+        cached &&
+        cached.updatedAt === updatedAt &&
+        cached.referenceIndexSignature === referenceIndexSignature
+      ) {
+        if (cached.issueCount > 0) {
+          byResourceId.set(resource.id, cached.issueCount);
+        }
+        continue;
+      }
+
+      let issueCount = 0;
+      try {
+        issueCount = collectBrokenReferences(resource.content, referenceIndex, {
+          maxNodes: 6_000,
+          maxDepth: 50,
+        }).length;
+      } catch (error) {
+        console.error("Failed to collect broken references for resource", resource.id, error);
+      }
+
+      const cacheEntry = { updatedAt, referenceIndexSignature, issueCount };
+      brokenReferenceIssueCache.set(resource.id, cacheEntry);
+      if (issueCount > 0) {
+        byResourceId.set(resource.id, issueCount);
+      }
+    }
+
+    for (const resourceId of brokenReferenceIssueCache.keys()) {
+      if (!nextIds.has(resourceId)) {
+        brokenReferenceIssueCache.delete(resourceId);
+      }
+    }
+
+    return byResourceId;
+  }, [resources]);
 
   const toggleType = (resourceType: string) => {
     setCollapsedTypes((prev) => {
@@ -211,6 +265,8 @@ export const ResourceListPanel = ({
                   <div className="grid gap-2">
                     {entries.map((resource) => {
                     const isActive = resource.id === selectedId;
+                    const brokenIssues = brokenReferenceIssuesByResourceId.get(resource.id) ?? 0;
+                    const hasBrokenReferences = brokenIssues > 0;
                     return (
                       <div
                         key={resource.id}
@@ -274,10 +330,21 @@ export const ResourceListPanel = ({
                         <span className="break-words whitespace-normal text-left text-sm font-medium leading-snug text-foreground">
                           {getResourceLabel(resource)}
                         </span>
-                        <span className="break-words whitespace-normal text-left text-xs leading-snug text-muted-foreground">
-                          {getResourceSecondary(resource)}
-                          {resource.profile ? ` · ${resource.profile}` : ""}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs leading-snug">
+                          <span className="break-words whitespace-normal text-left text-muted-foreground">
+                            {getResourceSecondary(resource)}
+                            {resource.profile ? ` · ${resource.profile}` : ""}
+                          </span>
+                          {hasBrokenReferences ? (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
+                              title={`${brokenIssues} broken reference${brokenIssues === 1 ? "" : "s"}`}
+                            >
+                              <AlertTriangle className="size-3" />
+                              {brokenIssues}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     );
                     })}

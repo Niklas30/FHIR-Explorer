@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,10 @@ import {
   resolveValueSetChoices,
   setFieldValue,
 } from "@/lib/fhir-editor/fields";
+import {
+  buildDatasetReferenceIndex,
+  isBrokenLocalReference,
+} from "@/lib/fhir-editor/references";
 import { cn } from "@/lib/utils";
 
 type ResourceDetailPanelProps = {
@@ -114,6 +118,10 @@ export const ResourceDetailPanel = ({
       return label.includes(normalizedQuery);
     });
   }, [fields, resource, fieldQuery]);
+  const referenceIndex = useMemo(
+    () => buildDatasetReferenceIndex(datasetResources),
+    [datasetResources]
+  );
 
   if (!resource) {
     return (
@@ -241,6 +249,7 @@ export const ResourceDetailPanel = ({
                     content={resource.content}
                     registry={registry}
                     datasetResources={datasetResources}
+                    referenceIndex={referenceIndex}
                     onChange={handleUpdate}
                     onRemove={() => handleFieldRemove(group.root)}
                   />
@@ -251,6 +260,7 @@ export const ResourceDetailPanel = ({
                     content={resource.content}
                     registry={registry}
                     datasetResources={datasetResources}
+                    referenceIndex={referenceIndex}
                     onChange={handleUpdate}
                   />
                 )
@@ -376,6 +386,7 @@ type FieldRowProps = {
   content: Record<string, unknown>;
   registry: FhirRegistry | null;
   datasetResources: DatasetResource[];
+  referenceIndex: Set<string>;
   onChange: (nextContent: Record<string, unknown>) => void;
   onRemove: () => void;
 };
@@ -385,6 +396,7 @@ const FieldRow = ({
   content,
   registry,
   datasetResources,
+  referenceIndex,
   onChange,
   onRemove,
 }: FieldRowProps) => {
@@ -428,6 +440,13 @@ const FieldRow = ({
   };
 
   const showRemove = (field.min ?? 0) === 0;
+  const brokenReferences = values.map((entry) => {
+    if (kind !== "Reference") return null;
+    const reference = extractReferenceString(entry);
+    if (!reference) return null;
+    return isBrokenLocalReference(reference, referenceIndex) ? reference : null;
+  });
+  const hasBrokenReference = brokenReferences.some(Boolean);
 
   return (
     <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3">
@@ -443,6 +462,15 @@ const FieldRow = ({
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {(field.min ?? 0) > 0 ? <span className="text-emerald-600">Required</span> : null}
           {effectiveRepeating ? <span>Multiple</span> : null}
+          {hasBrokenReference ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
+              title="Broken reference target"
+            >
+              <AlertTriangle className="size-3" />
+              Missing target
+            </span>
+          ) : null}
           {showRemove ? (
             <button
               type="button"
@@ -471,6 +499,7 @@ const FieldRow = ({
             identifierTypeOptions={field.identifierTypeOptions}
             onChange={(nextValue) => updateItem(index, nextValue)}
             onRemove={effectiveRepeating ? () => removeItem(index) : undefined}
+            brokenReference={brokenReferences[index]}
           />
         ))}
         {effectiveRepeating ? (
@@ -488,6 +517,7 @@ type ComplexFieldGroupProps = {
   content: Record<string, unknown>;
   registry: FhirRegistry | null;
   datasetResources: DatasetResource[];
+  referenceIndex: Set<string>;
   onChange: (nextContent: Record<string, unknown>) => void;
 };
 
@@ -499,6 +529,7 @@ const ComplexFieldGroup = ({
   content,
   registry,
   datasetResources,
+  referenceIndex,
   onChange,
 }: ComplexFieldGroupProps) => {
   const rootValue = getFieldValue(content, group.root);
@@ -517,6 +548,11 @@ const ComplexFieldGroup = ({
     if (allowAnyReference) return true;
     return referenceTargets.has(resource.resourceType);
   });
+  const getBrokenReference = (entry: unknown) => {
+    const reference = extractReferenceString(entry);
+    if (!reference) return null;
+    return isBrokenLocalReference(reference, referenceIndex) ? reference : null;
+  };
   const childFields = group.children
     .map((field) => ({
       ...field,
@@ -605,6 +641,7 @@ const ComplexFieldGroup = ({
                       value={itemContent}
                       options={[]}
                       referenceOptions={availableReferenceOptions}
+                      brokenReference={getBrokenReference(itemContent)}
                       onChange={(nextValue) =>
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
@@ -629,6 +666,7 @@ const ComplexFieldGroup = ({
                           content={itemContent}
                           registry={registry}
                           datasetResources={datasetResources}
+                          referenceIndex={referenceIndex}
                           onChange={handleItemChange}
                           onRemove={() => handleItemChange(removeFieldValue(itemContent, field))}
                         />
@@ -673,6 +711,7 @@ const ComplexFieldGroup = ({
             value={objectValue}
             options={[]}
             referenceOptions={availableReferenceOptions}
+            brokenReference={getBrokenReference(objectValue)}
             onChange={(nextValue) =>
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
@@ -697,6 +736,7 @@ const ComplexFieldGroup = ({
                 content={objectValue}
                 registry={registry}
                 datasetResources={datasetResources}
+                referenceIndex={referenceIndex}
                 onChange={handleObjectChange}
                 onRemove={() => handleObjectChange(removeFieldValue(objectValue, field))}
               />
@@ -869,6 +909,7 @@ type FieldInputProps = {
   identifierTypeOptions?: Array<{ system?: string; code: string; display?: string }>;
   onChange: (value: unknown) => void;
   onRemove?: () => void;
+  brokenReference?: string | null;
 };
 
 const IDENTIFIER_USE_OPTIONS = ["usual", "official", "temp", "secondary", "old"];
@@ -902,6 +943,20 @@ const isReferenceValue = (
   value: unknown
 ): value is { reference?: string; display?: string; identifier?: unknown } =>
   Boolean(value && typeof value === "object" && "reference" in (value as Record<string, unknown>));
+
+const extractReferenceString = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (
+    isReferenceValue(value) &&
+    typeof value.reference === "string" &&
+    value.reference.trim().length > 0
+  ) {
+    return value.reference.trim();
+  }
+  return null;
+};
 
 type PopupSearchOption = {
   value: string;
@@ -1027,6 +1082,7 @@ const FieldInput = ({
   identifierTypeOptions,
   onChange,
   onRemove,
+  brokenReference,
 }: FieldInputProps) => {
   const [includeReferenceDisplay, setIncludeReferenceDisplay] = useState(false);
 
@@ -1129,6 +1185,12 @@ const FieldInput = ({
           }
           placeholder="ResourceType/id"
         />
+        {brokenReference ? (
+          <div className="inline-flex items-center gap-1 text-xs text-amber-700">
+            <AlertTriangle className="size-3" />
+            Missing target: {brokenReference}
+          </div>
+        ) : null}
       </div>
     );
   };
