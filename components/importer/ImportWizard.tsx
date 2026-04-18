@@ -372,7 +372,7 @@ export const ImportWizard = () => {
               ) : null
             ) : null}
             <Button asChild variant="ghost" size="sm">
-              <Link href="/editor">Projects Overview</Link>
+              <Link href="/">Projects Overview</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link href="/">Home</Link>
@@ -401,7 +401,7 @@ export const ImportWizard = () => {
             </CardHeader>
             <CardContent>
               <Button asChild size="lg" className="w-full">
-                <Link href="/editor">Go to Projects Overview</Link>
+                <Link href="/">Go to Projects Overview</Link>
               </Button>
             </CardContent>
           </Card>
