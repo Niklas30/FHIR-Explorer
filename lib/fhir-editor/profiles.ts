@@ -25,6 +25,7 @@ export type FieldDefinition = {
   baseMax?: string;
   type?: ElementDefinitionType[];
   binding?: ElementDefinition["binding"];
+  identifierSystems?: Array<{ system: string; label: string; profile?: string; sliceName?: string }>;
   mustSupport?: boolean;
   short?: string;
   definition?: string;
@@ -49,6 +50,32 @@ const buildLabel = (element: ElementDefinition, segments: string[]) => {
 
 const hasType = (type?: ElementDefinitionType[]) =>
   Array.isArray(type) && type.some((entry) => Boolean(entry.code));
+
+const getTypeCodes = (types?: ElementDefinitionType[]) =>
+  (types ?? []).map((type) => type.code).filter((code): code is string => Boolean(code));
+
+const isComplexType = (types?: ElementDefinitionType[]) =>
+  getTypeCodes(types).some((code) => code[0] === code[0].toUpperCase());
+
+const getFixedSystemFromIdentifierProfile = (profile: StructureDefinition) => {
+  const elements =
+    profile.snapshot?.element?.length
+      ? profile.snapshot.element
+      : profile.differential?.element ?? [];
+  const systemElement = elements.find((element) => element.path === "Identifier.system");
+  if (!systemElement) return undefined;
+  const record = systemElement as unknown as Record<string, unknown>;
+  const candidates = [
+    record["fixedUri"],
+    record["patternUri"],
+    record["fixedString"],
+    record["patternString"],
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+  }
+  return undefined;
+};
 
 const mergeElementWithBase = (
   element: ElementDefinition,
@@ -199,6 +226,76 @@ export const buildFieldDefinitions = (
     }
   }
 
+  const allElements = [...baseElements, ...elements];
+  const getIdentifierSystemsForPath = (path: string) => {
+    const slices = allElements.filter(
+      (element) =>
+        element.path === path &&
+        typeof element.id === "string" &&
+        element.id.includes(":") &&
+        Array.isArray(element.type)
+    );
+    const options: Array<{ system: string; label: string; profile?: string; sliceName?: string }> = [];
+
+    for (const slice of slices) {
+      for (const entry of slice.type ?? []) {
+        const profiles = entry.profile ?? [];
+        for (const profileUrl of profiles) {
+          if (!profileUrl) continue;
+          const profile = getStructureDefinitionByCanonical(registry, profileUrl);
+          if (!profile || profile.type !== "Identifier") continue;
+          const system = getFixedSystemFromIdentifierProfile(profile);
+          if (!system) continue;
+          const sliceName =
+            "sliceName" in slice ? (slice as { sliceName?: string }).sliceName : undefined;
+          const label =
+            sliceName ??
+            profile.title ??
+            profile.name ??
+            profile.id ??
+            system;
+          options.push({
+            system,
+            label,
+            profile: profile.url ?? profileUrl,
+            sliceName,
+          });
+        }
+      }
+    }
+
+    const seen = new Set<string>();
+    return options.filter((option) => {
+      if (seen.has(option.system)) return false;
+      seen.add(option.system);
+      return true;
+    });
+  };
+
+  const inferTypeForPath = (path: string) => {
+    const element = diffByPath.get(path);
+    const baseElement = baseByPath.get(path);
+    if (!element && !baseElement) return undefined;
+    const merged = mergeElementWithBase(
+      element ?? (baseElement as ElementDefinition),
+      baseElement
+    );
+    const normalizedSegments = path
+      .slice(rootPrefix.length)
+      .split(".")
+      .map(stripSlice)
+      .filter(Boolean);
+    const normalizedPath = [rootType, ...normalizedSegments].join(".");
+    const inferredType = hasType(merged.type)
+      ? merged.type
+      : normalizedPath.endsWith(".coding")
+      ? [{ code: "Coding" }]
+      : codingParents.has(normalizedPath)
+      ? [{ code: "CodeableConcept" }]
+      : merged.type;
+    return inferredType;
+  };
+
   for (const path of orderedPaths) {
     if (!path || path === rootType) continue;
     if (!path.startsWith(rootPrefix)) continue;
@@ -221,13 +318,15 @@ export const buildFieldDefinitions = (
       baseElement
     );
 
-    const inferredType = hasType(merged.type)
-      ? merged.type
-      : normalizedPath.endsWith(".coding")
-      ? [{ code: "Coding" }]
-      : codingParents.has(normalizedPath)
-      ? [{ code: "CodeableConcept" }]
-      : merged.type;
+    const inferredType =
+      inferTypeForPath(path) ??
+      (hasType(merged.type)
+        ? merged.type
+        : normalizedPath.endsWith(".coding")
+        ? [{ code: "Coding" }]
+        : codingParents.has(normalizedPath)
+        ? [{ code: "CodeableConcept" }]
+        : merged.type);
 
     const isTopLevel = segments.length === 1;
     const shouldIncludeField =
@@ -237,7 +336,15 @@ export const buildFieldDefinitions = (
       Boolean(merged.mustSupport) ||
       (merged.min ?? 0) > 0;
 
-    if (!shouldIncludeField) continue;
+    if (!shouldIncludeField) {
+      if (segments.length === 2) {
+        const parentPath = `${rootType}.${segments[0]}`;
+        const parentType = inferTypeForPath(parentPath);
+        if (!isComplexType(parentType)) continue;
+      } else {
+        continue;
+      }
+    }
 
     fields.push({
       id: merged.id ?? path,
@@ -249,6 +356,9 @@ export const buildFieldDefinitions = (
       baseMax: baseElement?.max,
       type: inferredType,
       binding: merged.binding,
+      identifierSystems: path.endsWith(".identifier")
+        ? getIdentifierSystemsForPath(path)
+        : undefined,
       mustSupport: merged.mustSupport,
       short: merged.short,
       definition: merged.definition,

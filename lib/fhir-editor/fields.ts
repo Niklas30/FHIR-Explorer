@@ -14,6 +14,7 @@ export type FieldKind =
   | "code"
   | "uri"
   | "url"
+  | "Identifier"
   | "Coding"
   | "CodeableConcept"
   | "Reference"
@@ -24,9 +25,11 @@ const getTypeCodes = (types?: ElementDefinitionType[]) =>
 
 export const resolveFieldKind = (field: FieldDefinition): FieldKind => {
   const codes = getTypeCodes(field.type);
+  if (codes.length === 0 && field.path.endsWith(".identifier")) return "Identifier";
   if (codes.includes("Reference")) return "Reference";
   if (codes.includes("CodeableConcept")) return "CodeableConcept";
   if (codes.includes("Coding")) return "Coding";
+  if (codes.includes("Identifier")) return "Identifier";
   if (codes.includes("boolean")) return "boolean";
   if (
     codes.includes("integer") ||
@@ -49,6 +52,9 @@ export const resolveFieldKind = (field: FieldDefinition): FieldKind => {
 
 export const isRepeatingField = (field: FieldDefinition) => {
   const effectiveMax = field.baseMax ?? field.max;
+  if (!effectiveMax && field.path.endsWith(".identifier")) {
+    return true;
+  }
   return Boolean(effectiveMax && effectiveMax !== "1" && effectiveMax !== "0");
 };
 
@@ -180,6 +186,8 @@ export const getDefaultValueForField = (
       }
       case "Reference":
         return { reference: "" };
+      case "Identifier":
+        return { system: "", value: "" };
       case "time":
         return "";
       default:
