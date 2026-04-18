@@ -22,6 +22,7 @@ import {
 import {
   buildDatasetReferenceIndex,
   isBrokenLocalReference,
+  parseLocalReference,
 } from "@/lib/fhir-editor/references";
 import {
   validateResourceWithProfile,
@@ -1253,6 +1254,7 @@ const FieldInput = ({
         : typeof currentValue === "string"
         ? currentValue
         : "";
+    const normalizedReferenceKey = parseLocalReference(currentReference)?.key ?? "";
     const referenceSelectOptions = referenceOptions.map((entry) => {
       const name =
         typeof entry.content.name === "string" && entry.content.name.trim()
@@ -1286,7 +1288,7 @@ const FieldInput = ({
           <span>Set display</span>
         </label>
         <PopupSearchSelect
-          value={currentReference}
+          value={normalizedReferenceKey || currentReference}
           options={referenceSelectOptions}
           placeholder="Select reference"
           searchPlaceholder="Search resources"

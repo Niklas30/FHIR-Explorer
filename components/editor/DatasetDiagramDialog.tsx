@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, Maximize2, RefreshCcw, SlidersHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import type { DatasetResource } from "@/lib/datasets/content";
+import { parseLocalReference } from "@/lib/fhir-editor/references";
 
 type DatasetDiagramDialogProps = {
   open: boolean;
@@ -48,9 +49,13 @@ const getResourceId = (resource: DatasetResource) => {
 };
 
 const normalizeReference = (value: string) => {
+  const local = parseLocalReference(value)?.key;
+  if (local) return local;
+
   const trimmed = value.trim();
   if (!trimmed || trimmed.startsWith("#")) return null;
-  const segments = trimmed.split("/").filter(Boolean);
+  const pathOnly = trimmed.split("?")[0]?.split("#")[0] ?? trimmed;
+  const segments = pathOnly.split("/").filter(Boolean);
   if (segments.length < 2) return null;
   const type = segments[segments.length - 2];
   const id = segments[segments.length - 1];
