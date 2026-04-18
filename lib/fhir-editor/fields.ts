@@ -23,6 +23,27 @@ export type FieldKind =
 const getTypeCodes = (types?: ElementDefinitionType[]) =>
   (types ?? []).map((type) => type.code).filter((code): code is string => Boolean(code));
 
+const getChoicesForField = (
+  field: FieldDefinition,
+  registry?: FhirRegistry
+): CodingOption[] => {
+  const options: CodingOption[] = [];
+  if (field.choiceOptions?.length) {
+    options.push(...field.choiceOptions);
+  }
+  if (registry) {
+    options.push(...resolveValueSetOptions(field.binding?.valueSet, registry));
+  }
+  const unique = new Map<string, CodingOption>();
+  for (const option of options) {
+    const key = `${option.system ?? ""}|${option.code}`;
+    if (!unique.has(key)) {
+      unique.set(key, option);
+    }
+  }
+  return Array.from(unique.values());
+};
+
 export const resolveFieldKind = (field: FieldDefinition): FieldKind => {
   const codes = getTypeCodes(field.type);
   if (codes.length === 0 && field.path.endsWith(".identifier")) return "Identifier";
@@ -152,9 +173,7 @@ export const getDefaultValueForField = (
       case "number":
         return 0;
       case "Coding": {
-        const options = registry
-          ? resolveValueSetOptions(field.binding?.valueSet, registry)
-          : [];
+        const options = getChoicesForField(field, registry);
         if (options.length > 0) {
           const first = options[0];
           return {
@@ -166,9 +185,7 @@ export const getDefaultValueForField = (
         return { system: "", code: "", display: "" };
       }
       case "CodeableConcept": {
-        const options = registry
-          ? resolveValueSetOptions(field.binding?.valueSet, registry)
-          : [];
+        const options = getChoicesForField(field, registry);
         if (options.length > 0) {
           const first = options[0];
           return {
@@ -208,8 +225,7 @@ export const resolveValueSetChoices = (
   field: FieldDefinition,
   registry?: FhirRegistry
 ): CodingOption[] => {
-  if (!registry) return [];
-  return resolveValueSetOptions(field.binding?.valueSet, registry);
+  return getChoicesForField(field, registry);
 };
 
 export const resolveReferenceTargets = (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -393,7 +393,9 @@ const FieldRow = ({
     : resolveFieldKind(field);
   const isRepeating = isRepeatingField(field);
   const rawValue = getFieldValue(content, field);
-  const values = isRepeating ? (Array.isArray(rawValue) ? rawValue : []) : [rawValue];
+  const isArrayValue = Array.isArray(rawValue);
+  const effectiveRepeating = isRepeating || isArrayValue;
+  const values = effectiveRepeating ? (isArrayValue ? rawValue : []) : [rawValue];
   const options = resolveValueSetChoices(field, registry ?? undefined);
   const referenceTargets = resolveReferenceTargets(field, registry ?? undefined);
   const allowAnyReference = referenceTargets.has("*") || referenceTargets.size === 0;
@@ -404,7 +406,7 @@ const FieldRow = ({
   });
 
   const updateValues = (nextValues: unknown[]) => {
-    const value = isRepeating ? nextValues : nextValues[0];
+    const value = effectiveRepeating ? nextValues : nextValues[0];
     onChange(setFieldValue(content, field, value));
   };
 
@@ -440,7 +442,7 @@ const FieldRow = ({
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {(field.min ?? 0) > 0 ? <span className="text-emerald-600">Required</span> : null}
-          {isRepeating ? <span>Multiple</span> : null}
+          {effectiveRepeating ? <span>Multiple</span> : null}
           {showRemove ? (
             <button
               type="button"
@@ -468,10 +470,10 @@ const FieldRow = ({
             identifierSystems={field.identifierSystems}
             identifierTypeOptions={field.identifierTypeOptions}
             onChange={(nextValue) => updateItem(index, nextValue)}
-            onRemove={isRepeating ? () => removeItem(index) : undefined}
+            onRemove={effectiveRepeating ? () => removeItem(index) : undefined}
           />
         ))}
-        {isRepeating ? (
+        {effectiveRepeating ? (
           <Button variant="outline" size="sm" onClick={addItem} className="w-fit">
             Add value
           </Button>
@@ -509,6 +511,12 @@ const ComplexFieldGroup = ({
   const identifierTypeOptions = group.root.identifierTypeOptions ?? [];
   const showRootSelect =
     (rootKind === "CodeableConcept" || rootKind === "Coding") && rootOptions.length > 0;
+  const referenceTargets = resolveReferenceTargets(group.root, registry ?? undefined);
+  const allowAnyReference = referenceTargets.has("*") || referenceTargets.size === 0;
+  const availableReferenceOptions = datasetResources.filter((resource) => {
+    if (allowAnyReference) return true;
+    return referenceTargets.has(resource.resourceType);
+  });
   const childFields = group.children
     .map((field) => ({
       ...field,
@@ -591,6 +599,16 @@ const ComplexFieldGroup = ({
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
                     />
+                  ) : rootKind === "Reference" ? (
+                    <FieldInput
+                      kind={rootKind}
+                      value={itemContent}
+                      options={[]}
+                      referenceOptions={availableReferenceOptions}
+                      onChange={(nextValue) =>
+                        handleItemChange(isRecord(nextValue) ? nextValue : {})
+                      }
+                    />
                   ) : showRootSelect ? (
                     <FieldInput
                       kind={rootKind}
@@ -645,6 +663,16 @@ const ComplexFieldGroup = ({
             referenceOptions={[]}
             identifierSystems={identifierSystems}
             identifierTypeOptions={identifierTypeOptions}
+            onChange={(nextValue) =>
+              handleObjectChange(isRecord(nextValue) ? nextValue : {})
+            }
+          />
+        ) : rootKind === "Reference" ? (
+          <FieldInput
+            kind={rootKind}
+            value={objectValue}
+            options={[]}
+            referenceOptions={availableReferenceOptions}
             onChange={(nextValue) =>
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
@@ -870,6 +898,126 @@ const setCodingAt = (value: Record<string, unknown>, coding: Record<string, unkn
   };
 };
 
+const isReferenceValue = (
+  value: unknown
+): value is { reference?: string; display?: string; identifier?: unknown } =>
+  Boolean(value && typeof value === "object" && "reference" in (value as Record<string, unknown>));
+
+type PopupSearchOption = {
+  value: string;
+  label: string;
+  searchText?: string;
+};
+
+type PopupSearchSelectProps = {
+  value: string;
+  options: PopupSearchOption[];
+  placeholder: string;
+  onValueChange: (value: string) => void;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  clearLabel?: string;
+};
+
+const PopupSearchSelect = ({
+  value,
+  options,
+  placeholder,
+  onValueChange,
+  searchPlaceholder = "Search",
+  emptyMessage = "No options available.",
+  clearLabel = "Clear",
+}: PopupSearchSelectProps) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selected = options.find((option) => option.value === value);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = options.filter((option) => {
+    if (!normalizedQuery) return true;
+    const haystack = `${option.label} ${option.searchText ?? ""}`.toLowerCase();
+    return haystack.includes(normalizedQuery);
+  });
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-9 w-full items-center justify-between rounded-md border border-foreground/20 bg-background px-3 text-sm"
+      >
+        <span className={selected ? "text-foreground" : "text-muted-foreground"}>
+          {selected?.label ?? placeholder}
+        </span>
+        <ChevronsUpDown className="size-4 text-muted-foreground" />
+      </button>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
+            setQuery("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{placeholder}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Input
+              autoFocus
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={searchPlaceholder}
+            />
+            <div className="max-h-80 overflow-auto rounded-md border border-foreground/10">
+              <div className="grid gap-1 p-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onValueChange("");
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted/40",
+                    !value ? "bg-muted/50" : ""
+                  )}
+                >
+                  <span>{clearLabel}</span>
+                  {!value ? <Check className="size-4 text-muted-foreground" /> : null}
+                </button>
+                {filteredOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">{emptyMessage}</div>
+                ) : (
+                  filteredOptions.map((option, index) => (
+                    <button
+                      key={`${option.value}-${index}`}
+                      type="button"
+                      onClick={() => {
+                        onValueChange(option.value);
+                        setOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted/40",
+                        value === option.value ? "bg-muted/50" : ""
+                      )}
+                    >
+                      <span>{option.label}</span>
+                      {value === option.value ? (
+                        <Check className="size-4 text-muted-foreground" />
+                      ) : null}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
 const FieldInput = ({
   kind,
   value,
@@ -880,7 +1028,111 @@ const FieldInput = ({
   onChange,
   onRemove,
 }: FieldInputProps) => {
-  const [referenceQuery, setReferenceQuery] = useState("");
+  const [includeReferenceDisplay, setIncludeReferenceDisplay] = useState(false);
+
+  const renderReferenceInput = (currentValue: unknown) => {
+    const getReferenceValue = (entry: DatasetResource) => {
+      const id =
+        typeof entry.content.id === "string" && entry.content.id
+          ? entry.content.id
+          : entry.id;
+      return `${entry.resourceType}/${id}`;
+    };
+    const getReferenceLabel = (entry: DatasetResource) => {
+      const name =
+        typeof entry.content.name === "string" && entry.content.name.trim()
+          ? entry.content.name.trim()
+          : undefined;
+      const title =
+        typeof entry.content.title === "string" && entry.content.title.trim()
+          ? entry.content.title.trim()
+          : undefined;
+      const id =
+        typeof entry.content.id === "string" && entry.content.id
+          ? entry.content.id
+          : entry.id;
+      const primary = name ?? title ?? entry.title;
+      return primary ? `${primary} · ${entry.resourceType} · ${id}` : `${entry.resourceType} · ${id}`;
+    };
+    const currentReference =
+      typeof currentValue === "object" && currentValue && "reference" in currentValue
+        ? String((currentValue as { reference?: string }).reference ?? "")
+        : typeof currentValue === "string"
+        ? currentValue
+        : "";
+    const referenceSelectOptions = referenceOptions.map((entry) => {
+      const name =
+        typeof entry.content.name === "string" && entry.content.name.trim()
+          ? entry.content.name.trim()
+          : "";
+      const title =
+        typeof entry.content.title === "string" && entry.content.title.trim()
+          ? entry.content.title.trim()
+          : "";
+      const displayId =
+        typeof entry.content.id === "string" && entry.content.id
+          ? entry.content.id
+          : entry.id;
+      const reference = getReferenceValue(entry);
+      return {
+        value: reference,
+        label: getReferenceLabel(entry),
+        searchText: `${entry.resourceType} ${entry.title ?? ""} ${name} ${title} ${displayId}`,
+      };
+    });
+
+    return (
+      <div className="grid gap-2">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border border-foreground/20"
+            checked={includeReferenceDisplay}
+            onChange={(event) => setIncludeReferenceDisplay(event.target.checked)}
+          />
+          <span>Set display</span>
+        </label>
+        <PopupSearchSelect
+          value={currentReference}
+          options={referenceSelectOptions}
+          placeholder="Select reference"
+          searchPlaceholder="Search resources"
+          emptyMessage="No matching resources."
+          onValueChange={(reference) => {
+            if (!reference) {
+              onChange(undefined);
+              return;
+            }
+            const match = referenceOptions.find(
+              (entry) => getReferenceValue(entry) === reference
+            );
+            const name =
+              match && typeof match.content.name === "string"
+                ? match.content.name
+                : undefined;
+            const title =
+              match && typeof match.content.title === "string"
+                ? match.content.title
+                : undefined;
+            if (includeReferenceDisplay) {
+              const display = match?.title ?? name ?? title;
+              onChange(display ? { reference, display } : { reference });
+              return;
+            }
+            onChange({ reference });
+          }}
+        />
+        <Input
+          value={currentReference}
+          onChange={(event) =>
+            onChange({ reference: event.target.value })
+          }
+          placeholder="ResourceType/id"
+        />
+      </div>
+    );
+  };
+
   if (kind === "Identifier") {
     const current = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
     const system = typeof current.system === "string" ? current.system : "";
@@ -899,28 +1151,37 @@ const FieldInput = ({
     return (
       <div className="grid gap-2">
         {systemOptions.length > 0 ? (
-          <select
+          <PopupSearchSelect
             value={system}
-            onChange={(event) =>
-              onChange({ ...current, system: event.target.value || undefined })
+            options={systemOptions.map((option) => ({
+              value: option.system,
+              label: option.label,
+              searchText: option.system,
+            }))}
+            placeholder="Select system"
+            searchPlaceholder="Search systems"
+            onValueChange={(nextSystem) =>
+              onChange({ ...current, system: nextSystem || undefined })
             }
-            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-          >
-            <option value="">Select system</option>
-            {systemOptions.map((option) => (
-              <option key={option.system} value={option.system}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          />
         ) : null}
         {typeOptions.length > 0 ? (
-          <select
+          <PopupSearchSelect
             value={typeKey}
-            onChange={(event) => {
-              const nextKey = event.target.value;
+            options={typeOptions.map((option) => {
+              const key = `${option.system ?? ""}|${option.code}`;
+              return {
+                value: key,
+                label: formatOptionLabel(option.system, option.code, option.display),
+                searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
+              };
+            })}
+            placeholder="Select identifier type"
+            searchPlaceholder="Search identifier types"
+            onValueChange={(nextKey) => {
               if (!nextKey) {
-                const { type: _type, ...rest } = current;
+                const rest = { ...current };
+                delete rest.type;
                 onChange(rest);
                 return;
               }
@@ -935,18 +1196,7 @@ const FieldInput = ({
               };
               onChange({ ...current, type: setCodingAt(type, nextCoding) });
             }}
-            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-          >
-            <option value="">Select identifier type</option>
-            {typeOptions.map((option) => {
-              const key = `${option.system ?? ""}|${option.code}`;
-              return (
-                <option key={key} value={key}>
-                  {formatOptionLabel(option.system, option.code, option.display)}
-                </option>
-              );
-            })}
-          </select>
+          />
         ) : null}
         <div className="grid gap-2 md:grid-cols-2">
           <Input
@@ -961,20 +1211,18 @@ const FieldInput = ({
           />
         </div>
         <div className="grid gap-2 md:grid-cols-2">
-          <select
+          <PopupSearchSelect
             value={use}
-            onChange={(event) =>
-              onChange({ ...current, use: event.target.value || undefined })
+            options={IDENTIFIER_USE_OPTIONS.map((option) => ({
+              value: option,
+              label: option,
+            }))}
+            placeholder="Use (optional)"
+            searchPlaceholder="Search use values"
+            onValueChange={(nextUse) =>
+              onChange({ ...current, use: nextUse || undefined })
             }
-            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-          >
-            <option value="">Use (optional)</option>
-            {IDENTIFIER_USE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          />
           <Input
             value={typeText}
             onChange={(event) =>
@@ -1070,21 +1318,19 @@ const FieldInput = ({
     if (options.length > 0) {
       const current = typeof value === "string" ? value : "";
       return (
-        <select
+        <PopupSearchSelect
           value={current}
-          onChange={(event) => {
-            const nextValue = event.target.value;
+          options={options.map((option) => ({
+            value: option.code,
+            label: formatOptionLabel(option.system, option.code, option.display),
+            searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
+          }))}
+          placeholder="Select value"
+          searchPlaceholder="Search values"
+          onValueChange={(nextValue) => {
             onChange(nextValue || undefined);
           }}
-          className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-        >
-          <option value="">Select value</option>
-          {options.map((option) => (
-            <option key={`${option.system ?? ""}|${option.code}`} value={option.code}>
-              {formatOptionLabel(option.system, option.code, option.display)}
-            </option>
-          ))}
-        </select>
+        />
       );
     }
     return (
@@ -1096,110 +1342,32 @@ const FieldInput = ({
     );
   }
 
-  if (kind === "Reference") {
-    const getReferenceValue = (entry: DatasetResource) => {
-      const id =
-        typeof entry.content.id === "string" && entry.content.id
-          ? entry.content.id
-        : entry.id;
-      return `${entry.resourceType}/${id}`;
-    };
-    const getReferenceLabel = (entry: DatasetResource) => {
-      const name =
-        typeof entry.content.name === "string" && entry.content.name.trim()
-          ? entry.content.name.trim()
-          : undefined;
-      const title =
-        typeof entry.content.title === "string" && entry.content.title.trim()
-          ? entry.content.title.trim()
-          : undefined;
-      const id =
-        typeof entry.content.id === "string" && entry.content.id
-          ? entry.content.id
-          : entry.id;
-      const primary = name ?? title ?? entry.title;
-      return primary ? `${primary} · ${entry.resourceType} · ${id}` : `${entry.resourceType} · ${id}`;
-    };
-    const currentReference =
-      typeof value === "object" && value && "reference" in value
-        ? String((value as { reference?: string }).reference ?? "")
-        : typeof value === "string"
-        ? value
-        : "";
-
-    const filteredOptions = referenceOptions.filter((entry) => {
-      const name =
-        typeof entry.content.name === "string" ? entry.content.name : "";
-      const title =
-        typeof entry.content.title === "string" ? entry.content.title : "";
-      const displayId =
-        typeof entry.content.id === "string" && entry.content.id
-          ? entry.content.id
-          : entry.id;
-      const label = `${entry.resourceType} ${entry.title ?? ""} ${name} ${title} ${displayId}`.toLowerCase();
-      const query = referenceQuery.trim().toLowerCase();
-      if (!query) return true;
-      return label.includes(query);
-    });
-
+  if ((kind === "string" || kind === "uri" || kind === "url") && options.length > 0) {
+    const current = typeof value === "string" ? value : value ? String(value) : "";
     return (
       <div className="grid gap-2">
-        <Input
-          value={referenceQuery}
-          onChange={(event) => setReferenceQuery(event.target.value)}
-          placeholder="Search resources"
+        <PopupSearchSelect
+          value={current}
+          options={options.map((option) => ({
+            value: option.code,
+            label: formatOptionLabel(option.system, option.code, option.display),
+            searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
+          }))}
+          placeholder="Select value"
+          searchPlaceholder="Search values"
+          onValueChange={(nextValue) => onChange(nextValue || undefined)}
         />
-        <select
-          value={currentReference}
-          onChange={(event) => {
-            const reference = event.target.value;
-            if (!reference) {
-              onChange(undefined);
-              return;
-            }
-            const match = referenceOptions.find(
-              (entry) => getReferenceValue(entry) === reference
-            );
-            const name =
-              match && typeof match.content.name === "string"
-                ? match.content.name
-                : undefined;
-            const title =
-              match && typeof match.content.title === "string"
-                ? match.content.title
-                : undefined;
-            onChange({
-              reference,
-              display: match?.title ?? name ?? title,
-            });
-          }}
-          className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-        >
-          <option value="">Select reference</option>
-          {filteredOptions.length === 0 ? (
-            <option value="" disabled>
-              No matching resources
-            </option>
-          ) : (
-            filteredOptions.map((entry) => {
-              const reference = getReferenceValue(entry);
-              return (
-                <option key={entry.id} value={reference}>
-                  {getReferenceLabel(entry)}
-                </option>
-              );
-            })
-          )}
-        </select>
         <Input
-          value={currentReference}
-          onChange={(event) =>
-            onChange({ reference: event.target.value })
-          }
-          placeholder="ResourceType/id"
+          value={current}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Or enter a custom value"
         />
       </div>
     );
+  }
+
+  if (kind === "Reference" || isReferenceValue(value)) {
+    return renderReferenceInput(value);
   }
 
   if (kind === "Coding" || kind === "CodeableConcept") {
@@ -1216,10 +1384,19 @@ const FieldInput = ({
     if (options.length > 0) {
       return (
         <div className="grid gap-2">
-          <select
+          <PopupSearchSelect
             value={currentKey}
-            onChange={(event) => {
-              const nextKey = event.target.value;
+            options={options.map((option) => {
+              const key = `${option.system ?? ""}|${option.code}`;
+              return {
+                value: key,
+                label: formatOptionLabel(option.system, option.code, option.display),
+                searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
+              };
+            })}
+            placeholder="Select value"
+            searchPlaceholder="Search values"
+            onValueChange={(nextKey) => {
               if (!nextKey) {
                 onChange(undefined);
                 return;
@@ -1247,18 +1424,7 @@ const FieldInput = ({
                 text: option?.display,
               });
             }}
-            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
-          >
-            <option value="">Select value</option>
-            {options.map((option) => {
-              const key = `${option.system ?? ""}|${option.code}`;
-              return (
-                <option key={key} value={key}>
-                  {formatOptionLabel(option.system, option.code, option.display)}
-                </option>
-              );
-            })}
-          </select>
+          />
           {onRemove ? (
             <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
               Remove
