@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,7 @@ export const ImportWizard = () => {
     getDownloadUrl,
   } = useImporter();
 
+  const searchParams = useSearchParams();
   const [packageId, setPackageId] = useState("");
   const [version, setVersion] = useState("");
   const [versionDrafts, setVersionDrafts] = useState<Record<string, string>>({});
@@ -65,6 +67,18 @@ export const ImportWizard = () => {
   const completionHandledRef = useRef<string | null>(null);
 
   const currentTarget = snapshot?.state.currentTarget;
+
+  useEffect(() => {
+    if (currentTarget) return;
+    const projectParam = searchParams.get("project")?.trim();
+    const versionParam = searchParams.get("version")?.trim();
+    if (projectParam && packageId.length === 0) {
+      setPackageId(projectParam);
+    }
+    if (versionParam && version.length === 0) {
+      setVersion(versionParam);
+    }
+  }, [searchParams, currentTarget, packageId.length, version.length]);
 
   useEffect(() => {
     if (currentTarget) {
