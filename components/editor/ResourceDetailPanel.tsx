@@ -1737,6 +1737,19 @@ const FieldInput = ({
     );
   }
 
+  if (value !== null && typeof value === "object") {
+    return (
+      <div className="grid gap-2">
+        <UnknownValueEditor value={value} onChange={onChange} />
+        {onRemove ? (
+          <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
+            Remove
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("grid gap-2", onRemove ? "md:grid-cols-[1fr_auto]" : "")}>
       <Input

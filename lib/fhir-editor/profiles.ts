@@ -162,6 +162,28 @@ const mergeElementWithBase = (
   };
 };
 
+const isSliceElementForPath = (element: ElementDefinition) => {
+  if (!element.id || !element.path) return false;
+  if (!element.id.includes(":")) return false;
+
+  const idSegments = element.id.split(".");
+  const pathSegments = element.path.split(".");
+  if (idSegments.length !== pathSegments.length) return false;
+
+  let hasSlice = false;
+  for (let index = 0; index < idSegments.length; index += 1) {
+    const idSegment = idSegments[index];
+    if (idSegment.includes(":")) {
+      hasSlice = true;
+    }
+    if (stripSlice(idSegment) !== pathSegments[index]) {
+      return false;
+    }
+  }
+
+  return hasSlice;
+};
+
 const shouldInclude = (segments: string[]) => {
   return segments.length >= 1 && segments.length <= 3;
 };
@@ -263,6 +285,7 @@ export const buildFieldDefinitions = (
     baseElements.push(...baseDefinitionElements);
     for (const element of baseDefinitionElements) {
       if (!element.path) continue;
+      if (isSliceElementForPath(element)) continue;
       const previous = baseByPath.get(element.path);
       baseByPath.set(
         element.path,
@@ -276,6 +299,7 @@ export const buildFieldDefinitions = (
   const diffByPath = new Map<string, ElementDefinition>();
   for (const element of profileElements) {
     if (!element.path) continue;
+    if (isSliceElementForPath(element)) continue;
     const previous = diffByPath.get(element.path);
     diffByPath.set(
       element.path,
