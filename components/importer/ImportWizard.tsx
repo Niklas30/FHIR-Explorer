@@ -9,7 +9,16 @@ import { Label } from "@/components/ui/label";
 import { FileDropzone } from "@/components/importer/FileDropzone";
 import { useImporter } from "@/components/importer/useImporter";
 import type { DependencyRequirement } from "@/lib/fhir-importer/types";
+import {
+  isComposeProjectArchive,
+  isComposeProjectExport,
+  type ComposeDatasetExport,
+  type ComposePackageExport,
+  type ComposeProjectExport,
+} from "@/lib/fhir-importer/compose";
+import { upsertDataset, type DatasetRecord } from "@/lib/datasets/storage";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
 const formatRequirement = (dependency: DependencyRequirement) => {
   if (dependency.exactVersion) {
@@ -34,6 +43,7 @@ export const ImportWizard = () => {
     clearVersionSelection,
     importFile,
     importTargetFile,
+    importComposeProject,
     addImportHistory,
     getDownloadUrl,
   } = useImporter();
@@ -97,6 +107,106 @@ export const ImportWizard = () => {
     return { id: key.slice(0, index), version: key.slice(index + 1) };
   };
 
+  const createDatasetId = () =>
+    `dataset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const importComposeBundle = async (bundle: ComposeProjectExport) => {
+    const result = await importComposeProject(bundle);
+    if (!result) {
+      return "Failed to import compose project file.";
+    }
+    const datasets = bundle.datasets ?? [];
+
+    if (datasets.length > 0) {
+      for (const dataset of datasets) {
+        if (!dataset?.name) continue;
+        const record: DatasetRecord = {
+          id: dataset.id ?? createDatasetId(),
+          name: dataset.name,
+          projectKey: dataset.projectKey ?? bundle.targetKey ?? "imported",
+          createdAt: Date.now(),
+        };
+        upsertDataset(record);
+      }
+    }
+
+    return `Compose project imported (${result.imported} packages, ${result.skipped} skipped).`;
+  };
+
+  const parseComposeZip = async (file: File): Promise<ComposeProjectExport | null> => {
+    try {
+      const buffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(buffer);
+      const manifestFile = zip.file("compose-project.json");
+      if (!manifestFile) return null;
+
+      const manifestText = await manifestFile.async("text");
+      const manifest = JSON.parse(manifestText);
+
+      if (isComposeProjectExport(manifest)) {
+        return manifest;
+      }
+
+      if (!isComposeProjectArchive(manifest)) return null;
+
+      const packages: ComposePackageExport[] = [];
+      for (const entry of manifest.packages) {
+        const pkgFile = zip.file(entry.file);
+        if (!pkgFile) continue;
+        const pkgText = await pkgFile.async("text");
+        packages.push(JSON.parse(pkgText) as ComposePackageExport);
+      }
+
+      const datasets: ComposeDatasetExport[] = [];
+      for (const entry of manifest.datasets ?? []) {
+        const datasetFile = zip.file(entry.file);
+        if (!datasetFile) continue;
+        const datasetText = await datasetFile.async("text");
+        datasets.push(JSON.parse(datasetText) as ComposeDatasetExport);
+      }
+
+      return {
+        type: "fhir-compose-project",
+        version: 1,
+        targetKey: manifest.targetKey,
+        exportedAt: manifest.exportedAt,
+        packages,
+        datasets,
+      };
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
+
+  const maybeImportComposeProject = async (file: File) => {
+    const name = file.name.toLowerCase();
+    const isJson =
+      name.endsWith(".json") ||
+      file.type === "application/json" ||
+      file.type === "text/json";
+    const isZip = name.endsWith(".zip") || file.type === "application/zip";
+
+    try {
+      if (isZip) {
+        const bundle = await parseComposeZip(file);
+        if (!bundle) return null;
+        return await importComposeBundle(bundle);
+      }
+
+      if (!isJson) return null;
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!isComposeProjectExport(parsed)) {
+        return null;
+      }
+      return await importComposeBundle(parsed);
+    } catch (err) {
+      console.error(err);
+      return "Failed to import compose project file.";
+    }
+  };
+
   const handleUpload = async (files: File[]) => {
     setUploadNotice(null);
     const missingIds = new Set(missing.map((dep) => dep.id));
@@ -104,6 +214,12 @@ export const ImportWizard = () => {
     const notices: string[] = [];
 
     for (const file of files) {
+      const composeNotice = await maybeImportComposeProject(file);
+      if (composeNotice) {
+        notices.push(composeNotice);
+        continue;
+      }
+
       const result = await importFile(file);
       if (!result) continue;
       const parsed = parsePackageKey(result.packageKey);
@@ -137,6 +253,12 @@ export const ImportWizard = () => {
     const notices: string[] = [];
 
     for (const file of files) {
+      const composeNotice = await maybeImportComposeProject(file);
+      if (composeNotice) {
+        notices.push(composeNotice);
+        continue;
+      }
+
       const result = await importTargetFile(file);
       if (!result) continue;
 
@@ -295,9 +417,11 @@ export const ImportWizard = () => {
           </CardHeader>
           <CardContent className="grid gap-4">
               <FileDropzone
-                label="Upload target package (.tgz)"
+                label="Upload target package (.tgz) or compose project (.json/.zip)"
                 helperText="The package must contain package/package.json"
                 disabled={isUploading}
+                accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+                hint="Drag & drop .tgz, .json, or .zip files here"
                 onFiles={handleTargetUpload}
               />
             <div className="grid gap-4 md:grid-cols-3">
@@ -436,9 +560,11 @@ export const ImportWizard = () => {
             )}
             {missing.length > 0 ? (
               <FileDropzone
-                label="Upload package (.tgz)"
+                label="Upload package (.tgz) or compose project (.json/.zip)"
                 helperText="Upload target or dependency packages. The importer will detect matches."
                 disabled={!currentTarget || isUploading}
+                accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+                hint="Drag & drop .tgz, .json, or .zip files here"
                 onFiles={handleUpload}
               />
             ) : null}

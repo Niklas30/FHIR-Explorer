@@ -5,12 +5,15 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const defaultAccept = ".tgz,application/gzip,application/x-gzip";
+const defaultHint = "Drag & drop .tgz files here";
 
 type FileDropzoneProps = {
   label?: string;
   helperText?: string;
   disabled?: boolean;
   onFiles: (files: File[]) => void;
+  accept?: string;
+  hint?: string;
 };
 
 export const FileDropzone = ({
@@ -18,6 +21,8 @@ export const FileDropzone = ({
   helperText,
   disabled,
   onFiles,
+  accept = defaultAccept,
+  hint = defaultHint,
 }: FileDropzoneProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -67,14 +72,12 @@ export const FileDropzone = ({
         <input
           ref={inputRef}
           type="file"
-          accept={defaultAccept}
+          accept={accept}
           className="hidden"
           multiple
           onChange={(event) => handleFiles(event.target.files)}
         />
-        <span className="text-xs text-muted-foreground">
-          Drag & drop .tgz files here
-        </span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
       </div>
     </div>
   );

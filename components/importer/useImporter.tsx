@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ImportProgress, ImporterSnapshot, ImportResult } from "@/lib/fhir-importer/types";
+import type {
+  ImportProgress,
+  ImporterSnapshot,
+  ImportResult,
+  ResourcePayload,
+} from "@/lib/fhir-importer/types";
+import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
 import { ImporterClient } from "@/lib/fhir-importer/client";
 import { registryStrategies } from "@/lib/fhir-importer/registry";
 
@@ -19,6 +25,12 @@ type UseImporterResult = {
   importTargetFile: (file: File) => Promise<ImportResult | null>;
   addImportHistory: (targetKey: string) => Promise<void>;
   deletePackage: (packageKey: string) => Promise<void>;
+  clearAllData: () => Promise<void>;
+  importComposeProject: (bundle: ComposeProjectExport) => Promise<{
+    imported: number;
+    skipped: number;
+  } | null>;
+  getResourcePayloadsByPackageKeys: (packageKeys: string[]) => Promise<ResourcePayload[]>;
   getDownloadUrl: (id: string, version: string) => string;
   refresh: () => Promise<void>;
 };
@@ -162,6 +174,39 @@ export const useImporter = (): UseImporterResult => {
     [client, refresh]
   );
 
+  const clearAllData = useCallback(async () => {
+    if (!client) return;
+    await client.clearAllData();
+    await refresh();
+  }, [client, refresh]);
+
+  const importComposeProject = useCallback(
+    async (bundle: ComposeProjectExport) => {
+      if (!client) return null;
+      try {
+        const result = await client.importComposeProject(bundle, (update) => {
+          setProgress(update);
+        });
+        await refresh();
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Project import failed");
+        return null;
+      } finally {
+        setProgress({ phase: "idle" });
+      }
+    },
+    [client, refresh]
+  );
+
+  const getResourcePayloadsByPackageKeys = useCallback(
+    async (packageKeys: string[]) => {
+      if (!client) return [];
+      return await client.getResourcePayloadsByPackageKeys(packageKeys);
+    },
+    [client]
+  );
+
   return {
     snapshot,
     progress,
@@ -176,6 +221,9 @@ export const useImporter = (): UseImporterResult => {
     importTargetFile,
     addImportHistory,
     deletePackage,
+    clearAllData,
+    importComposeProject,
+    getResourcePayloadsByPackageKeys,
     getDownloadUrl: client ? client.getDownloadUrl.bind(client) : () => "",
     refresh,
   };

@@ -14,6 +14,7 @@ import { buildPackageKey } from "./utils";
 import type { RegistryStrategy } from "./registry";
 import { defaultRegistry } from "./registry";
 import { parsePackageInWorker } from "./worker-client";
+import type { ComposeProjectExport } from "./compose";
 
 export type ImporterClientOptions = {
   registry?: RegistryStrategy;
@@ -167,6 +168,97 @@ export class ImporterClient {
     });
   }
 
+  async getResourcePayloadsByPackageKeys(packageKeys: string[]) {
+    return this.storage.listResourcePayloadsByPackageKeys(packageKeys);
+  }
+
+  async importComposeProject(
+    bundle: ComposeProjectExport,
+    onProgress?: (progress: ImportProgress) => void
+  ): Promise<{ imported: number; skipped: number }> {
+    onProgress?.({ phase: "parsing", message: "Parsing compose project" });
+
+    const packages = bundle.packages ?? [];
+    let imported = 0;
+    let skipped = 0;
+
+    for (const pkg of packages) {
+      const packageKey = pkg.key ?? buildPackageKey(pkg.id, pkg.version);
+      const existing = await this.storage.getPackage(packageKey);
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+
+      const resources = (pkg.resources ?? []).map((resource, index) => {
+        const content = resource.content as Record<string, unknown> | undefined;
+        const resourceType = resource.resourceType ?? (content?.resourceType as string) ?? "Resource";
+        const id = resource.id ?? (content?.id as string | undefined);
+        const url = resource.url ?? (content?.url as string | undefined);
+        const name = content?.name as string | undefined;
+        const title = content?.title as string | undefined;
+
+        return {
+          resourceType,
+          id,
+          url,
+          name,
+          title,
+          content: resource.content,
+          packageKey,
+          sourcePath: `compose/${pkg.id}/${resourceType}-${id ?? index}.json`,
+        };
+      });
+
+      const resourceIndex = buildResourceIndexEntries(resources);
+      const resourcePayloads: ResourcePayload[] = resources.map((resource) => ({
+        key: `${resource.resourceType}|${resource.id ?? resource.sourcePath}|${resource.packageKey}`,
+        packageKey: resource.packageKey,
+        resourceType: resource.resourceType,
+        id: resource.id,
+        url: resource.url,
+        content: resource.content,
+      }));
+
+      onProgress?.({ phase: "saving", message: `Saving ${packageKey}` });
+
+      const record: PackageRecord = {
+        key: packageKey,
+        id: pkg.id,
+        version: pkg.version,
+        manifest: pkg.manifest ?? { name: pkg.id, version: pkg.version },
+        addedAt: Date.now(),
+        resourceCount: resources.length,
+      };
+
+      await this.storage.putPackage(record);
+      await this.storage.putResourceIndex(resourceIndex);
+      if (this.storeResourcePayloads) {
+        await this.storage.putResourcePayloads(resourcePayloads);
+      }
+
+      imported += 1;
+    }
+
+    if (bundle.targetKey) {
+      const state = await this.storage.loadState();
+      const history = state.importHistory ?? [];
+      const filtered = history.filter((entry) => entry.targetKey !== bundle.targetKey);
+      const next = [{ targetKey: bundle.targetKey, completedAt: Date.now() }, ...filtered].slice(
+        0,
+        20
+      );
+      await this.storage.saveState({
+        ...state,
+        importHistory: next,
+      });
+    }
+
+    onProgress?.({ phase: "completed", message: "Compose project imported" });
+
+    return { imported, skipped };
+  }
+
   private async parsePackage(
     buffer: ArrayBuffer,
     onProgress?: (progress: number) => void
@@ -311,6 +403,10 @@ export class ImporterClient {
         importHistory: nextHistory,
       });
     }
+  }
+
+  async clearAllData() {
+    await this.storage.clearAll();
   }
 
   private getRequiredPackageKeys(

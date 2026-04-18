@@ -61,3 +61,12 @@ export const removeDatasetsForProject = (projectKey: string): DatasetRecord[] =>
   saveDatasets(next);
   return next;
 };
+
+export const clearDatasets = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error("Failed to clear datasets", error);
+  }
+};
