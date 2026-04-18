@@ -4,7 +4,12 @@ import type {
   FhirRegistry,
   StructureDefinition,
 } from "@/lib/fhir-editor/registry";
-import { getStructureDefinitionByCanonical, normalizeCanonical } from "@/lib/fhir-editor/registry";
+import {
+  getStructureDefinitionByCanonical,
+  normalizeCanonical,
+  resolveValueSetOptions,
+  type CodingOption,
+} from "@/lib/fhir-editor/registry";
 
 export type ProfileSummary = {
   url: string;
@@ -26,6 +31,7 @@ export type FieldDefinition = {
   type?: ElementDefinitionType[];
   binding?: ElementDefinition["binding"];
   identifierSystems?: Array<{ system: string; label: string; profile?: string; sliceName?: string }>;
+  identifierTypeOptions?: CodingOption[];
   mustSupport?: boolean;
   short?: string;
   definition?: string;
@@ -75,6 +81,42 @@ const getFixedSystemFromIdentifierProfile = (profile: StructureDefinition) => {
     if (typeof candidate === "string" && candidate.trim()) return candidate;
   }
   return undefined;
+};
+
+const getIdentifierTypeOptionsFromProfile = (
+  profile: StructureDefinition,
+  registry: FhirRegistry
+): CodingOption[] => {
+  const elements =
+    profile.snapshot?.element?.length
+      ? profile.snapshot.element
+      : profile.differential?.element ?? [];
+  const typeElement = elements.find((element) => element.path === "Identifier.type");
+  if (!typeElement) return [];
+  const options: CodingOption[] = [];
+
+  if (typeElement.binding?.valueSet) {
+    options.push(...resolveValueSetOptions(typeElement.binding.valueSet, registry));
+  }
+
+  const patternCodings = typeElement.patternCodeableConcept?.coding ?? [];
+  for (const coding of patternCodings) {
+    if (!coding?.code) continue;
+    options.push({
+      system: coding.system,
+      code: coding.code,
+      display: coding.display,
+    });
+  }
+
+  const unique = new Map<string, CodingOption>();
+  for (const option of options) {
+    const key = `${option.system ?? ""}|${option.code}`;
+    if (!unique.has(key)) {
+      unique.set(key, option);
+    }
+  }
+  return Array.from(unique.values());
 };
 
 const mergeElementWithBase = (
@@ -272,6 +314,38 @@ export const buildFieldDefinitions = (
     });
   };
 
+  const getIdentifierTypeOptionsForPath = (path: string) => {
+    const slices = allElements.filter(
+      (element) =>
+        element.path === path &&
+        typeof element.id === "string" &&
+        element.id.includes(":") &&
+        Array.isArray(element.type)
+    );
+    const options: CodingOption[] = [];
+
+    for (const slice of slices) {
+      for (const entry of slice.type ?? []) {
+        const profiles = entry.profile ?? [];
+        for (const profileUrl of profiles) {
+          if (!profileUrl) continue;
+          const profile = getStructureDefinitionByCanonical(registry, profileUrl);
+          if (!profile || profile.type !== "Identifier") continue;
+          options.push(...getIdentifierTypeOptionsFromProfile(profile, registry));
+        }
+      }
+    }
+
+    const unique = new Map<string, CodingOption>();
+    for (const option of options) {
+      const key = `${option.system ?? ""}|${option.code}`;
+      if (!unique.has(key)) {
+        unique.set(key, option);
+      }
+    }
+    return Array.from(unique.values());
+  };
+
   const inferTypeForPath = (path: string) => {
     const element = diffByPath.get(path);
     const baseElement = baseByPath.get(path);
@@ -358,6 +432,9 @@ export const buildFieldDefinitions = (
       binding: merged.binding,
       identifierSystems: path.endsWith(".identifier")
         ? getIdentifierSystemsForPath(path)
+        : undefined,
+      identifierTypeOptions: path.endsWith(".identifier")
+        ? getIdentifierTypeOptionsForPath(path)
         : undefined,
       mustSupport: merged.mustSupport,
       short: merged.short,
