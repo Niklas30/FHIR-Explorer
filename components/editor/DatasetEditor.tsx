@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Layout } from "react-resizable-panels";
 import { useImporter } from "@/components/importer/useImporter";
 import { DatasetDiagramDialog } from "@/components/editor/DatasetDiagramDialog";
 import { EditorHeader } from "@/components/editor/EditorHeader";
@@ -10,7 +9,12 @@ import { NewResourceDialog } from "@/components/editor/NewResourceDialog";
 import { ResourceDetailPanel } from "@/components/editor/ResourceDetailPanel";
 import { ResourceJsonPanel } from "@/components/editor/ResourceJsonPanel";
 import { ResourceListPanel } from "@/components/editor/ResourceListPanel";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import { loadDatasets } from "@/lib/datasets/storage";
@@ -629,21 +633,21 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         </div>
       ) : null}
       <div className="flex h-full w-full flex-col" style={{ zoom: zoomPercent / 100 }}>
-	        <EditorHeader
-	          datasetName={dataset.name}
-	          datasetId={dataset.id}
-	          projectKey={dataset.projectKey}
-	          onCreateResource={() => setCreateDialogOpen(true)}
-	          onOpenDiagram={() => setDiagramOpen(true)}
-	          onOpenExport={() => setExportDialogOpen(true)}
-	          theme={theme}
-	          onThemeChange={setTheme}
-	          zoomLabel={zoomLabel}
-	          onZoomIn={() => setZoomPercent((prev) => Math.min(140, prev + 5))}
-	          onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
-	        />
+        <EditorHeader
+          datasetName={dataset.name}
+          datasetId={dataset.id}
+          projectKey={dataset.projectKey}
+          onCreateResource={() => setCreateDialogOpen(true)}
+          onOpenDiagram={() => setDiagramOpen(true)}
+          onOpenExport={() => setExportDialogOpen(true)}
+          theme={theme}
+          onThemeChange={setTheme}
+          zoomLabel={zoomLabel}
+          onZoomIn={() => setZoomPercent((prev) => Math.min(140, prev + 5))}
+          onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
+        />
 
-        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6 pt-4">
+        <div className="min-h-0 flex-1 overflow-hidden px-6 pb-6 pt-4">
           <ResizablePanelGroup
             direction="horizontal"
             onLayoutChanged={(layout: Layout) => {
@@ -686,20 +690,20 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                 onRemoveResource={handleRemoveResource}
               />
             </ResizablePanel>
-	            <ResizableHandle withHandle />
-	            <ResizablePanel
-	              id="resource-json"
-	              defaultSize={panelLayout?.["resource-json"] ?? 32}
-	              minSize={20}
-	              className="min-h-0"
-	            >
-	              <ResourceJsonPanel
-	                resource={selectedResource}
-	                onUpdateResource={handleUpdateResource}
-	              />
-	            </ResizablePanel>
-	          </ResizablePanelGroup>
-	        </div>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              id="resource-json"
+              defaultSize={panelLayout?.["resource-json"] ?? 32}
+              minSize={20}
+              className="min-h-0"
+            >
+              <ResourceJsonPanel
+                resource={selectedResource}
+                onUpdateResource={handleUpdateResource}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
 
         <NewResourceDialog
           open={isCreateDialogOpen}

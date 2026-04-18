@@ -122,10 +122,8 @@ export const hydrateDatasetResources = (resources: unknown[]): DatasetResource[]
 
   for (const resource of resources ?? []) {
     if (!isRecord(resource)) continue;
-
     const resourceType = resource.resourceType;
     if (typeof resourceType !== "string") continue;
-
     const meta = resource.meta;
     const profile =
       isRecord(meta) && Array.isArray(meta.profile)
