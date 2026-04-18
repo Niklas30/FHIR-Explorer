@@ -5,7 +5,7 @@ export type DatasetRecord = {
   createdAt: number;
 };
 
-const STORAGE_KEY = "fhir-compose-datasets";
+const STORAGE_KEY = "health-compose-datasets";
 
 const sortByNewest = (a: DatasetRecord, b: DatasetRecord) => b.createdAt - a.createdAt;
 

@@ -193,7 +193,7 @@ export const ImportWizard = () => {
       }
 
       return {
-        type: "fhir-compose-project",
+        type: "health-compose-project",
         version: 1,
         targetKey: manifest.targetKey,
         exportedAt: manifest.exportedAt,
