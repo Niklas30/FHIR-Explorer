@@ -138,8 +138,40 @@ export class ImporterStorage {
     await tx.done;
   }
 
+  async listResourcePayloadsByPackageKeys(packageKeys: string[]): Promise<ResourcePayload[]> {
+    if (packageKeys.length === 0) return [];
+    const db = await this.dbPromise;
+    const tx = db.transaction("resourcePayloads", "readonly");
+    const results: ResourcePayload[] = [];
+    let cursor = await tx.store.openCursor();
+
+    while (cursor) {
+      const value = cursor.value as ResourcePayload;
+      if (packageKeys.includes(value.packageKey)) {
+        results.push(value);
+      }
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
+    return results;
+  }
+
   async getResourceIndexCount(): Promise<number> {
     const db = await this.dbPromise;
     return await db.count("resourceIndex");
+  }
+
+  async clearAll() {
+    const db = await this.dbPromise;
+    const tx = db.transaction(
+      ["state", "packages", "resourceIndex", "resourcePayloads"],
+      "readwrite"
+    );
+    await tx.objectStore("state").clear();
+    await tx.objectStore("packages").clear();
+    await tx.objectStore("resourceIndex").clear();
+    await tx.objectStore("resourcePayloads").clear();
+    await tx.done;
   }
 }
