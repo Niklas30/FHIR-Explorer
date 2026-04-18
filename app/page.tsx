@@ -501,8 +501,8 @@ export default function EditorOverviewPage() {
   }, [packages]);
 
   const normalizedFilter = filter.trim().toLowerCase();
-  const filteredTargets = targets.filter((target) =>
-    matchesFilter(normalizedFilter, target.record, target.key)
+  const filteredTargets = targets.filter(
+    (target) => target.record && matchesFilter(normalizedFilter, target.record, target.key)
   );
   const filteredDependencies = dependencyProjects.filter((project) =>
     matchesFilter(normalizedFilter, project, project.key)
