@@ -475,7 +475,13 @@ const FieldRow = ({
   const rawValue = getFieldValue(content, field);
   const isArrayValue = Array.isArray(rawValue);
   const effectiveRepeating = isRepeating || isArrayValue;
-  const values = effectiveRepeating ? (isArrayValue ? rawValue : []) : [rawValue];
+  const values = effectiveRepeating
+    ? isArrayValue
+      ? rawValue
+      : rawValue === undefined || rawValue === null
+      ? []
+      : [rawValue]
+    : [rawValue];
   const options = resolveValueSetChoices(field, registry ?? undefined);
   const minItems = Math.max(0, field.min ?? 0);
   const maxItems = parseMaxCardinality(field.max);
@@ -675,7 +681,11 @@ const ComplexFieldGroup = ({
   };
 
   if (isRepeating) {
-    const items = Array.isArray(rootValue) ? rootValue : [];
+    const items = Array.isArray(rootValue)
+      ? rootValue
+      : rootValue === undefined || rootValue === null
+      ? []
+      : [rootValue];
     const minItems = Math.max(0, group.root.min ?? 0);
     const maxItems = parseMaxCardinality(group.root.max);
     const canAddEntry = maxItems === null || items.length < maxItems;
