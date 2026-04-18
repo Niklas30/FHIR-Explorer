@@ -175,7 +175,9 @@ export const useImporter = (): UseImporterResult => {
   );
 
   const clearAllData = useCallback(async () => {
-    if (!client) return;
+    if (!client) {
+      throw new Error("Importer client is not ready yet.");
+    }
     await client.clearAllData();
     await refresh();
   }, [client, refresh]);

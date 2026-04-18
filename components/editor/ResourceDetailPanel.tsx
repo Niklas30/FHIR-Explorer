@@ -43,6 +43,13 @@ const formatOptionLabel = (system?: string, code?: string, display?: string) => 
   return label;
 };
 
+const parseMaxCardinality = (max?: string) => {
+  if (!max || max === "*") return null;
+  const parsed = Number(max);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+};
+
 export const ResourceDetailPanel = ({
   resource,
   fields,
@@ -107,17 +114,23 @@ export const ResourceDetailPanel = ({
       .sort((a, b) => a.root.label.localeCompare(b.root.label));
   }, [fields, resource]);
 
-  const addableFields = useMemo(() => {
+  const allAddableFields = useMemo(() => {
     if (!resource) return [];
-    const normalizedQuery = fieldQuery.trim().toLowerCase();
     return fields.filter((field) => {
       if (field.segments.length !== 1) return false;
       if (isFieldFilled(resource.content, field)) return false;
-      if (!normalizedQuery) return true;
+      return true;
+    });
+  }, [fields, resource]);
+
+  const addableFields = useMemo(() => {
+    const normalizedQuery = fieldQuery.trim().toLowerCase();
+    if (!normalizedQuery) return allAddableFields;
+    return allAddableFields.filter((field) => {
       const label = `${field.label} ${field.path ?? ""}`.toLowerCase();
       return label.includes(normalizedQuery);
     });
-  }, [fields, resource, fieldQuery]);
+  }, [allAddableFields, fieldQuery]);
   const referenceIndex = useMemo(
     () => buildDatasetReferenceIndex(datasetResources),
     [datasetResources]
@@ -203,8 +216,11 @@ export const ResourceDetailPanel = ({
             </Button>
             <Button
               size="sm"
-              onClick={() => setFieldDialogOpen(true)}
-              disabled={addableFields.length === 0}
+              onClick={() => {
+                setFieldQuery("");
+                setFieldDialogOpen(true);
+              }}
+              disabled={allAddableFields.length === 0}
               className="gap-1.5"
             >
               <Plus className="size-4" />
@@ -231,8 +247,11 @@ export const ResourceDetailPanel = ({
               <div className="mt-3 flex justify-center">
                 <Button
                   size="sm"
-                  onClick={() => setFieldDialogOpen(true)}
-                  disabled={addableFields.length === 0}
+                  onClick={() => {
+                    setFieldQuery("");
+                    setFieldDialogOpen(true);
+                  }}
+                  disabled={allAddableFields.length === 0}
                   className="gap-1.5"
                 >
                   <Plus className="size-4" />
@@ -331,7 +350,15 @@ export const ResourceDetailPanel = ({
           ) : null}
         </div>
       </ScrollArea>
-      <Dialog open={fieldDialogOpen} onOpenChange={setFieldDialogOpen}>
+      <Dialog
+        open={fieldDialogOpen}
+        onOpenChange={(open) => {
+          setFieldDialogOpen(open);
+          if (!open) {
+            setFieldQuery("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add field</DialogTitle>
@@ -358,6 +385,7 @@ export const ResourceDetailPanel = ({
                       type="button"
                       onClick={() => {
                         handleFieldAdd(field);
+                        setFieldQuery("");
                         setFieldDialogOpen(false);
                       }}
                       className="rounded-md border border-foreground/10 px-3 py-2 text-left text-sm hover:border-foreground/30 hover:bg-muted/40"
@@ -371,7 +399,13 @@ export const ResourceDetailPanel = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFieldDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFieldQuery("");
+                setFieldDialogOpen(false);
+              }}
+            >
               Close
             </Button>
           </DialogFooter>
@@ -409,6 +443,11 @@ const FieldRow = ({
   const effectiveRepeating = isRepeating || isArrayValue;
   const values = effectiveRepeating ? (isArrayValue ? rawValue : []) : [rawValue];
   const options = resolveValueSetChoices(field, registry ?? undefined);
+  const minItems = Math.max(0, field.min ?? 0);
+  const maxItems = parseMaxCardinality(field.max);
+  const canAddItem =
+    effectiveRepeating && (maxItems === null || values.length < maxItems);
+  const canRemoveItem = effectiveRepeating && values.length > minItems;
   const referenceTargets = resolveReferenceTargets(field, registry ?? undefined);
   const allowAnyReference = referenceTargets.has("*") || referenceTargets.size === 0;
 
@@ -429,12 +468,14 @@ const FieldRow = ({
   };
 
   const addItem = () => {
+    if (!canAddItem) return;
     const defaultValue = getDefaultValueForField(field, registry ?? undefined);
     const next = [...values, ...(Array.isArray(defaultValue) ? defaultValue : [defaultValue])];
     updateValues(next);
   };
 
   const removeItem = (index: number) => {
+    if (!canRemoveItem) return;
     const next = values.filter((_, idx) => idx !== index);
     updateValues(next);
   };
@@ -498,12 +539,18 @@ const FieldRow = ({
             identifierSystems={field.identifierSystems}
             identifierTypeOptions={field.identifierTypeOptions}
             onChange={(nextValue) => updateItem(index, nextValue)}
-            onRemove={effectiveRepeating ? () => removeItem(index) : undefined}
+            onRemove={canRemoveItem ? () => removeItem(index) : undefined}
             brokenReference={brokenReferences[index]}
           />
         ))}
         {effectiveRepeating ? (
-          <Button variant="outline" size="sm" onClick={addItem} className="w-fit">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addItem}
+            className="w-fit"
+            disabled={!canAddItem}
+          >
             Add value
           </Button>
         ) : null}
@@ -537,11 +584,10 @@ const ComplexFieldGroup = ({
   const rootKind = group.root.path.endsWith(".identifier")
     ? "Identifier"
     : resolveFieldKind(group.root);
+  const isCodeableRoot = rootKind === "CodeableConcept" || rootKind === "Coding";
   const rootOptions = resolveValueSetChoices(group.root, registry ?? undefined);
   const identifierSystems = group.root.identifierSystems ?? [];
   const identifierTypeOptions = group.root.identifierTypeOptions ?? [];
-  const showRootSelect =
-    (rootKind === "CodeableConcept" || rootKind === "Coding") && rootOptions.length > 0;
   const referenceTargets = resolveReferenceTargets(group.root, registry ?? undefined);
   const allowAnyReference = referenceTargets.has("*") || referenceTargets.size === 0;
   const availableReferenceOptions = datasetResources.filter((resource) => {
@@ -559,7 +605,7 @@ const ComplexFieldGroup = ({
       segments: field.segments.slice(1),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  const filteredChildFields = showRootSelect
+  const filteredChildFields = isCodeableRoot
     ? childFields.filter((field) => !["coding", "text"].includes(field.segments[0] ?? ""))
     : childFields;
 
@@ -569,6 +615,10 @@ const ComplexFieldGroup = ({
 
   if (isRepeating) {
     const items = Array.isArray(rootValue) ? rootValue : [];
+    const minItems = Math.max(0, group.root.min ?? 0);
+    const maxItems = parseMaxCardinality(group.root.max);
+    const canAddEntry = maxItems === null || items.length < maxItems;
+    const canRemoveEntry = items.length > minItems;
 
     return (
       <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3">
@@ -582,7 +632,11 @@ const ComplexFieldGroup = ({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => updateRoot([...items, {}])}
+            onClick={() => {
+              if (!canAddEntry) return;
+              updateRoot([...items, {}]);
+            }}
+            disabled={!canAddEntry}
           >
             Add entry
           </Button>
@@ -601,6 +655,7 @@ const ComplexFieldGroup = ({
               updateRoot(nextItems);
             };
             const handleRemoveItem = () => {
+              if (!canRemoveEntry) return;
               const nextItems = items.filter((_, idx) => idx !== index);
               updateRoot(nextItems);
             };
@@ -617,7 +672,13 @@ const ComplexFieldGroup = ({
                   <button
                     type="button"
                     onClick={handleRemoveItem}
-                    className="text-xs text-destructive hover:text-destructive/80"
+                    className={cn(
+                      "text-xs text-destructive",
+                      canRemoveEntry
+                        ? "hover:text-destructive/80"
+                        : "cursor-not-allowed opacity-50"
+                    )}
+                    disabled={!canRemoveEntry}
                   >
                     Remove
                   </button>
@@ -646,7 +707,7 @@ const ComplexFieldGroup = ({
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
                     />
-                  ) : showRootSelect ? (
+                  ) : isCodeableRoot ? (
                     <FieldInput
                       kind={rootKind}
                       value={itemContent}
@@ -716,7 +777,7 @@ const ComplexFieldGroup = ({
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
           />
-        ) : showRootSelect ? (
+        ) : isCodeableRoot ? (
           <FieldInput
             kind={rootKind}
             value={objectValue}
@@ -1433,60 +1494,96 @@ const FieldInput = ({
   }
 
   if (kind === "Coding" || kind === "CodeableConcept") {
-    const currentCoding =
-      kind === "Coding"
-        ? (value as { system?: string; code?: string; display?: string })
-        : (value as { coding?: Array<{ system?: string; code?: string; display?: string }> })
-            ?.coding?.[0];
+    const conceptValue = isRecord(value) ? value : {};
+    const conceptCodings = Array.isArray(conceptValue.coding)
+      ? conceptValue.coding.filter(isRecord)
+      : [];
 
-    const currentKey = currentCoding?.code
-      ? `${currentCoding.system ?? ""}|${currentCoding.code}`
-      : "";
+    const toCleanCoding = (entry: Record<string, unknown>) => {
+      const next: Record<string, unknown> = {};
+      if (typeof entry.system === "string" && entry.system.trim().length > 0) {
+        next.system = entry.system;
+      }
+      if (typeof entry.code === "string" && entry.code.trim().length > 0) {
+        next.code = entry.code;
+      }
+      if (typeof entry.display === "string" && entry.display.trim().length > 0) {
+        next.display = entry.display;
+      }
+      return next;
+    };
 
-    if (options.length > 0) {
+    const withConcept = (nextConcept: Record<string, unknown>) => {
+      onChange(Object.keys(nextConcept).length > 0 ? nextConcept : undefined);
+    };
+
+    const codingOptions = options.map((option) => {
+      const key = `${option.system ?? ""}|${option.code}`;
+      return {
+        value: key,
+        label: formatOptionLabel(option.system, option.code, option.display),
+        searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
+      };
+    });
+
+    if (kind === "Coding") {
+      const currentCoding = isRecord(value) ? value : {};
+      const currentSystem = typeof currentCoding.system === "string" ? currentCoding.system : "";
+      const currentCode = typeof currentCoding.code === "string" ? currentCoding.code : "";
+      const currentDisplay = typeof currentCoding.display === "string" ? currentCoding.display : "";
+      const currentKey = currentCode ? `${currentSystem}|${currentCode}` : "";
+
+      const updateCoding = (nextPartial: Record<string, unknown>) => {
+        const nextCoding = {
+          ...currentCoding,
+          ...nextPartial,
+        };
+        const cleaned = toCleanCoding(nextCoding);
+        onChange(Object.keys(cleaned).length > 0 ? cleaned : undefined);
+      };
+
       return (
         <div className="grid gap-2">
-          <PopupSearchSelect
-            value={currentKey}
-            options={options.map((option) => {
-              const key = `${option.system ?? ""}|${option.code}`;
-              return {
-                value: key,
-                label: formatOptionLabel(option.system, option.code, option.display),
-                searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
-              };
-            })}
-            placeholder="Select value"
-            searchPlaceholder="Search values"
-            onValueChange={(nextKey) => {
-              if (!nextKey) {
-                onChange(undefined);
-                return;
-              }
-              const [system, code] = nextKey.split("|");
-              const option = options.find(
-                (entry) => `${entry.system ?? ""}|${entry.code}` === nextKey
-              );
-              if (kind === "Coding") {
-                onChange({
+          {options.length > 0 ? (
+            <PopupSearchSelect
+              value={currentKey}
+              options={codingOptions}
+              placeholder="Select value"
+              searchPlaceholder="Search values"
+              onValueChange={(nextKey) => {
+                if (!nextKey) {
+                  onChange(undefined);
+                  return;
+                }
+                const [system, code] = nextKey.split("|");
+                const option = options.find(
+                  (entry) => `${entry.system ?? ""}|${entry.code}` === nextKey
+                );
+                updateCoding({
                   system: option?.system ?? system,
                   code: option?.code ?? code,
                   display: option?.display,
                 });
-                return;
-              }
-              onChange({
-                coding: [
-                  {
-                    system: option?.system ?? system,
-                    code: option?.code ?? code,
-                    display: option?.display,
-                  },
-                ],
-                text: option?.display,
-              });
-            }}
-          />
+              }}
+            />
+          ) : null}
+          <div className="grid gap-2 md:grid-cols-3">
+            <Input
+              value={currentSystem}
+              onChange={(event) => updateCoding({ system: event.target.value })}
+              placeholder="System URL"
+            />
+            <Input
+              value={currentCode}
+              onChange={(event) => updateCoding({ code: event.target.value })}
+              placeholder="Code"
+            />
+            <Input
+              value={currentDisplay}
+              onChange={(event) => updateCoding({ display: event.target.value })}
+              placeholder="Display (optional)"
+            />
+          </div>
           {onRemove ? (
             <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
               Remove
@@ -1496,41 +1593,147 @@ const FieldInput = ({
       );
     }
 
-    if (kind === "Coding") {
-      return (
-        <div className="grid gap-2 md:grid-cols-2">
-          <Input
-            value={currentCoding?.system ?? ""}
-            onChange={(event) =>
-              onChange({
-                system: event.target.value,
-                code: currentCoding?.code ?? "",
-                display: currentCoding?.display,
-              })
-            }
-            placeholder="System URL"
-          />
-          <Input
-            value={currentCoding?.code ?? ""}
-            onChange={(event) =>
-              onChange({
-                system: currentCoding?.system,
-                code: event.target.value,
-                display: currentCoding?.display,
-              })
-            }
-            placeholder="Code"
-          />
-        </div>
-      );
-    }
+    const conceptText = typeof conceptValue.text === "string" ? conceptValue.text : "";
+
+    const updateConceptText = (nextText: string) => {
+      const nextConcept: Record<string, unknown> = { ...conceptValue };
+      if (nextText.trim().length === 0) {
+        delete nextConcept.text;
+      } else {
+        nextConcept.text = nextText;
+      }
+      withConcept(nextConcept);
+    };
+
+    const updateCodingAt = (index: number, nextPartial: Record<string, unknown>) => {
+      const nextCodings = [...conceptCodings];
+      const current = nextCodings[index] ?? {};
+      const merged = toCleanCoding({
+        ...current,
+        ...nextPartial,
+      });
+      if (Object.keys(merged).length > 0) {
+        nextCodings[index] = merged;
+      } else if (index < nextCodings.length) {
+        nextCodings.splice(index, 1);
+      }
+
+      const nextConcept: Record<string, unknown> = { ...conceptValue };
+      if (nextCodings.length > 0) {
+        nextConcept.coding = nextCodings;
+      } else {
+        delete nextConcept.coding;
+      }
+      withConcept(nextConcept);
+    };
+
+    const updateCodingFromOption = (index: number, nextKey: string) => {
+      if (!nextKey) {
+        updateCodingAt(index, { system: "", code: "", display: "" });
+        return;
+      }
+      const [system, code] = nextKey.split("|");
+      const option = options.find((entry) => `${entry.system ?? ""}|${entry.code}` === nextKey);
+      updateCodingAt(index, {
+        system: option?.system ?? system,
+        code: option?.code ?? code,
+        display: option?.display,
+      });
+    };
+
+    const addCoding = () => {
+      const nextCodings = [...conceptCodings];
+      const firstOption = options[0];
+      if (firstOption) {
+        nextCodings.push(
+          toCleanCoding({
+            system: firstOption.system,
+            code: firstOption.code,
+            display: firstOption.display,
+          })
+        );
+      } else {
+        nextCodings.push({});
+      }
+      const nextConcept: Record<string, unknown> = {
+        ...conceptValue,
+        coding: nextCodings,
+      };
+      withConcept(nextConcept);
+    };
+
+    const removeCodingAt = (index: number) => {
+      const nextCodings = conceptCodings.filter((_, idx) => idx !== index);
+      const nextConcept: Record<string, unknown> = { ...conceptValue };
+      if (nextCodings.length > 0) {
+        nextConcept.coding = nextCodings;
+      } else {
+        delete nextConcept.coding;
+      }
+      withConcept(nextConcept);
+    };
 
     return (
-      <Input
-        value={isRecord(value) && typeof value.text === "string" ? value.text : ""}
-        onChange={(event) => onChange({ text: event.target.value })}
-        placeholder="Display text"
-      />
+      <div className="grid gap-3">
+        <Input
+          value={conceptText}
+          onChange={(event) => updateConceptText(event.target.value)}
+          placeholder="Text (optional)"
+        />
+        {conceptCodings.length === 0 ? (
+          <div className="rounded-md border border-dashed border-foreground/15 px-3 py-2 text-xs text-muted-foreground">
+            No values yet.
+          </div>
+        ) : null}
+        {conceptCodings.map((coding, index) => {
+          const codingSystem = typeof coding.system === "string" ? coding.system : "";
+          const codingCode = typeof coding.code === "string" ? coding.code : "";
+          const codingDisplay = typeof coding.display === "string" ? coding.display : "";
+          const codingKey = codingCode ? `${codingSystem}|${codingCode}` : "";
+
+          return (
+            <div key={`${index}-${codingKey}`} className="grid gap-2 rounded-md border border-foreground/10 p-2">
+              {options.length > 0 ? (
+                <PopupSearchSelect
+                  value={codingKey}
+                  options={codingOptions}
+                  placeholder="Search value"
+                  searchPlaceholder="Search values"
+                  onValueChange={(nextKey) => updateCodingFromOption(index, nextKey)}
+                />
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-3">
+                <Input
+                  value={codingSystem}
+                  onChange={(event) => updateCodingAt(index, { system: event.target.value })}
+                  placeholder="System URL"
+                />
+                <Input
+                  value={codingCode}
+                  onChange={(event) => updateCodingAt(index, { code: event.target.value })}
+                  placeholder="Code"
+                />
+                <Input
+                  value={codingDisplay}
+                  onChange={(event) => updateCodingAt(index, { display: event.target.value })}
+                  placeholder="Display (optional)"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeCodingAt(index)}
+                className="w-fit"
+              >
+                Remove value
+              </Button>
+            </div>
+          );
+        })}
+        <Button variant="outline" size="sm" onClick={addCoding} className="w-fit">
+          Add value
+        </Button>
+      </div>
     );
   }
 

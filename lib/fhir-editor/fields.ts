@@ -72,7 +72,7 @@ export const resolveFieldKind = (field: FieldDefinition): FieldKind => {
 };
 
 export const isRepeatingField = (field: FieldDefinition) => {
-  const effectiveMax = field.baseMax ?? field.max;
+  const effectiveMax = field.max ?? field.baseMax;
   if (!effectiveMax && field.path.endsWith(".identifier")) {
     return true;
   }
