@@ -33,6 +33,12 @@ import {
   upsertDataset,
   type DatasetRecord,
 } from "@/lib/datasets/storage";
+import {
+  clearDatasetResources,
+  hydrateDatasetResources,
+  loadDatasetResources,
+  saveDatasetResources,
+} from "@/lib/datasets/content";
 import { toast } from "sonner";
 import { Database, LayoutGrid, MoreHorizontal, Plus, Settings, Upload } from "lucide-react";
 import JSZip from "jszip";
@@ -260,7 +266,7 @@ const ProjectCard = ({
             <div>
               <p className="text-sm font-semibold text-foreground">Datasets</p>
               <p className="text-xs text-muted-foreground">
-                Create datasets for this project. The editor is coming soon.
+                Create datasets for this project and open them in the editor.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -560,9 +566,10 @@ export default function EditorOverviewPage() {
       createdAt: Date.now(),
     };
     const next = upsertDataset(dataset);
+    saveDatasetResources(dataset.id, []);
     setDatasets(next);
     setCreateDialogOpen(false);
-    toast.success("Dataset created. Editor coming soon.");
+    toast.success("Dataset created.");
   };
 
   const handleImportDataset = async () => {
@@ -577,19 +584,22 @@ export default function EditorOverviewPage() {
     try {
       const text = await importDatasetFile.text();
       const parsed = JSON.parse(text) as
-        | { name?: string; id?: string }
-        | { datasets?: Array<{ name?: string; id?: string }> };
+        | { name?: string; id?: string; resources?: unknown[] }
+        | { datasets?: Array<{ name?: string; id?: string; resources?: unknown[] }> };
 
       let importedName: string | undefined;
       let importedId: string | undefined;
+      let importedResources: unknown[] | undefined;
 
       if (Array.isArray((parsed as { datasets?: Array<{ name?: string; id?: string }> }).datasets)) {
-        const first = (parsed as { datasets?: Array<{ name?: string; id?: string }> }).datasets?.[0];
+        const first = (parsed as { datasets?: Array<{ name?: string; id?: string; resources?: unknown[] }> }).datasets?.[0];
         importedName = first?.name;
         importedId = first?.id;
+        importedResources = first?.resources;
       } else {
         importedName = (parsed as { name?: string }).name;
         importedId = (parsed as { id?: string }).id;
+        importedResources = (parsed as { resources?: unknown[] }).resources;
       }
 
       const name = (importedName ?? datasetName).trim();
@@ -604,11 +614,13 @@ export default function EditorOverviewPage() {
         projectKey: selectedProject.key,
         createdAt: Date.now(),
       };
+      const resources = hydrateDatasetResources(Array.isArray(importedResources) ? importedResources : []);
+      saveDatasetResources(dataset.id, resources);
       const next = upsertDataset(dataset);
       setDatasets(next);
       setImportDialogOpen(false);
       setImportDatasetFile(null);
-      toast.success("Dataset imported. Editor coming soon.");
+      toast.success("Dataset imported.");
     } catch (error) {
       toast.error("Failed to import dataset file.");
       console.error(error);
@@ -618,6 +630,7 @@ export default function EditorOverviewPage() {
   const handleDeleteDataset = (dataset: DatasetRecord) => {
     const ok = window.confirm(`Delete dataset \"${dataset.name}\"? This cannot be undone.`);
     if (!ok) return;
+    clearDatasetResources(dataset.id);
     const next = removeDataset(dataset.id);
     setDatasets(next);
     toast.success("Dataset deleted.");
@@ -633,15 +646,24 @@ export default function EditorOverviewPage() {
     );
     if (!ok) return;
     await deletePackage(project.key);
+    const datasetIds = datasets
+      .filter((dataset) => dataset.projectKey === project.key)
+      .map((dataset) => dataset.id);
+    for (const datasetId of datasetIds) {
+      clearDatasetResources(datasetId);
+    }
     const next = removeDatasetsForProject(project.key);
     setDatasets(next);
     toast.success("Project deleted.");
   };
 
   const handleExportDataset = (dataset: DatasetRecord) => {
+    const resources = loadDatasetResources(dataset.id).map((entry) => entry.content);
     const payload = {
+      id: dataset.id,
       name: dataset.name,
-      resources: [],
+      projectKey: dataset.projectKey,
+      resources,
     };
     const filename = `${toSafeFilename(dataset.name) || "dataset"}.json`;
     downloadJson(filename, payload);
@@ -695,7 +717,7 @@ export default function EditorOverviewPage() {
             id: dataset.id,
             name: dataset.name,
             projectKey: dataset.projectKey,
-            resources: [],
+            resources: loadDatasetResources(dataset.id).map((entry) => entry.content),
           }))
       : [];
 
@@ -792,6 +814,9 @@ export default function EditorOverviewPage() {
     );
     if (!ok) return;
     await clearAllData();
+    for (const dataset of datasets) {
+      clearDatasetResources(dataset.id);
+    }
     clearDatasets();
     setDatasets([]);
     setSelectedProject(null);
@@ -816,8 +841,8 @@ export default function EditorOverviewPage() {
           </div>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Review imported target packages, inspect dependencies, and start datasets. Dataset
-          composition will arrive in a future update.
+          Review imported target packages, inspect dependencies, and start datasets. Open a
+          dataset to compose resources with profile-driven forms.
         </p>
       </header>
 
@@ -1078,8 +1103,8 @@ export default function EditorOverviewPage() {
           <DialogHeader>
             <DialogTitle>Create dataset</DialogTitle>
             <DialogDescription>
-              Create a dataset shell for {selectedProject?.id ?? "this project"}. The
-              editor is not implemented yet.
+              Create a dataset shell for {selectedProject?.id ?? "this project"} and start
+              composing resources.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
