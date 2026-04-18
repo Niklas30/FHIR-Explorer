@@ -45,7 +45,7 @@ export const EditorHeader = ({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/editor" className="text-sm font-medium text-foreground">
+            <Link href="/" className="text-sm font-medium text-foreground">
               Projects
             </Link>
             <span>/</span>
@@ -59,7 +59,7 @@ export const EditorHeader = ({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline">
-            <Link href="/editor">Back to projects</Link>
+            <Link href="/">Back to projects</Link>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
