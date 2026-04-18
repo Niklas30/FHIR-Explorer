@@ -83,6 +83,14 @@ export class ImporterClient {
     });
   }
 
+  async finalizeCurrentTarget() {
+    const state = await this.storage.loadState();
+    await this.storage.saveState({
+      versionSelections: {},
+      importHistory: state.importHistory,
+    });
+  }
+
   async setVersionSelection(depId: string, version: string) {
     const state = await this.storage.loadState();
     const nextState = {
@@ -279,6 +287,30 @@ export class ImporterClient {
     await this.storage.deletePackages(deletions);
     await this.storage.deleteResourceIndexByPackageKeys(deletions);
     await this.storage.deleteResourcePayloadsByPackageKeys(deletions);
+  }
+
+  async deletePackage(packageKey: string) {
+    const record = await this.storage.getPackage(packageKey);
+    if (!record) return;
+    await this.storage.deletePackage(packageKey);
+    await this.storage.deleteResourceIndexByPackageKeys([packageKey]);
+    await this.storage.deleteResourcePayloadsByPackageKeys([packageKey]);
+
+    const state = await this.storage.loadState();
+    const history = state.importHistory ?? [];
+    const nextHistory = history.filter((entry) => entry.targetKey !== packageKey);
+
+    if (state.currentTarget && buildPackageKey(state.currentTarget.id, state.currentTarget.version) === packageKey) {
+      await this.storage.saveState({
+        versionSelections: {},
+        importHistory: nextHistory,
+      });
+    } else {
+      await this.storage.saveState({
+        ...state,
+        importHistory: nextHistory,
+      });
+    }
   }
 
   private getRequiredPackageKeys(

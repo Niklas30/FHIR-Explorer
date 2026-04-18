@@ -12,11 +12,13 @@ type UseImporterResult = {
   lastResult: ImportResult | null;
   setTarget: (id: string, version: string) => Promise<void>;
   clearTarget: () => Promise<void>;
+  finalizeTarget: () => Promise<void>;
   setVersionSelection: (depId: string, version: string) => Promise<void>;
   clearVersionSelection: (depId: string) => Promise<void>;
   importFile: (file: File) => Promise<ImportResult | null>;
   importTargetFile: (file: File) => Promise<ImportResult | null>;
   addImportHistory: (targetKey: string) => Promise<void>;
+  deletePackage: (packageKey: string) => Promise<void>;
   getDownloadUrl: (id: string, version: string) => string;
   refresh: () => Promise<void>;
 };
@@ -68,6 +70,13 @@ export const useImporter = (): UseImporterResult => {
     setError(null);
     if (!client) return;
     await client.clearCurrentTarget();
+    await refresh();
+  }, [client, refresh]);
+
+  const finalizeTarget = useCallback(async () => {
+    setError(null);
+    if (!client) return;
+    await client.finalizeCurrentTarget();
     await refresh();
   }, [client, refresh]);
 
@@ -144,6 +153,15 @@ export const useImporter = (): UseImporterResult => {
     [client, refresh]
   );
 
+  const deletePackage = useCallback(
+    async (packageKey: string) => {
+      if (!client) return;
+      await client.deletePackage(packageKey);
+      await refresh();
+    },
+    [client, refresh]
+  );
+
   return {
     snapshot,
     progress,
@@ -151,11 +169,13 @@ export const useImporter = (): UseImporterResult => {
     lastResult,
     setTarget,
     clearTarget,
+    finalizeTarget,
     setVersionSelection,
     clearVersionSelection,
     importFile,
     importTargetFile,
     addImportHistory,
+    deletePackage,
     getDownloadUrl: client ? client.getDownloadUrl.bind(client) : () => "",
     refresh,
   };
