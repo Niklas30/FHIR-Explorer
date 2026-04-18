@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -145,6 +145,11 @@ export const ResourceDetailPanel = ({
     });
   });
 
+  const knownTopLevel = new Set(fields.map((field) => field.segments[0]).filter(Boolean));
+  const unknownKeys = Object.keys(resource.content).filter(
+    (key) => key !== "resourceType" && !knownTopLevel.has(key)
+  );
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-foreground/10 px-4 py-3">
@@ -201,7 +206,7 @@ export const ResourceDetailPanel = ({
             </div>
           ) : (
             visibleGroups.map((group) =>
-                group.children.length === 0 ? (
+              group.children.length === 0 ? (
                   <FieldRow
                     key={group.key}
                     field={group.root}
@@ -223,6 +228,69 @@ export const ResourceDetailPanel = ({
                 )
               )
           )}
+          {unknownKeys.length > 0 ? (
+            <div className="grid gap-3 rounded-lg border border-dashed border-foreground/15 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Unknown Fields
+              </div>
+              <div className="grid gap-3">
+                {unknownKeys.map((key) => {
+                  const value = resource.content[key];
+                  const isArray = Array.isArray(value);
+                  const values = isArray ? value : [value];
+                  return (
+                    <div key={key} className="rounded-md border border-foreground/10 bg-background px-3 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            {key}
+                          </div>
+                          <div className="text-sm font-semibold text-foreground">Unknown field</div>
+                        </div>
+                        <span className="rounded-full border border-foreground/20 px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
+                          Not in profile
+                        </span>
+                      </div>
+                      <div className="mt-3 grid gap-3">
+                        {values.map((entry, index) => (
+                          <UnknownValueEditor
+                            key={`${key}-${index}`}
+                            value={entry}
+                            onChange={(nextValue) => {
+                              const nextContent = { ...resource.content };
+                              if (isArray) {
+                                const nextArray = [...values];
+                                nextArray[index] = nextValue;
+                                nextContent[key] = nextArray;
+                              } else {
+                                nextContent[key] = nextValue;
+                              }
+                              handleUpdate(nextContent);
+                            }}
+                          />
+                        ))}
+                        {isArray ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const nextContent = { ...resource.content };
+                              const nextArray = Array.isArray(value) ? [...value, {}] : [{}];
+                              nextContent[key] = nextArray;
+                              handleUpdate(nextContent);
+                            }}
+                            className="w-fit"
+                          >
+                            Add value
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       </ScrollArea>
       <Dialog open={fieldDialogOpen} onOpenChange={setFieldDialogOpen}>
@@ -516,6 +584,160 @@ const ComplexFieldGroup = ({
           />
         ))}
       </div>
+    </div>
+  );
+};
+
+const isPrimitiveValue = (value: unknown) =>
+  value === null ||
+  value === undefined ||
+  typeof value === "string" ||
+  typeof value === "number" ||
+  typeof value === "boolean";
+
+const stringifyValue = (value: unknown) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value, null, 2);
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+type UnknownValueEditorProps = {
+  value: unknown;
+  onChange: (nextValue: unknown) => void;
+};
+
+const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
+  const [draft, setDraft] = useState(() => stringifyValue(value));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(stringifyValue(value));
+    setError(null);
+  }, [value]);
+
+  if (isPlainObject(value)) {
+    const keys = Object.keys(value);
+    return (
+      <div className="rounded-md border border-foreground/10 bg-muted/30 px-3 py-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Object
+        </div>
+        <div className="mt-3 grid gap-2">
+          {keys.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No fields yet.</div>
+          ) : null}
+          {keys.map((key) => {
+            const entry = value[key];
+            return (
+              <div key={key} className="grid gap-2">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {key}
+                </div>
+                {isPrimitiveValue(entry) ? (
+                  <Input
+                    value={stringifyValue(entry)}
+                    onChange={(event) => {
+                      const next = { ...value, [key]: event.target.value };
+                      onChange(next);
+                    }}
+                  />
+                ) : (
+                  <UnknownValueEditor
+                    value={entry}
+                    onChange={(nextEntry) => {
+                      const next = { ...value, [key]: nextEntry };
+                      onChange(next);
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+          <div className="grid gap-2">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Raw JSON
+            </div>
+            <textarea
+              value={draft}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                setError(null);
+              }}
+              onBlur={() => {
+                try {
+                  const parsed = JSON.parse(draft);
+                  if (!isPlainObject(parsed)) {
+                    setError("JSON must be an object.");
+                    return;
+                  }
+                  onChange(parsed);
+                  setError(null);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Invalid JSON");
+                }
+              }}
+              className="min-h-[120px] w-full rounded-md border border-foreground/10 bg-background p-2 text-xs"
+            />
+            {error ? <div className="text-xs text-destructive">{error}</div> : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return (
+      <div className="grid gap-2">
+        {value.map((entry, index) => (
+          <UnknownValueEditor
+            key={index}
+            value={entry}
+            onChange={(nextEntry) => {
+              const nextArray = [...value];
+              nextArray[index] = nextEntry;
+              onChange(nextArray);
+            }}
+          />
+        ))}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([...value, ""])}
+          className="w-fit"
+        >
+          Add value
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      <Input
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setError(null);
+        }}
+        onBlur={() => {
+          if (isPrimitiveValue(value)) {
+            onChange(draft);
+            return;
+          }
+          try {
+            const parsed = JSON.parse(draft);
+            onChange(parsed);
+            setError(null);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Invalid JSON");
+          }
+        }}
+      />
+      {error ? <div className="text-xs text-destructive">{error}</div> : null}
     </div>
   );
 };

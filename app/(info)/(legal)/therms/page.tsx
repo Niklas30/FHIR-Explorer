@@ -1,3 +1,3 @@
 export default function TermsPage() {
-  return null;
+  return null
 }
