@@ -17,6 +17,7 @@ import {
   type ComposeProjectExport,
 } from "@/lib/fhir-importer/compose";
 import { upsertDataset, type DatasetRecord } from "@/lib/datasets/storage";
+import { hydrateDatasetResources, saveDatasetResources } from "@/lib/datasets/content";
 import { toast } from "sonner";
 import JSZip from "jszip";
 
@@ -120,13 +121,18 @@ export const ImportWizard = () => {
     if (datasets.length > 0) {
       for (const dataset of datasets) {
         if (!dataset?.name) continue;
+        const datasetId = dataset.id ?? createDatasetId();
         const record: DatasetRecord = {
-          id: dataset.id ?? createDatasetId(),
+          id: datasetId,
           name: dataset.name,
           projectKey: dataset.projectKey ?? bundle.targetKey ?? "imported",
           createdAt: Date.now(),
         };
         upsertDataset(record);
+        const resources = hydrateDatasetResources(
+          Array.isArray(dataset.resources) ? dataset.resources : []
+        );
+        saveDatasetResources(datasetId, resources);
       }
     }
 
