@@ -78,11 +78,16 @@ export const ImportWizard = () => {
   const missing = dependencyState?.missing ?? [];
   const conflicts = dependencyState?.conflicts ?? [];
   const packages = snapshot?.packages ?? [];
+  const trimmedPackageId = packageId.trim();
+  const trimmedVersion = version.trim();
 
   const targetKey = currentTarget ? `${currentTarget.id}@${currentTarget.version}` : null;
   const isTargetImported = targetKey
     ? packages.some((pkg) => pkg.key === targetKey)
     : false;
+  const targetDownloadUrl = currentTarget
+    ? getDownloadUrl(currentTarget.id, currentTarget.version)
+    : null;
 
   const handleCopy = async (link: string) => {
     if (typeof navigator === "undefined") return;
@@ -91,7 +96,9 @@ export const ImportWizard = () => {
 
   const importedCount = packages.length;
   const missingCount = missing.length;
-  const allResolved = Boolean(currentTarget && missing.length === 0);
+  const allResolved = Boolean(
+    currentTarget && isTargetImported && missing.length === 0 && conflicts.length === 0
+  );
   const importedDependencies = packages.filter((pkg) => pkg.key !== targetKey);
   const importedTargetText = currentTarget
     ? `${currentTarget.id}@${currentTarget.version}`
@@ -418,47 +425,88 @@ export const ImportWizard = () => {
           <CardHeader>
             <CardTitle>Target Package</CardTitle>
             <CardDescription>
-              Upload the target package directly or enter id + version.
+              {currentTarget
+                ? "Target set. Download the package and upload it to start the import."
+                : "Upload the target package directly or enter id + version."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-              <FileDropzone
-                label="Upload target package (.tgz) or compose project (.json/.zip)"
-                helperText="The package must contain package/package.json"
-                disabled={isUploading}
-                accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-                hint="Drag & drop .tgz, .json, or .zip files here"
-                onFiles={handleTargetUpload}
-              />
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="package-id">Package ID</Label>
-                <Input
-                  id="package-id"
-                  value={packageId}
-                  onChange={(event) => setPackageId(event.target.value)}
-                  placeholder="de.gematik.fhir.directory"
+            {currentTarget ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-foreground">Import started for:</span>
+                    <span className="text-foreground">
+                      {currentTarget.id}@{currentTarget.version}
+                    </span>
+                  </div>
+                  {targetDownloadUrl ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button asChild size="sm" variant="secondary">
+                        <a href={targetDownloadUrl} target="_blank" rel="noreferrer">
+                          Download (packages2.fhir.org)
+                        </a>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(targetDownloadUrl)}
+                      >
+                        Copy Link
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+                <FileDropzone
+                  label="Upload target package (.tgz)"
+                  helperText="Download the target from packages2.fhir.org, then upload it here to start the import."
+                  disabled={isUploading}
+                  accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+                  hint="Drag & drop the target .tgz file here"
+                  onFiles={handleTargetUpload}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="package-version">Version</Label>
-                <Input
-                  id="package-version"
-                  value={version}
-                  onChange={(event) => setVersion(event.target.value)}
-                  placeholder="1.0.0"
+              </>
+            ) : (
+              <>
+                <FileDropzone
+                  label="Upload target package (.tgz) or compose project (.json/.zip)"
+                  helperText="The package must contain package/package.json"
+                  disabled={isUploading}
+                  accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+                  hint="Drag & drop .tgz, .json, or .zip files here"
+                  onFiles={handleTargetUpload}
                 />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  className="w-full"
-                  disabled={!packageId || !version}
-                  onClick={() => setTarget(packageId.trim(), version.trim())}
-                >
-                  Set Target
-                </Button>
-              </div>
-            </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="package-id">Package ID</Label>
+                    <Input
+                      id="package-id"
+                      value={packageId}
+                      onChange={(event) => setPackageId(event.target.value)}
+                      placeholder="de.gematik.fhir.directory"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="package-version">Version</Label>
+                    <Input
+                      id="package-version"
+                      value={version}
+                      onChange={(event) => setVersion(event.target.value)}
+                      placeholder="1.0.0"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      className="w-full"
+                      disabled={!trimmedPackageId || !trimmedVersion}
+                      onClick={() => setTarget(trimmedPackageId, trimmedVersion)}
+                    >
+                      Set Target
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : null}
@@ -472,7 +520,13 @@ export const ImportWizard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {missing.length === 0 ? (
+            {!isTargetImported ? (
+              <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
+                <p className="text-sm text-foreground">
+                  Upload the target package to detect its dependencies.
+                </p>
+              </div>
+            ) : missing.length === 0 ? (
               <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
                 <p className="text-sm text-foreground">All dependencies resolved.</p>
               </div>
