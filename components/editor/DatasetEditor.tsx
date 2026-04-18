@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { Layout } from "react-resizable-panels";
 import { useImporter } from "@/components/importer/useImporter";
 import { DatasetDiagramDialog } from "@/components/editor/DatasetDiagramDialog";
 import { EditorHeader } from "@/components/editor/EditorHeader";
+import { ExportDialog } from "@/components/editor/ExportDialog";
 import { NewResourceDialog } from "@/components/editor/NewResourceDialog";
 import { ResourceDetailPanel } from "@/components/editor/ResourceDetailPanel";
 import { ResourceJsonPanel } from "@/components/editor/ResourceJsonPanel";
@@ -26,8 +28,16 @@ import {
   resolveProfileForResource,
   type ProfileSummary,
 } from "@/lib/fhir-editor/profiles";
+import type {
+  ComposeDatasetExport,
+  ComposePackageExport,
+  ComposeProjectArchiveManifest,
+  ComposeProjectExport,
+} from "@/lib/fhir-importer/compose";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
+import { toast } from "sonner";
+import JSZip from "jszip";
 
 type DatasetEditorProps = {
   datasetId: string;
@@ -37,6 +47,32 @@ type DependencyGraph = {
   byKey: Map<string, PackageRecord>;
   adjacency: Map<string, string[]>;
 };
+
+const downloadBlob = (filename: string, blob: Blob) => {
+  if (typeof window === "undefined") return;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+};
+
+const downloadJson = (filename: string, payload: unknown) => {
+  if (typeof window === "undefined") return;
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  downloadBlob(filename, blob);
+};
+
+const toSafeFilename = (value: string) =>
+  value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
 
 const buildDependencyGraph = (packages: PackageRecord[]): DependencyGraph => {
   const byKey = new Map<string, PackageRecord>();
@@ -104,6 +140,7 @@ const collectDependencies = (targetKey: string, graph: DependencyGraph): Set<str
 
 export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [dataset, setDataset] = useState<DatasetRecord | null>(null);
+  const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
   const [datasetLoaded, setDatasetLoaded] = useState(false);
   const [registryLoaded, setRegistryLoaded] = useState(false);
   const [resources, setResources] = useState<DatasetResource[]>([]);
@@ -111,11 +148,18 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isDiagramOpen, setDiagramOpen] = useState(false);
+  const [isExportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportScope, setExportScope] = useState<"dataset" | "project">("dataset");
+  const [exportFormat, setExportFormat] = useState<"json" | "zip">("json");
+  const [exportDatasetMode, setExportDatasetMode] = useState<
+    "package" | "resources" | "searchset"
+  >("package");
+  const [exportIncludeDatasets, setExportIncludeDatasets] = useState(true);
   const [zoomPercent, setZoomPercent] = useState(100);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [viewSettingsLoaded, setViewSettingsLoaded] = useState(false);
   const layoutStorageKey = "fhir-compose-editor-layout";
-  const [panelSizes, setPanelSizes] = useState<number[] | null>(null);
+  const [panelLayout, setPanelLayout] = useState<Layout | null>(null);
 
   const { snapshot, getResourcePayloadsByPackageKeys } = useImporter();
   const packages = snapshot?.packages ?? [];
@@ -133,6 +177,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const records = loadDatasets();
     const match = records.find((entry) => entry.id === datasetId) ?? null;
     setDataset(match);
+    setDatasets(records);
     const loaded = loadDatasetResources(datasetId);
     setResources(sortResources(loaded));
     setDatasetLoaded(true);
@@ -152,12 +197,17 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const rawLayout = window.localStorage.getItem(layoutStorageKey);
     if (rawLayout) {
       try {
-        const parsed = JSON.parse(rawLayout);
-        if (Array.isArray(parsed) && parsed.length >= 3) {
-          setPanelSizes(parsed.filter((value) => typeof value === "number") as number[]);
+        const parsed = JSON.parse(rawLayout) as unknown;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const entries = Object.entries(parsed as Record<string, unknown>).filter(
+            ([, value]) => typeof value === "number"
+          );
+          if (entries.length > 0) {
+            setPanelLayout(Object.fromEntries(entries) as Layout);
+          }
         }
       } catch {
-        setPanelSizes(null);
+        setPanelLayout(null);
       }
     }
     setViewSettingsLoaded(true);
@@ -268,18 +318,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     setResources(nextResources);
   };
 
-  const downloadJson = (filename: string, payload: unknown) => {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportResource = (resource: DatasetResource) => {
     const id =
       typeof resource.content.id === "string" && resource.content.id.trim()
@@ -310,6 +348,209 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const nextResources = [duplicated, ...resources];
     persistResources(nextResources);
     setSelectedResourceId(duplicated.id);
+  };
+
+  const datasetResourcesPayload = useMemo(
+    () => resources.map((entry) => entry.content),
+    [resources]
+  );
+
+  const buildSearchsetBundle = (entries: unknown[]) => ({
+    resourceType: "Bundle",
+    type: "searchset",
+    total: entries.length,
+    entry: entries.map((resource) => ({ resource })),
+  });
+
+  const handleExportDataset = async () => {
+    if (!dataset) return;
+    const safeName = toSafeFilename(dataset.name) || "dataset";
+    let payload: unknown = null;
+    let filename = `${safeName}.json`;
+    let zipName = `${safeName}.zip`;
+
+    if (exportDatasetMode === "package") {
+      const datasetPayload: ComposeDatasetExport = {
+        id: dataset.id,
+        name: dataset.name,
+        projectKey: dataset.projectKey,
+        resources: datasetResourcesPayload,
+      };
+      payload = datasetPayload;
+      filename = `${safeName}.json`;
+      zipName = `${safeName}.zip`;
+    } else if (exportDatasetMode === "resources") {
+      payload = datasetResourcesPayload;
+      filename = `${safeName}-resources.json`;
+      zipName = `${safeName}-resources.zip`;
+    } else {
+      payload = buildSearchsetBundle(datasetResourcesPayload);
+      filename = `${safeName}-searchset.json`;
+      zipName = `${safeName}-searchset.zip`;
+    }
+
+    if (exportFormat === "json") {
+      downloadJson(filename, payload);
+    } else {
+      const zip = new JSZip();
+      zip.file(filename, JSON.stringify(payload, null, 2));
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(zipName, blob);
+    }
+    toast.success("Dataset exported.");
+  };
+
+  const prepareProjectExport = async (
+    project: PackageRecord,
+    includeDatasets: boolean
+  ): Promise<{
+    projectKeys: Set<string>;
+    exportPackages: ComposePackageExport[];
+    exportDatasets: ComposeDatasetExport[];
+  } | null> => {
+    const graph = buildDependencyGraph(packages);
+    const dependencyKeys = collectDependencies(project.key, graph);
+    const projectKeys = new Set<string>([project.key, ...dependencyKeys]);
+    const packageRecords = Array.from(projectKeys)
+      .map((key) => graph.byKey.get(key))
+      .filter((record): record is PackageRecord => Boolean(record));
+
+    if (packageRecords.length === 0) {
+      toast.error("No packages available to export.");
+      return null;
+    }
+
+    const payloads = await getResourcePayloadsByPackageKeys(Array.from(projectKeys));
+    const payloadsByKey = new Map<string, typeof payloads>();
+    for (const payload of payloads) {
+      const list = payloadsByKey.get(payload.packageKey) ?? [];
+      list.push(payload);
+      payloadsByKey.set(payload.packageKey, list);
+    }
+
+    const exportPackages: ComposePackageExport[] = packageRecords.map((pkg) => ({
+      key: pkg.key,
+      id: pkg.id,
+      version: pkg.version,
+      manifest: pkg.manifest,
+      resources: (payloadsByKey.get(pkg.key) ?? []).map((resource) => ({
+        resourceType: resource.resourceType,
+        id: resource.id,
+        url: resource.url,
+        content: resource.content,
+      })),
+    }));
+
+    const exportDatasets: ComposeDatasetExport[] = includeDatasets
+      ? datasets
+          .filter((entry) => projectKeys.has(entry.projectKey ?? ""))
+          .map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            projectKey: entry.projectKey,
+            resources:
+              entry.id === dataset?.id
+                ? datasetResourcesPayload
+                : loadDatasetResources(entry.id).map((item) => item.content),
+          }))
+      : [];
+
+    return {
+      projectKeys,
+      exportPackages,
+      exportDatasets,
+    };
+  };
+
+  const exportProjectAsJson = async (project: PackageRecord, includeDatasets: boolean) => {
+    const prepared = await prepareProjectExport(project, includeDatasets);
+    if (!prepared) return;
+
+    const payload: ComposeProjectExport = {
+      type: "fhir-compose-project",
+      version: 1,
+      targetKey: project.key,
+      exportedAt: new Date().toISOString(),
+      packages: prepared.exportPackages,
+      datasets: prepared.exportDatasets,
+    };
+
+    const filename =
+      toSafeFilename(`${project.id}-${project.version}-compose.json`) ||
+      "compose-project.json";
+    downloadJson(filename, payload);
+    toast.success("Project exported.");
+  };
+
+  const exportProjectAsZip = async (project: PackageRecord, includeDatasets: boolean) => {
+    const prepared = await prepareProjectExport(project, includeDatasets);
+    if (!prepared) return;
+
+    const zip = new JSZip();
+    const packagesFolder = zip.folder("packages");
+    const datasetsFolder = zip.folder("datasets");
+
+    const packageEntries = prepared.exportPackages.map((pkg) => {
+      const filename = toSafeFilename(`${pkg.key}.json`) || "package.json";
+      packagesFolder?.file(filename, JSON.stringify(pkg, null, 2));
+      return {
+        key: pkg.key,
+        id: pkg.id,
+        version: pkg.version,
+        manifest: pkg.manifest,
+        file: `packages/${filename}`,
+      };
+    });
+
+    const datasetEntries = prepared.exportDatasets.map((entry, index) => {
+      const baseName = toSafeFilename(entry.id ?? entry.name) || `dataset-${index + 1}`;
+      const filename = `${baseName}.json`;
+      datasetsFolder?.file(filename, JSON.stringify(entry, null, 2));
+      return {
+        id: entry.id,
+        name: entry.name,
+        projectKey: entry.projectKey,
+        file: `datasets/${filename}`,
+      };
+    });
+
+    const manifest: ComposeProjectArchiveManifest = {
+      type: "fhir-compose-project-archive",
+      version: 1,
+      targetKey: project.key,
+      exportedAt: new Date().toISOString(),
+      packages: packageEntries,
+      datasets: includeDatasets ? datasetEntries : undefined,
+    };
+
+    zip.file("compose-project.json", JSON.stringify(manifest, null, 2));
+    const blob = await zip.generateAsync({ type: "blob" });
+    const filename =
+      toSafeFilename(`${project.id}-${project.version}-compose.zip`) || "compose-project.zip";
+    downloadBlob(filename, blob);
+    toast.success("Project exported.");
+  };
+
+  const handleExportConfirm = async () => {
+    if (!dataset) return;
+    if (exportScope === "dataset") {
+      await handleExportDataset();
+      setExportDialogOpen(false);
+      return;
+    }
+
+    const targetProject = packages.find((pkg) => pkg.key === dataset.projectKey);
+    if (!targetProject) {
+      toast.error("Project package not found for this dataset.");
+      return;
+    }
+
+    if (exportFormat === "json") {
+      await exportProjectAsJson(targetProject, exportIncludeDatasets);
+    } else {
+      await exportProjectAsZip(targetProject, exportIncludeDatasets);
+    }
+    setExportDialogOpen(false);
   };
 
   const handleCreateResource = (payload: { profileUrl: string; resourceId?: string }) => {
@@ -394,6 +635,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           projectKey={dataset.projectKey}
           onCreateResource={() => setCreateDialogOpen(true)}
           onOpenDiagram={() => setDiagramOpen(true)}
+          onOpenExport={() => setExportDialogOpen(true)}
           theme={theme}
           onThemeChange={setTheme}
           zoomLabel={zoomLabel}
@@ -401,44 +643,59 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
         />
 
-		        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6 pt-4">
-		          <ResizablePanelGroup
-		            direction="horizontal"
-		            onLayoutChanged={(sizes: number[]) => {
-		              setPanelSizes(sizes);
-		              if (typeof window !== "undefined" && viewSettingsLoaded) {
-		                window.localStorage.setItem(layoutStorageKey, JSON.stringify(sizes));
-		              }
-		            }}
-		            className="h-full min-h-0 rounded-xl border border-foreground/10 bg-background"
-		          >
-            <ResizablePanel defaultSize={panelSizes?.[0] ?? 24} minSize={18} className="min-h-0">
-            <ResourceListPanel
-              resources={resources}
-              selectedId={selectedResourceId}
-              onSelect={handleSelectResource}
-              onCreateResource={() => setCreateDialogOpen(true)}
-              onRemoveResource={handleRemoveResource}
-              onExportResource={handleExportResource}
-              onDuplicateResource={handleDuplicateResource}
-            />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={panelSizes?.[1] ?? 44} minSize={32} className="min-h-0">
-              <ResourceDetailPanel
-                resource={selectedResource}
-                fields={fields}
-                registry={registryState}
-                datasetResources={resources}
-                onUpdateResource={handleUpdateResource}
+        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6 pt-4">
+          <ResizablePanelGroup
+            direction="horizontal"
+            onLayoutChanged={(layout: Layout) => {
+              setPanelLayout(layout);
+              if (typeof window !== "undefined" && viewSettingsLoaded) {
+                window.localStorage.setItem(layoutStorageKey, JSON.stringify(layout));
+              }
+            }}
+            className="h-full min-h-0 rounded-xl border border-foreground/10 bg-background"
+          >
+            <ResizablePanel
+              id="resource-list"
+              defaultSize={panelLayout?.["resource-list"] ?? 24}
+              minSize={18}
+              className="min-h-0"
+            >
+              <ResourceListPanel
+                resources={resources}
+                selectedId={selectedResourceId}
+                onSelect={handleSelectResource}
+                onCreateResource={() => setCreateDialogOpen(true)}
                 onRemoveResource={handleRemoveResource}
+                onExportResource={handleExportResource}
+                onDuplicateResource={handleDuplicateResource}
               />
             </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={panelSizes?.[2] ?? 32} minSize={20} className="min-h-0">
-              <ResourceJsonPanel
-                resource={selectedResource}
-                onUpdateResource={handleUpdateResource}
+		            <ResizableHandle withHandle />
+		            <ResizablePanel
+		              id="resource-detail"
+		              defaultSize={panelLayout?.["resource-detail"] ?? 44}
+	              minSize={32}
+	              className="min-h-0"
+		            >
+		              <ResourceDetailPanel
+		                resource={selectedResource}
+		                fields={fields}
+                    registry={registryState}
+                    datasetResources={resources}
+                    onUpdateResource={handleUpdateResource}
+                    onRemoveResource={handleRemoveResource}
+		              />
+		            </ResizablePanel>
+	            <ResizableHandle withHandle />
+	            <ResizablePanel
+	              id="resource-json"
+	              defaultSize={panelLayout?.["resource-json"] ?? 32}
+	              minSize={20}
+	              className="min-h-0"
+	            >
+	              <ResourceJsonPanel
+	                resource={selectedResource}
+	                onUpdateResource={handleUpdateResource}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -449,6 +706,33 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           onOpenChange={setCreateDialogOpen}
           profiles={profiles}
           onCreate={handleCreateResource}
+        />
+        <ExportDialog
+          open={isExportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          title="Export dataset"
+          description="Export the current dataset or the full project with dependencies."
+          scope={exportScope}
+          scopeOptions={[
+            { value: "dataset", label: "Dataset only" },
+            {
+              value: "project",
+              label: "Project + dependencies",
+              disabled: !dataset.projectKey,
+              helper: !dataset.projectKey
+                ? "Project export is unavailable for datasets without a project key."
+                : undefined,
+            },
+          ]}
+          onScopeChange={setExportScope}
+          exportFormat={exportFormat}
+          onExportFormatChange={setExportFormat}
+          datasetMode={exportDatasetMode}
+          onDatasetModeChange={setExportDatasetMode}
+          includeDatasets={exportIncludeDatasets}
+          onIncludeDatasetsChange={setExportIncludeDatasets}
+          confirmLabel={exportScope === "dataset" ? "Export dataset" : "Export project"}
+          onConfirm={handleExportConfirm}
         />
         <DatasetDiagramDialog
           open={isDiagramOpen}
