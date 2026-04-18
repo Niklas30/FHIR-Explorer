@@ -9,10 +9,12 @@ import {
 import type { DatasetResource } from "@/lib/datasets/content";
 import type { FhirRegistry } from "@/lib/fhir-editor/registry";
 import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
+import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
 import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
 
 type ResourceJsonPanelProps = {
   resource: DatasetResource | null;
+  datasetResources: DatasetResource[];
   fields: FieldDefinition[];
   registry: FhirRegistry | null;
   onUpdateResource: (resource: DatasetResource) => void;
@@ -20,6 +22,7 @@ type ResourceJsonPanelProps = {
 
 export const ResourceJsonPanel = ({
   resource,
+  datasetResources,
   fields,
   registry,
   onUpdateResource,
@@ -59,10 +62,17 @@ export const ResourceJsonPanel = ({
     }
   }, [draft, resource]);
 
+  const existingReferences = useMemo(
+    () => buildDatasetReferenceIndex(datasetResources),
+    [datasetResources]
+  );
+
   const validationIssues = useMemo(() => {
     if (!resource || !parsedDraft.value) return [];
-    return validateResourceWithProfile(parsedDraft.value, fields, registry ?? undefined);
-  }, [fields, parsedDraft.value, registry, resource]);
+    return validateResourceWithProfile(parsedDraft.value, fields, registry ?? undefined, {
+      existingReferences,
+    });
+  }, [existingReferences, fields, parsedDraft.value, registry, resource]);
 
   const errorCount = validationIssues.filter((issue) => issue.severity === "error").length;
   const warningCount = validationIssues.filter((issue) => issue.severity === "warning").length;

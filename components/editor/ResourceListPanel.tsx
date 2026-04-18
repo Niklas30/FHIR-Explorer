@@ -11,13 +11,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { DatasetResource } from "@/lib/datasets/content";
-import {
-  buildDatasetReferenceIndex,
-  collectBrokenReferences,
-} from "@/lib/fhir-editor/references";
+import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
+import { buildFieldDefinitions, resolveProfileForResource } from "@/lib/fhir-editor/profiles";
+import type { FhirRegistry } from "@/lib/fhir-editor/registry";
+import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
+import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
 
 type ResourceListPanelProps = {
   resources: DatasetResource[];
+  registry: FhirRegistry | null;
   selectedId?: string | null;
   onSelect: (resourceId: string) => void;
   onCreateResource?: () => void;
@@ -49,13 +51,20 @@ type SortMode = "lastSelected" | "lastCreated" | "alphabetic";
 
 const SORT_STORAGE_KEY = "fhir-explorer-resource-sort";
 const SEARCH_VISIBLE_KEY = "fhir-explorer-resource-search-visible";
-const brokenReferenceIssueCache = new Map<
+const validationIssueCountCache = new Map<
   string,
-  { updatedAt: number; referenceIndexSignature: string; issueCount: number }
+  {
+    updatedAt: number;
+    referenceIndexSignature: string;
+    profileKey: string;
+    registrySignature: string;
+    issueCount: number;
+  }
 >();
 
 export const ResourceListPanel = ({
   resources,
+  registry,
   selectedId,
   onSelect,
   onCreateResource,
@@ -126,19 +135,32 @@ export const ResourceListPanel = ({
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [resources, sortMode, query]);
 
-  const brokenReferenceIssuesByResourceId = useMemo(() => {
+  const validationErrorsByResourceId = useMemo(() => {
+    if (!registry) return new Map<string, number>();
     const referenceIndex = buildDatasetReferenceIndex(resources);
     const referenceIndexSignature = Array.from(referenceIndex).sort().join("|");
+    const registrySignature = [
+      registry.structureDefinitions.length,
+      registry.valueSetsByUrl.size,
+      registry.codeSystemsByUrl.size,
+    ].join("|");
+    const fieldsByProfile = new Map<string, FieldDefinition[]>();
     const byResourceId = new Map<string, number>();
     const nextIds = new Set(resources.map((resource) => resource.id));
 
     for (const resource of resources) {
       const updatedAt = resource.updatedAt ?? resource.createdAt ?? 0;
-      const cached = brokenReferenceIssueCache.get(resource.id);
+      const profile = resolveProfileForResource(resource.content, registry);
+      if (!profile) continue;
+      const profileKey = profile.url ?? profile.id ?? profile.type ?? resource.resourceType;
+
+      const cached = validationIssueCountCache.get(resource.id);
       if (
         cached &&
         cached.updatedAt === updatedAt &&
-        cached.referenceIndexSignature === referenceIndexSignature
+        cached.referenceIndexSignature === referenceIndexSignature &&
+        cached.profileKey === profileKey &&
+        cached.registrySignature === registrySignature
       ) {
         if (cached.issueCount > 0) {
           byResourceId.set(resource.id, cached.issueCount);
@@ -146,31 +168,42 @@ export const ResourceListPanel = ({
         continue;
       }
 
-      let issueCount = 0;
-      try {
-        issueCount = collectBrokenReferences(resource.content, referenceIndex, {
-          maxNodes: 6_000,
-          maxDepth: 50,
-        }).length;
-      } catch (error) {
-        console.error("Failed to collect broken references for resource", resource.id, error);
+      const fields =
+        fieldsByProfile.get(profileKey) ?? buildFieldDefinitions(profile, registry);
+      if (!fieldsByProfile.has(profileKey)) {
+        fieldsByProfile.set(profileKey, fields);
       }
 
-      const cacheEntry = { updatedAt, referenceIndexSignature, issueCount };
-      brokenReferenceIssueCache.set(resource.id, cacheEntry);
+      let issueCount = 0;
+      try {
+        issueCount = validateResourceWithProfile(resource.content, fields, registry, {
+          existingReferences: referenceIndex,
+        }).filter((issue) => issue.severity === "error").length;
+      } catch (error) {
+        console.error("Failed to validate resource", resource.id, error);
+      }
+
+      const cacheEntry = {
+        updatedAt,
+        referenceIndexSignature,
+        profileKey,
+        registrySignature,
+        issueCount,
+      };
+      validationIssueCountCache.set(resource.id, cacheEntry);
       if (issueCount > 0) {
         byResourceId.set(resource.id, issueCount);
       }
     }
 
-    for (const resourceId of brokenReferenceIssueCache.keys()) {
+    for (const resourceId of validationIssueCountCache.keys()) {
       if (!nextIds.has(resourceId)) {
-        brokenReferenceIssueCache.delete(resourceId);
+        validationIssueCountCache.delete(resourceId);
       }
     }
 
     return byResourceId;
-  }, [resources]);
+  }, [resources, registry]);
 
   const toggleType = (resourceType: string) => {
     setCollapsedTypes((prev) => {
@@ -265,8 +298,8 @@ export const ResourceListPanel = ({
                   <div className="grid gap-2">
                     {entries.map((resource) => {
                     const isActive = resource.id === selectedId;
-                    const brokenIssues = brokenReferenceIssuesByResourceId.get(resource.id) ?? 0;
-                    const hasBrokenReferences = brokenIssues > 0;
+                    const errorCount = validationErrorsByResourceId.get(resource.id) ?? 0;
+                    const hasValidationErrors = errorCount > 0;
                     return (
                       <div
                         key={resource.id}
@@ -327,21 +360,21 @@ export const ResourceListPanel = ({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                        <span className="break-words whitespace-normal text-left text-sm font-medium leading-snug text-foreground">
+                        <span className="min-w-0 break-words whitespace-normal text-left text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
                           {getResourceLabel(resource)}
                         </span>
                         <div className="flex flex-wrap items-center gap-2 text-xs leading-snug">
-                          <span className="break-words whitespace-normal text-left text-muted-foreground">
+                          <span className="min-w-0 break-words whitespace-normal text-left text-muted-foreground [overflow-wrap:anywhere]">
                             {getResourceSecondary(resource)}
                             {resource.profile ? ` · ${resource.profile}` : ""}
                           </span>
-                          {hasBrokenReferences ? (
+                          {hasValidationErrors ? (
                             <span
                               className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
-                              title={`${brokenIssues} broken reference${brokenIssues === 1 ? "" : "s"}`}
+                              title={`${errorCount} validation error${errorCount === 1 ? "" : "s"}`}
                             >
                               <AlertTriangle className="size-3" />
-                              {brokenIssues}
+                              {errorCount}
                             </span>
                           ) : null}
                         </div>
