@@ -668,7 +668,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               id="resource-list"
               defaultSize={panelLayout?.["resource-list"] ?? 24}
               minSize={18}
-              className="min-h-0"
+              className="min-h-0 min-w-0"
             >
               <ResourceListPanel
                 resources={resources}
@@ -685,7 +685,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               id="resource-detail"
               defaultSize={panelLayout?.["resource-detail"] ?? 44}
               minSize={32}
-              className="min-h-0"
+              className="min-h-0 min-w-0"
             >
               <ResourceDetailPanel
                 resource={selectedResource}
@@ -701,7 +701,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               id="resource-json"
               defaultSize={panelLayout?.["resource-json"] ?? 32}
               minSize={20}
-              className="min-h-0"
+              className="min-h-0 min-w-0"
             >
               <ResourceJsonPanel
                 resource={selectedResource}

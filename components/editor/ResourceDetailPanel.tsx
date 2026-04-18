@@ -875,7 +875,7 @@ const FieldInput = ({
             const nextValue = event.target.value;
             onChange(nextValue || undefined);
           }}
-          className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
+          className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
         >
           <option value="">Select value</option>
           {options.map((option) => (
@@ -972,7 +972,7 @@ const FieldInput = ({
               display: match?.title ?? name ?? title,
             });
           }}
-          className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
+          className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
         >
           <option value="">Select reference</option>
           {filteredOptions.length === 0 ? (
@@ -1046,7 +1046,7 @@ const FieldInput = ({
                 text: option?.display,
               });
             }}
-            className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
+            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
           >
             <option value="">Select value</option>
             {options.map((option) => {
