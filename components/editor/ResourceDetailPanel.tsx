@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,22 @@ export const ResourceDetailPanel = ({
   const [listQuery, setListQuery] = useState("");
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("fhir-compose-field-search-visible");
+    if (stored === "true" || stored === "false") {
+      setShowSearch(stored === "true");
+    }
+    setSettingsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!settingsLoaded) return;
+    window.localStorage.setItem("fhir-compose-field-search-visible", String(showSearch));
+  }, [showSearch, settingsLoaded]);
 
   const groupedFields = useMemo(() => {
     if (!resource) return [];
@@ -161,14 +177,6 @@ export const ResourceDetailPanel = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setFieldDialogOpen(true)}
-              disabled={addableFields.length === 0}
-            >
-              Add field
-            </Button>
             <button
               type="button"
               onClick={() => setShowSearch((prev) => !prev)}
@@ -184,6 +192,15 @@ export const ResourceDetailPanel = ({
               className="text-destructive hover:text-destructive"
             >
               Remove
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setFieldDialogOpen(true)}
+              disabled={addableFields.length === 0}
+              className="gap-1.5"
+            >
+              <Plus className="size-4" />
+              Add field
             </Button>
           </div>
         </div>
@@ -202,7 +219,18 @@ export const ResourceDetailPanel = ({
         <div className="grid gap-4 p-4">
           {visibleGroups.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
-              No fields available for this profile.
+              <div>No fields available for this profile.</div>
+              <div className="mt-3 flex justify-center">
+                <Button
+                  size="sm"
+                  onClick={() => setFieldDialogOpen(true)}
+                  disabled={addableFields.length === 0}
+                  className="gap-1.5"
+                >
+                  <Plus className="size-4" />
+                  Add field
+                </Button>
+              </div>
             </div>
           ) : (
             visibleGroups.map((group) =>

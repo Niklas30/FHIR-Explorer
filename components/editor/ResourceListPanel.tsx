@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { MoreVertical, Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -9,6 +16,10 @@ type ResourceListPanelProps = {
   resources: DatasetResource[];
   selectedId?: string | null;
   onSelect: (resourceId: string) => void;
+  onCreateResource?: () => void;
+  onRemoveResource?: (resourceId: string) => void;
+  onExportResource?: (resource: DatasetResource) => void;
+  onDuplicateResource?: (resource: DatasetResource) => void;
 };
 
 const getResourceLabel = (resource: DatasetResource) => {
@@ -33,15 +44,21 @@ const getResourceSecondary = (resource: DatasetResource) => {
 type SortMode = "lastSelected" | "lastCreated" | "alphabetic";
 
 const SORT_STORAGE_KEY = "fhir-compose-resource-sort";
+const SEARCH_VISIBLE_KEY = "fhir-compose-resource-search-visible";
 
 export const ResourceListPanel = ({
   resources,
   selectedId,
   onSelect,
+  onCreateResource,
+  onRemoveResource,
+  onExportResource,
+  onDuplicateResource,
 }: ResourceListPanelProps) => {
   const [sortMode, setSortMode] = useState<SortMode>("lastSelected");
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,12 +66,24 @@ export const ResourceListPanel = ({
     if (stored === "lastSelected" || stored === "lastCreated" || stored === "alphabetic") {
       setSortMode(stored);
     }
+    const storedSearch = window.localStorage.getItem(SEARCH_VISIBLE_KEY);
+    if (storedSearch === "true" || storedSearch === "false") {
+      setShowSearch(storedSearch === "true");
+    }
+    setSettingsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!settingsLoaded) return;
     window.localStorage.setItem(SORT_STORAGE_KEY, sortMode);
-  }, [sortMode]);
+  }, [sortMode, settingsLoaded]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!settingsLoaded) return;
+    window.localStorage.setItem(SEARCH_VISIBLE_KEY, String(showSearch));
+  }, [showSearch, settingsLoaded]);
 
   const groupedResources = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -114,6 +143,12 @@ export const ResourceListPanel = ({
               <option value="lastCreated">Last added</option>
               <option value="alphabetic">Alphabetic</option>
             </select>
+            {onCreateResource ? (
+              <Button size="sm" onClick={onCreateResource} className="gap-1.5">
+                <Plus className="size-4" />
+                <span className="hidden md:inline">New resource</span>
+              </Button>
+            ) : null}
           </div>
         </div>
         {showSearch ? (
@@ -131,7 +166,15 @@ export const ResourceListPanel = ({
         <div className="grid gap-3 p-3">
           {resources.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
-              No resources yet. Create the first one from the header.
+              <div>No resources yet.</div>
+              {onCreateResource ? (
+                <div className="mt-3 flex justify-center">
+                  <Button size="sm" onClick={onCreateResource} className="gap-1.5">
+                    <Plus className="size-4" />
+                    New resource
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
             groupedResources.map(([resourceType, entries]) => (
@@ -143,17 +186,65 @@ export const ResourceListPanel = ({
                   {entries.map((resource) => {
                     const isActive = resource.id === selectedId;
                     return (
-                      <button
+                      <div
                         key={resource.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => onSelect(resource.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelect(resource.id);
+                          }
+                        }}
                         className={cn(
-                          "flex min-w-0 w-full flex-col gap-1 rounded-lg border px-3 py-2 text-left text-sm transition",
+                          "relative flex min-w-0 w-full flex-col gap-1 rounded-lg border px-3 py-2 pr-10 text-left text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-foreground/30",
                           isActive
                             ? "border-foreground/30 bg-muted/50"
                             : "border-foreground/10 hover:border-foreground/30 hover:bg-muted/40"
                         )}
                       >
+                        <div className="absolute right-2 top-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={(event) => event.stopPropagation()}
+                                className="flex h-7 w-7 items-center justify-center rounded-md border border-foreground/15 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                                aria-label="Open resource menu"
+                              >
+                                <MoreVertical className="size-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onExportResource?.(resource);
+                                }}
+                              >
+                                Export resource
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onDuplicateResource?.(resource);
+                                }}
+                              >
+                                Duplicate resource
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onRemoveResource?.(resource.id);
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                Delete resource
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                         <span className="break-words whitespace-normal text-left text-sm font-medium leading-snug text-foreground">
                           {getResourceLabel(resource)}
                         </span>
@@ -161,7 +252,7 @@ export const ResourceListPanel = ({
                           {getResourceSecondary(resource)}
                           {resource.profile ? ` · ${resource.profile}` : ""}
                         </span>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
