@@ -174,12 +174,16 @@ const flattenConcepts = (
   return options;
 };
 
-export const resolveValueSetOptions = (
+const resolveValueSetOptionsInternal = (
   canonical: string | undefined,
-  registry: FhirRegistry
+  registry: FhirRegistry,
+  visited: Set<string>
 ): CodingOption[] => {
   if (!canonical) return [];
   const normalized = normalizeCanonical(canonical);
+  if (visited.has(normalized)) return [];
+  visited.add(normalized);
+
   const valueSet = registry.valueSetsByUrl.get(normalized);
   if (!valueSet) return [];
 
@@ -212,7 +216,6 @@ export const resolveValueSetOptions = (
   for (const include of includes) {
     if (Array.isArray(include.concept) && include.concept.length > 0) {
       options.push(...flattenConcepts(include.concept, include.system));
-      continue;
     }
     if (include.system) {
       const codeSystem = registry.codeSystemsByUrl.get(normalizeCanonical(include.system));
@@ -220,8 +223,21 @@ export const resolveValueSetOptions = (
         options.push(...flattenConcepts(codeSystem.concept, codeSystem.url));
       }
     }
+    if (Array.isArray(include.valueSet)) {
+      for (const nestedValueSet of include.valueSet) {
+        options.push(...resolveValueSetOptionsInternal(nestedValueSet, registry, visited));
+      }
+    }
   }
 
+  return options;
+};
+
+export const resolveValueSetOptions = (
+  canonical: string | undefined,
+  registry: FhirRegistry
+): CodingOption[] => {
+  const options = resolveValueSetOptionsInternal(canonical, registry, new Set<string>());
   const unique = new Map<string, CodingOption>();
   for (const option of options) {
     const key = `${option.system ?? ""}|${option.code}`;
@@ -229,6 +245,5 @@ export const resolveValueSetOptions = (
       unique.set(key, option);
     }
   }
-
   return Array.from(unique.values());
 };

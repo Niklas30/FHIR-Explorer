@@ -629,19 +629,19 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         </div>
       ) : null}
       <div className="flex h-full w-full flex-col" style={{ zoom: zoomPercent / 100 }}>
-        <EditorHeader
-          datasetName={dataset.name}
-          datasetId={dataset.id}
-          projectKey={dataset.projectKey}
-          onCreateResource={() => setCreateDialogOpen(true)}
-          onOpenDiagram={() => setDiagramOpen(true)}
-          onOpenExport={() => setExportDialogOpen(true)}
-          theme={theme}
-          onThemeChange={setTheme}
-          zoomLabel={zoomLabel}
-          onZoomIn={() => setZoomPercent((prev) => Math.min(140, prev + 5))}
-          onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
-        />
+	        <EditorHeader
+	          datasetName={dataset.name}
+	          datasetId={dataset.id}
+	          projectKey={dataset.projectKey}
+	          onCreateResource={() => setCreateDialogOpen(true)}
+	          onOpenDiagram={() => setDiagramOpen(true)}
+	          onOpenExport={() => setExportDialogOpen(true)}
+	          theme={theme}
+	          onThemeChange={setTheme}
+	          zoomLabel={zoomLabel}
+	          onZoomIn={() => setZoomPercent((prev) => Math.min(140, prev + 5))}
+	          onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
+	        />
 
         <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6 pt-4">
           <ResizablePanelGroup
@@ -670,22 +670,22 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                 onDuplicateResource={handleDuplicateResource}
               />
             </ResizablePanel>
-		            <ResizableHandle withHandle />
-		            <ResizablePanel
-		              id="resource-detail"
-		              defaultSize={panelLayout?.["resource-detail"] ?? 44}
-	              minSize={32}
-	              className="min-h-0"
-		            >
-		              <ResourceDetailPanel
-		                resource={selectedResource}
-		                fields={fields}
-                    registry={registryState}
-                    datasetResources={resources}
-                    onUpdateResource={handleUpdateResource}
-                    onRemoveResource={handleRemoveResource}
-		              />
-		            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              id="resource-detail"
+              defaultSize={panelLayout?.["resource-detail"] ?? 44}
+              minSize={32}
+              className="min-h-0"
+            >
+              <ResourceDetailPanel
+                resource={selectedResource}
+                fields={fields}
+                registry={registryState}
+                datasetResources={resources}
+                onUpdateResource={handleUpdateResource}
+                onRemoveResource={handleRemoveResource}
+              />
+            </ResizablePanel>
 	            <ResizableHandle withHandle />
 	            <ResizablePanel
 	              id="resource-json"
@@ -696,10 +696,10 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
 	              <ResourceJsonPanel
 	                resource={selectedResource}
 	                onUpdateResource={handleUpdateResource}
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
+	              />
+	            </ResizablePanel>
+	          </ResizablePanelGroup>
+	        </div>
 
         <NewResourceDialog
           open={isCreateDialogOpen}

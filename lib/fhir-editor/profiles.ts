@@ -47,6 +47,9 @@ const buildLabel = (element: ElementDefinition, segments: string[]) => {
   return slice ? `${base} (${slice})` : base;
 };
 
+const hasType = (type?: ElementDefinitionType[]) =>
+  Array.isArray(type) && type.some((entry) => Boolean(entry.code));
+
 const mergeElementWithBase = (
   element: ElementDefinition,
   base?: ElementDefinition
@@ -54,7 +57,7 @@ const mergeElementWithBase = (
   return {
     ...base,
     ...element,
-    type: element.type ?? base?.type,
+    type: hasType(element.type) ? element.type : base?.type,
     min: element.min ?? base?.min,
     max: element.max ?? base?.max,
   };
@@ -182,6 +185,20 @@ export const buildFieldDefinitions = (
     }
   }
 
+  const codingParents = new Set<string>();
+  for (const path of orderedPaths) {
+    if (!path || !path.startsWith(rootPrefix)) continue;
+    const segments = path
+      .slice(rootPrefix.length)
+      .split(".")
+      .map(stripSlice)
+      .filter(Boolean);
+    const normalized = [rootType, ...segments].join(".");
+    if (normalized.endsWith(".coding")) {
+      codingParents.add(normalized.slice(0, -".coding".length));
+    }
+  }
+
   for (const path of orderedPaths) {
     if (!path || path === rootType) continue;
     if (!path.startsWith(rootPrefix)) continue;
@@ -195,6 +212,7 @@ export const buildFieldDefinitions = (
       .split(".")
       .map(stripSlice)
       .filter(Boolean);
+    const normalizedPath = [rootType, ...segments].join(".");
 
     if (!shouldInclude(segments)) continue;
 
@@ -202,6 +220,14 @@ export const buildFieldDefinitions = (
       element ?? (baseElement as ElementDefinition),
       baseElement
     );
+
+    const inferredType = hasType(merged.type)
+      ? merged.type
+      : normalizedPath.endsWith(".coding")
+      ? [{ code: "Coding" }]
+      : codingParents.has(normalizedPath)
+      ? [{ code: "CodeableConcept" }]
+      : merged.type;
 
     const isTopLevel = segments.length === 1;
     const shouldIncludeField =
@@ -221,7 +247,7 @@ export const buildFieldDefinitions = (
       min: merged.min,
       max: merged.max,
       baseMax: baseElement?.max,
-      type: merged.type,
+      type: inferredType,
       binding: merged.binding,
       mustSupport: merged.mustSupport,
       short: merged.short,

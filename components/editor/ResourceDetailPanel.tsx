@@ -500,12 +500,19 @@ const ComplexFieldGroup = ({
 }: ComplexFieldGroupProps) => {
   const rootValue = getFieldValue(content, group.root);
   const isRepeating = isRepeatingField(group.root) || Array.isArray(rootValue);
+  const rootKind = resolveFieldKind(group.root);
+  const rootOptions = resolveValueSetChoices(group.root, registry ?? undefined);
+  const showRootSelect =
+    (rootKind === "CodeableConcept" || rootKind === "Coding") && rootOptions.length > 0;
   const childFields = group.children
     .map((field) => ({
       ...field,
       segments: field.segments.slice(1),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+  const filteredChildFields = showRootSelect
+    ? childFields.filter((field) => !["coding", "text"].includes(field.segments[0] ?? ""))
+    : childFields;
 
   const updateRoot = (nextValue: unknown) => {
     onChange(setFieldValue(content, group.root, nextValue));
@@ -567,7 +574,18 @@ const ComplexFieldGroup = ({
                   </button>
                 </div>
                 <div className="mt-3 grid gap-3">
-                  {childFields.map((field) => (
+                  {showRootSelect ? (
+                    <FieldInput
+                      kind={rootKind}
+                      value={itemContent}
+                      options={rootOptions}
+                      referenceOptions={[]}
+                      onChange={(nextValue) =>
+                        handleItemChange(isRecord(nextValue) ? nextValue : {})
+                      }
+                    />
+                  ) : null}
+                  {filteredChildFields.map((field) => (
                     <FieldRow
                       key={`${field.id}-${index}`}
                       field={field}
@@ -600,7 +618,18 @@ const ComplexFieldGroup = ({
         </Label>
       </div>
       <div className="mt-3 grid gap-3">
-        {childFields.map((field) => (
+        {showRootSelect ? (
+          <FieldInput
+            kind={rootKind}
+            value={objectValue}
+            options={rootOptions}
+            referenceOptions={[]}
+            onChange={(nextValue) =>
+              handleObjectChange(isRecord(nextValue) ? nextValue : {})
+            }
+          />
+        ) : null}
+        {filteredChildFields.map((field) => (
           <FieldRow
             key={field.id}
             field={field}
