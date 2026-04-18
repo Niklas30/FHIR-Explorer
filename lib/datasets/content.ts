@@ -116,6 +116,15 @@ export const clearDatasetResources = (datasetId: string) => {
   saveStore(store);
 };
 
+export const clearAllDatasetResources = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error("Failed to clear dataset resources", error);
+  }
+};
+
 export const hydrateDatasetResources = (resources: unknown[]): DatasetResource[] => {
   const now = Date.now();
   const hydrated: DatasetResource[] = [];

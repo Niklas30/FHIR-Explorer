@@ -163,9 +163,7 @@ const mergeElementWithBase = (
 };
 
 const shouldInclude = (segments: string[]) => {
-  if (segments.length === 1) return true;
-  if (segments.length === 2) return true;
-  return false;
+  return segments.length >= 1 && segments.length <= 3;
 };
 
 export const getProfileSummaries = (registry: FhirRegistry): ProfileSummary[] => {
@@ -225,6 +223,19 @@ export const buildFieldDefinitions = (
   const rootType = profile.type ?? profile.id;
   if (!rootType) return [];
 
+  const getElementsForDefinition = (definition: StructureDefinition) => {
+    const snapshotElements = definition.snapshot?.element ?? [];
+    const differentialElements = definition.differential?.element ?? [];
+    if (snapshotElements.length === 0) {
+      return differentialElements;
+    }
+    if (differentialElements.length === 0) {
+      return snapshotElements;
+    }
+    // Snapshot gives the resolved tree; differential keeps profile-local overrides/slices.
+    return [...snapshotElements, ...differentialElements];
+  };
+
   const collectBaseDefinitions = (start?: StructureDefinition | null) => {
     const list: StructureDefinition[] = [];
     const seen = new Set<string>();
@@ -245,28 +256,31 @@ export const buildFieldDefinitions = (
     : undefined;
   const baseDefinitions = collectBaseDefinitions(baseDefinition);
   const baseElements: ElementDefinition[] = [];
-  for (const base of baseDefinitions.reverse()) {
-    const elements = base.snapshot?.element ?? base.differential?.element ?? [];
-    baseElements.push(...elements);
-  }
 
   const baseByPath = new Map<string, ElementDefinition>();
-  for (const base of baseElements) {
-    if (base.path) {
-      baseByPath.set(base.path, base);
+  for (const base of baseDefinitions.reverse()) {
+    const baseDefinitionElements = getElementsForDefinition(base);
+    baseElements.push(...baseDefinitionElements);
+    for (const element of baseDefinitionElements) {
+      if (!element.path) continue;
+      const previous = baseByPath.get(element.path);
+      baseByPath.set(
+        element.path,
+        previous ? mergeElementWithBase(element, previous) : element
+      );
     }
   }
 
-  const elements =
-    profile.differential?.element?.length
-      ? profile.differential.element
-      : profile.snapshot?.element ?? [];
+  const profileElements = getElementsForDefinition(profile);
 
   const diffByPath = new Map<string, ElementDefinition>();
-  for (const element of elements) {
-    if (element.path) {
-      diffByPath.set(element.path, element);
-    }
+  for (const element of profileElements) {
+    if (!element.path) continue;
+    const previous = diffByPath.get(element.path);
+    diffByPath.set(
+      element.path,
+      previous ? mergeElementWithBase(element, previous) : element
+    );
   }
 
   const fields: FieldDefinition[] = [];
@@ -278,7 +292,7 @@ export const buildFieldDefinitions = (
       orderedPaths.push(base.path);
     }
   }
-  for (const element of elements) {
+  for (const element of profileElements) {
     if (element.path && !orderedPaths.includes(element.path)) {
       orderedPaths.push(element.path);
     }
@@ -298,7 +312,7 @@ export const buildFieldDefinitions = (
     }
   }
 
-  const allElements = [...baseElements, ...elements];
+  const allElements = [...baseElements, ...profileElements];
   const getIdentifierSystemsForPath = (path: string) => {
     const slices = allElements.filter(
       (element) =>
@@ -379,11 +393,32 @@ export const buildFieldDefinitions = (
   const getChoiceOptionsForPath = (path: string) => {
     const options: CodingOption[] = [];
     const pathElements = allElements.filter((element) => element.path === path);
+    const directElement = diffByPath.get(path);
+    const baseElement = baseByPath.get(path);
+    const mergedElement =
+      directElement || baseElement
+        ? mergeElementWithBase(
+            directElement ?? (baseElement as ElementDefinition),
+            baseElement
+          )
+        : undefined;
+
+    if (mergedElement?.binding?.valueSet) {
+      options.push(...resolveValueSetOptions(mergedElement.binding.valueSet, registry));
+    }
+
+    const sliceElements = pathElements.filter(
+      (element) =>
+        typeof element.id === "string" &&
+        element.id.includes(":") &&
+        element.binding?.valueSet
+    );
+    for (const element of sliceElements) {
+      if (!element.binding?.valueSet) continue;
+      options.push(...resolveValueSetOptions(element.binding.valueSet, registry));
+    }
 
     for (const element of pathElements) {
-      if (element.binding?.valueSet) {
-        options.push(...resolveValueSetOptions(element.binding.valueSet, registry));
-      }
       const patternCoding = (element as PatternElement).patternCoding;
       if (patternCoding?.code) {
         options.push({
@@ -585,8 +620,8 @@ export const buildFieldDefinitions = (
       (merged.min ?? 0) > 0;
 
     if (!shouldIncludeField) {
-      if (segments.length === 2) {
-        const parentPath = `${rootType}.${segments[0]}`;
+      if (segments.length >= 2) {
+        const parentPath = `${rootType}.${segments.slice(0, -1).join(".")}`;
         const parentType = inferTypeForPath(parentPath);
         if (!isComplexType(parentType)) continue;
       } else {

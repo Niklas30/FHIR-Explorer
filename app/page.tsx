@@ -35,6 +35,7 @@ import {
   type DatasetRecord,
 } from "@/lib/datasets/storage";
 import {
+  clearAllDatasetResources,
   clearDatasetResources,
   hydrateDatasetResources,
   loadDatasetResources,
@@ -958,15 +959,18 @@ export default function EditorOverviewPage() {
       "Delete all locally stored data? This removes imported projects, resources, and datasets."
     );
     if (!ok) return;
-    await clearAllData();
-    for (const dataset of datasets) {
-      clearDatasetResources(dataset.id);
+    try {
+      await clearAllData();
+      clearAllDatasetResources();
+      clearDatasets();
+      setDatasets([]);
+      setSelectedProject(null);
+      setSelectedProjectKey(null);
+      toast.success("Local data cleared.");
+    } catch (error) {
+      console.error("Failed to clear local data", error);
+      toast.error("Failed to clear local data. Please try again.");
     }
-    clearDatasets();
-    setDatasets([]);
-    setSelectedProject(null);
-    setSelectedProjectKey(null);
-    toast.success("Local data cleared.");
   };
 
   return (
