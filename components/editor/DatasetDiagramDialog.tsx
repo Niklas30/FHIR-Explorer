@@ -13,7 +13,7 @@ type DatasetDiagramDialogProps = {
   resources: DatasetResource[];
 };
 
-type SvgPanZoomInstance = {
+type PanZoomInstance = {
   destroy: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -132,7 +132,7 @@ export const DatasetDiagramDialog = ({
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const panZoomRef = useRef<SvgPanZoomInstance | null>(null);
+  const panZoomRef = useRef<PanZoomInstance | null>(null);
 
   const diagram = useMemo(() => buildMermaidDefinition(resources), [resources]);
 
@@ -195,7 +195,7 @@ export const DatasetDiagramDialog = ({
         default: (
           element: SVGSVGElement,
           options: Record<string, unknown>
-        ) => SvgPanZoomInstance;
+        ) => PanZoomInstance;
       };
       if (!active) return;
       panZoomRef.current = mod.default(svgElement as SVGSVGElement, {

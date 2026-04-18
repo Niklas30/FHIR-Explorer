@@ -1,25 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import { useEffect, useState } from "react";
 
-export function useIsMobile(breakpointPx = 768) {
-  const [isMobile, setIsMobile] = React.useState(false)
+const MOBILE_BREAKPOINT_PX = 768;
 
-  React.useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${breakpointPx - 1}px)`)
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
 
-    const onChange = () => setIsMobile(mediaQuery.matches)
-    onChange()
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", onChange)
-      return () => mediaQuery.removeEventListener("change", onChange)
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`);
+
+    const update = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches);
+    };
+
+    update(mediaQuery);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", update);
+      return () => mediaQuery.removeEventListener("change", update);
     }
 
-    mediaQuery.addListener(onChange)
-    return () => mediaQuery.removeListener(onChange)
-  }, [breakpointPx])
+    // Safari < 14
+    mediaQuery.addListener(update);
+    return () => mediaQuery.removeListener(update);
+  }, []);
 
-  return isMobile
+  return isMobile;
 }
-
