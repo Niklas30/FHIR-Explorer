@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Settings2, Sun, ZoomIn, ZoomOut } from "lucide-react";
+import { Download, Moon, Settings2, Sun, ZoomIn, ZoomOut } from "lucide-react";
 
 type EditorHeaderProps = {
   datasetName: string;
@@ -19,6 +19,7 @@ type EditorHeaderProps = {
   projectKey?: string;
   onCreateResource: () => void;
   onOpenDiagram: () => void;
+  onOpenExport: () => void;
   theme: "light" | "dark";
   onThemeChange: (theme: "light" | "dark") => void;
   zoomLabel: string;
@@ -32,6 +33,7 @@ export const EditorHeader = ({
   projectKey,
   onCreateResource,
   onOpenDiagram,
+  onOpenExport,
   theme,
   onThemeChange,
   zoomLabel,
@@ -97,6 +99,10 @@ export const EditorHeader = ({
           </DropdownMenu>
           <Button variant="outline" onClick={onOpenDiagram}>
             Visualize
+          </Button>
+          <Button variant="outline" onClick={onOpenExport} className="gap-1.5">
+            <Download className="size-4" />
+            Export
           </Button>
         </div>
       </div>

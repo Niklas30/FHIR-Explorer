@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useImporter } from "@/components/importer/useImporter";
+import { ExportDialog } from "@/components/editor/ExportDialog";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
 import type {
@@ -341,6 +342,7 @@ export default function EditorOverviewPage() {
   const { snapshot, refresh, deletePackage, getResourcePayloadsByPackageKeys, clearAllData } = useImporter();
   const [filter, setFilter] = useState("");
   const [viewMode, setViewMode] = useState<"projects" | "datasets">("projects");
+  const [viewModeLoaded, setViewModeLoaded] = useState(false);
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -353,16 +355,61 @@ export default function EditorOverviewPage() {
   const [importDatasetFile, setImportDatasetFile] = useState<File | null>(null);
   const [exportIncludeDatasets, setExportIncludeDatasets] = useState(true);
   const [exportFormat, setExportFormat] = useState<"json" | "zip">("json");
+  const [exportScope, setExportScope] = useState<"project" | "dataset">("project");
+  const [exportDatasetMode, setExportDatasetMode] = useState<
+    "package" | "resources" | "searchset"
+  >("package");
+  const [exportDatasetId, setExportDatasetId] = useState<string | null>(null);
 
   useEffect(() => {
     setDatasets(loadDatasets());
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedView = window.localStorage.getItem("fhir-compose-overview-viewmode");
+    if (storedView === "projects" || storedView === "datasets") {
+      setViewMode(storedView);
+    }
+    setViewModeLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!viewModeLoaded) return;
+    window.localStorage.setItem("fhir-compose-overview-viewmode", viewMode);
+  }, [viewMode, viewModeLoaded]);
 
   const packages = snapshot?.packages ?? [];
   const importHistory = snapshot?.state.importHistory ?? [];
   const currentTarget = snapshot?.state.currentTarget;
 
   const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
+  const exportDatasetOptions = useMemo(() => {
+    if (!exportTarget) return [];
+    return datasets
+      .filter((entry) => entry.projectKey === exportTarget.key)
+      .map((entry) => ({
+        value: entry.id,
+        label: entry.name,
+        secondary: entry.id,
+      }));
+  }, [datasets, exportTarget]);
+
+  useEffect(() => {
+    if (!exportTarget) {
+      setExportDatasetId(null);
+      return;
+    }
+    const list = datasets.filter((entry) => entry.projectKey === exportTarget.key);
+    if (list.length === 0) {
+      setExportDatasetId(null);
+      return;
+    }
+    if (!exportDatasetId || !list.some((entry) => entry.id === exportDatasetId)) {
+      setExportDatasetId(list[0].id);
+    }
+  }, [datasets, exportTarget, exportDatasetId]);
 
   const targetKeys = useMemo(() => {
     const keys: string[] = [];
@@ -529,8 +576,12 @@ export default function EditorOverviewPage() {
 
   const openExportDialog = (project: PackageRecord) => {
     setExportTarget(project);
+    setExportScope("project");
     setExportIncludeDatasets(true);
     setExportFormat("json");
+    setExportDatasetMode("package");
+    const firstDataset = datasets.find((entry) => entry.projectKey === project.key);
+    setExportDatasetId(firstDataset?.id ?? null);
     setExportDialogOpen(true);
   };
 
@@ -582,20 +633,54 @@ export default function EditorOverviewPage() {
       return;
     }
     try {
-      const text = await importDatasetFile.text();
-      const parsed = JSON.parse(text) as
+      const parseImportFile = async (file: File) => {
+        const lower = file.name.toLowerCase();
+        const isZip =
+          lower.endsWith(".zip") || file.type === "application/zip" || file.type === "application/x-zip-compressed";
+        if (!isZip) {
+          const text = await file.text();
+          return JSON.parse(text);
+        }
+        const zip = await JSZip.loadAsync(file);
+        const jsonEntry = Object.values(zip.files).find(
+          (entry) => !entry.dir && entry.name.toLowerCase().endsWith(".json")
+        );
+        if (!jsonEntry) {
+          throw new Error("ZIP does not contain a JSON dataset file.");
+        }
+        const text = await jsonEntry.async("text");
+        return JSON.parse(text);
+      };
+
+      const parsed = (await parseImportFile(importDatasetFile)) as
         | { name?: string; id?: string; resources?: unknown[] }
-        | { datasets?: Array<{ name?: string; id?: string; resources?: unknown[] }> };
+        | { datasets?: Array<{ name?: string; id?: string; resources?: unknown[] }> }
+        | { resourceType?: string; type?: string; entry?: Array<{ resource?: unknown }> }
+        | unknown[];
 
       let importedName: string | undefined;
       let importedId: string | undefined;
       let importedResources: unknown[] | undefined;
 
-      if (Array.isArray((parsed as { datasets?: Array<{ name?: string; id?: string }> }).datasets)) {
+      if (Array.isArray(parsed)) {
+        importedResources = parsed;
+      } else if (
+        parsed &&
+        typeof parsed === "object" &&
+        Array.isArray((parsed as { datasets?: Array<{ name?: string; id?: string }> }).datasets)
+      ) {
         const first = (parsed as { datasets?: Array<{ name?: string; id?: string; resources?: unknown[] }> }).datasets?.[0];
         importedName = first?.name;
         importedId = first?.id;
         importedResources = first?.resources;
+      } else if (
+        parsed &&
+        typeof parsed === "object" &&
+        (parsed as { resourceType?: string }).resourceType === "Bundle" &&
+        (parsed as { type?: string }).type === "searchset"
+      ) {
+        const entries = (parsed as { entry?: Array<{ resource?: unknown }> }).entry ?? [];
+        importedResources = entries.map((entry) => entry.resource).filter(Boolean) as unknown[];
       } else {
         importedName = (parsed as { name?: string }).name;
         importedId = (parsed as { id?: string }).id;
@@ -657,17 +742,55 @@ export default function EditorOverviewPage() {
     toast.success("Project deleted.");
   };
 
-  const handleExportDataset = (dataset: DatasetRecord) => {
+  const buildSearchsetBundle = (entries: unknown[]) => ({
+    resourceType: "Bundle",
+    type: "searchset",
+    total: entries.length,
+    entry: entries.map((resource) => ({ resource })),
+  });
+
+  const exportDatasetWithMode = async (
+    dataset: DatasetRecord,
+    mode: "package" | "resources" | "searchset"
+  ) => {
     const resources = loadDatasetResources(dataset.id).map((entry) => entry.content);
-    const payload = {
-      id: dataset.id,
-      name: dataset.name,
-      projectKey: dataset.projectKey,
-      resources,
-    };
-    const filename = `${toSafeFilename(dataset.name) || "dataset"}.json`;
-    downloadJson(filename, payload);
+    const safeName = toSafeFilename(dataset.name) || "dataset";
+    let payload: unknown;
+    let filename = `${safeName}.json`;
+    let zipName = `${safeName}.zip`;
+
+    if (mode === "package") {
+      payload = {
+        id: dataset.id,
+        name: dataset.name,
+        projectKey: dataset.projectKey,
+        resources,
+      };
+      filename = `${safeName}.json`;
+      zipName = `${safeName}.zip`;
+    } else if (mode === "resources") {
+      payload = resources;
+      filename = `${safeName}-resources.json`;
+      zipName = `${safeName}-resources.zip`;
+    } else {
+      payload = buildSearchsetBundle(resources);
+      filename = `${safeName}-searchset.json`;
+      zipName = `${safeName}-searchset.zip`;
+    }
+
+    if (exportFormat === "json") {
+      downloadJson(filename, payload);
+    } else {
+      const zip = new JSZip();
+      zip.file(filename, JSON.stringify(payload, null, 2));
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(zipName, blob);
+    }
     toast.success("Dataset exported.");
+  };
+
+  const handleExportDataset = (dataset: DatasetRecord) => {
+    exportDatasetWithMode(dataset, "package");
   };
 
   const prepareProjectExport = async (
@@ -806,6 +929,23 @@ export default function EditorOverviewPage() {
     }
     setExportDialogOpen(false);
     setExportTarget(null);
+  };
+
+  const handleExportConfirm = async () => {
+    if (!exportTarget) return;
+    if (exportScope === "dataset") {
+      const dataset = datasets.find((entry) => entry.id === exportDatasetId);
+      if (!dataset) {
+        toast.error("No dataset selected.");
+        return;
+      }
+      await exportDatasetWithMode(dataset, exportDatasetMode);
+      setExportDialogOpen(false);
+      setExportTarget(null);
+      return;
+    }
+
+    await handleExportProjectConfirm();
   };
 
   const handleDeleteAllData = async () => {
@@ -1182,11 +1322,11 @@ export default function EditorOverviewPage() {
               <Input
                 id="dataset-import"
                 type="file"
-                accept=".json,application/json"
+                accept=".json,.zip,application/json,application/zip"
                 onChange={(event) => setImportDatasetFile(event.target.files?.[0] ?? null)}
               />
               <p className="text-xs text-muted-foreground">
-                Accepts a JSON file with a {`{"name": "My Dataset"}`} object.
+                Supports JSON/ZIP dataset exports, resource lists, or FHIR searchset bundles.
               </p>
             </div>
             <div className="grid gap-2">
@@ -1213,7 +1353,7 @@ export default function EditorOverviewPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <ExportDialog
         open={exportDialogOpen}
         onOpenChange={(open) => {
           setExportDialogOpen(open);
@@ -1221,61 +1361,40 @@ export default function EditorOverviewPage() {
             setExportTarget(null);
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Export project</DialogTitle>
-            <DialogDescription>
-              Export {exportTarget?.id ?? "this project"} with its dependencies.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label>Export format</Label>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={exportFormat === "json" ? "secondary" : "outline"}
-                  onClick={() => setExportFormat("json")}
-                >
-                  Single JSON
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={exportFormat === "zip" ? "secondary" : "outline"}
-                  onClick={() => setExportFormat("zip")}
-                >
-                  ZIP (multiple files)
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                JSON exports everything in one file. ZIP splits packages and datasets into
-                separate files with a manifest.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="export-include-datasets"
-                type="checkbox"
-                checked={exportIncludeDatasets}
-                onChange={(event) => setExportIncludeDatasets(event.target.checked)}
-                className="h-4 w-4 rounded border border-foreground/30"
-              />
-              <Label htmlFor="export-include-datasets">Include datasets</Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleExportProjectConfirm} disabled={!exportTarget}>
-              Export project
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Export project"
+        description={`Export ${exportTarget?.id ?? "this project"} or one of its datasets.`}
+        scope={exportScope}
+        scopeOptions={[
+          {
+            value: "project",
+            label: "Project + dependencies",
+          },
+          {
+            value: "dataset",
+            label: "Dataset only",
+            disabled: exportDatasetOptions.length === 0,
+            helper:
+              exportDatasetOptions.length === 0
+                ? "No datasets available for this project."
+                : undefined,
+          },
+        ]}
+        onScopeChange={setExportScope}
+        exportFormat={exportFormat}
+        onExportFormatChange={setExportFormat}
+        datasetMode={exportDatasetMode}
+        onDatasetModeChange={setExportDatasetMode}
+        datasetOptions={exportDatasetOptions}
+        selectedDataset={exportDatasetId}
+        onDatasetChange={setExportDatasetId}
+        includeDatasets={exportIncludeDatasets}
+        onIncludeDatasetsChange={setExportIncludeDatasets}
+        confirmLabel={exportScope === "dataset" ? "Export dataset" : "Export project"}
+        confirmDisabled={
+          !exportTarget || (exportScope === "dataset" && !exportDatasetId)
+        }
+        onConfirm={handleExportConfirm}
+      />
 
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
         <DialogContent>
