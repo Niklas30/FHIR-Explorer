@@ -62,6 +62,11 @@ export class ImporterStorage {
     return (await db.get("packages", key)) as PackageRecord | undefined;
   }
 
+  async deletePackage(key: string) {
+    const db = await this.dbPromise;
+    await db.delete("packages", key);
+  }
+
   async deletePackages(keys: string[]) {
     if (keys.length === 0) return;
     const db = await this.dbPromise;

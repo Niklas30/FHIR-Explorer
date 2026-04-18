@@ -29,6 +29,7 @@ export const ImportWizard = () => {
     lastResult,
     setTarget,
     clearTarget,
+    finalizeTarget,
     setVersionSelection,
     clearVersionSelection,
     importFile,
@@ -205,14 +206,14 @@ export const ImportWizard = () => {
     });
     (async () => {
       await addImportHistory(targetKey);
-      await clearTarget();
+      await finalizeTarget();
       setPackageId("");
       setVersion("");
       setVersionDrafts({});
       setUploadNotice(null);
       setImportLog([]);
     })();
-  }, [allResolved, currentTarget, importLog, clearTarget, addImportHistory]);
+  }, [allResolved, currentTarget, importLog, finalizeTarget, addImportHistory]);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
