@@ -23,6 +23,10 @@ import {
   buildDatasetReferenceIndex,
   isBrokenLocalReference,
 } from "@/lib/fhir-editor/references";
+import {
+  validateResourceWithProfile,
+  type ValidationIssue,
+} from "@/lib/fhir-editor/validation";
 import { cn } from "@/lib/utils";
 
 type ResourceDetailPanelProps = {
@@ -49,6 +53,23 @@ const parseMaxCardinality = (max?: string) => {
   if (!Number.isFinite(parsed) || parsed < 0) return null;
   return parsed;
 };
+
+const isIssueForPath = (issuePath: string, targetPath: string) => {
+  if (issuePath === targetPath) return true;
+  return (
+    issuePath.startsWith(`${targetPath}.`) ||
+    issuePath.startsWith(`${targetPath}[`)
+  );
+};
+
+const getFieldValidationIssues = (
+  issues: ValidationIssue[],
+  targetPath: string
+) =>
+  issues.filter(
+    (issue) =>
+      issue.code !== "reference-broken" && isIssueForPath(issue.path, targetPath)
+  );
 
 export const ResourceDetailPanel = ({
   resource,
@@ -135,6 +156,12 @@ export const ResourceDetailPanel = ({
     () => buildDatasetReferenceIndex(datasetResources),
     [datasetResources]
   );
+  const validationIssues = useMemo(() => {
+    if (!resource || !registry) return [];
+    return validateResourceWithProfile(resource.content, fields, registry, {
+      existingReferences: referenceIndex,
+    });
+  }, [fields, referenceIndex, registry, resource]);
 
   if (!resource) {
     return (
@@ -269,6 +296,7 @@ export const ResourceDetailPanel = ({
                     registry={registry}
                     datasetResources={datasetResources}
                     referenceIndex={referenceIndex}
+                    validationIssues={validationIssues}
                     onChange={handleUpdate}
                     onRemove={() => handleFieldRemove(group.root)}
                   />
@@ -280,6 +308,7 @@ export const ResourceDetailPanel = ({
                     registry={registry}
                     datasetResources={datasetResources}
                     referenceIndex={referenceIndex}
+                    validationIssues={validationIssues}
                     onChange={handleUpdate}
                   />
                 )
@@ -421,6 +450,8 @@ type FieldRowProps = {
   registry: FhirRegistry | null;
   datasetResources: DatasetResource[];
   referenceIndex: Set<string>;
+  validationIssues: ValidationIssue[];
+  issuePath?: string;
   onChange: (nextContent: Record<string, unknown>) => void;
   onRemove: () => void;
 };
@@ -431,6 +462,8 @@ const FieldRow = ({
   registry,
   datasetResources,
   referenceIndex,
+  validationIssues,
+  issuePath,
   onChange,
   onRemove,
 }: FieldRowProps) => {
@@ -488,6 +521,11 @@ const FieldRow = ({
     return isBrokenLocalReference(reference, referenceIndex) ? reference : null;
   });
   const hasBrokenReference = brokenReferences.some(Boolean);
+  const fieldPath = issuePath ?? field.path;
+  const fieldValidationIssues = getFieldValidationIssues(validationIssues, fieldPath);
+  const fieldErrorCount = fieldValidationIssues.filter(
+    (issue) => issue.severity === "error"
+  ).length;
 
   return (
     <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3">
@@ -512,6 +550,15 @@ const FieldRow = ({
               Missing target
             </span>
           ) : null}
+          {fieldErrorCount > 0 ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
+              title={`${fieldErrorCount} validation error${fieldErrorCount === 1 ? "" : "s"}`}
+            >
+              <AlertTriangle className="size-3" />
+              {fieldErrorCount}
+            </span>
+          ) : null}
           {showRemove ? (
             <button
               type="button"
@@ -524,6 +571,13 @@ const FieldRow = ({
         </div>
       </div>
       <div className="mt-3 grid gap-3">
+        {fieldValidationIssues.length > 0 ? (
+          <div className="grid gap-1 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-2 text-xs text-destructive">
+            {fieldValidationIssues.map((issue, index) => (
+              <div key={`${issue.code}-${issue.path}-${index}`}>{issue.message}</div>
+            ))}
+          </div>
+        ) : null}
         {values.length === 0 ? (
           <div className="rounded-md border border-dashed border-foreground/15 px-3 py-3 text-xs text-muted-foreground">
             No values yet.
@@ -565,6 +619,7 @@ type ComplexFieldGroupProps = {
   registry: FhirRegistry | null;
   datasetResources: DatasetResource[];
   referenceIndex: Set<string>;
+  validationIssues: ValidationIssue[];
   onChange: (nextContent: Record<string, unknown>) => void;
 };
 
@@ -577,6 +632,7 @@ const ComplexFieldGroup = ({
   registry,
   datasetResources,
   referenceIndex,
+  validationIssues,
   onChange,
 }: ComplexFieldGroupProps) => {
   const rootValue = getFieldValue(content, group.root);
@@ -608,6 +664,10 @@ const ComplexFieldGroup = ({
   const filteredChildFields = isCodeableRoot
     ? childFields.filter((field) => !["coding", "text"].includes(field.segments[0] ?? ""))
     : childFields;
+  const rootValidationIssues = getFieldValidationIssues(validationIssues, group.root.path);
+  const rootErrorCount = rootValidationIssues.filter(
+    (issue) => issue.severity === "error"
+  ).length;
 
   const updateRoot = (nextValue: unknown) => {
     onChange(setFieldValue(content, group.root, nextValue));
@@ -629,6 +689,15 @@ const ComplexFieldGroup = ({
             </Label>
             <p className="text-xs text-muted-foreground">Group · {items.length} entries</p>
           </div>
+          {rootErrorCount > 0 ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
+              title={`${rootErrorCount} validation error${rootErrorCount === 1 ? "" : "s"}`}
+            >
+              <AlertTriangle className="size-3" />
+              {rootErrorCount}
+            </span>
+          ) : null}
           <Button
             size="sm"
             variant="outline"
@@ -728,6 +797,12 @@ const ComplexFieldGroup = ({
                           registry={registry}
                           datasetResources={datasetResources}
                           referenceIndex={referenceIndex}
+                          validationIssues={validationIssues}
+                          issuePath={
+                            field.path.startsWith(`${group.root.path}.`)
+                              ? `${group.root.path}[${index}].${field.path.slice(group.root.path.length + 1)}`
+                              : field.path
+                          }
                           onChange={handleItemChange}
                           onRemove={() => handleItemChange(removeFieldValue(itemContent, field))}
                         />
@@ -798,6 +873,7 @@ const ComplexFieldGroup = ({
                 registry={registry}
                 datasetResources={datasetResources}
                 referenceIndex={referenceIndex}
+                validationIssues={validationIssues}
                 onChange={handleObjectChange}
                 onRemove={() => handleObjectChange(removeFieldValue(objectValue, field))}
               />
