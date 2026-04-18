@@ -92,11 +92,11 @@ export const ResourceJsonPanel = ({
           </Button>
         </div>
       </div>
-      <div className="flex-1 min-h-0 p-3">
+      <div className="flex-1 min-h-0">
         {resource ? (
-          <ResizablePanelGroup direction="vertical" className="h-full min-h-0">
+          <ResizablePanelGroup orientation="vertical" className="h-full min-h-0">
             <ResizablePanel id="resource-json-source" defaultSize={70} minSize={30} className="min-h-0">
-              <div className="flex h-full min-h-0 flex-col gap-2">
+              <div className="flex h-full min-h-0 flex-col gap-2 p-3">
                 <textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
@@ -114,16 +114,19 @@ export const ResourceJsonPanel = ({
                 ) : null}
               </div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle
+              withHandle
+              className="h-px w-full after:left-0 after:top-1/2 after:inset-y-auto after:h-1 after:w-full after:translate-x-0 after:-translate-y-1/2 [&>div]:rotate-90"
+            />
             <ResizablePanel
               id="resource-json-validation"
               defaultSize={30}
               minSize={15}
               className="min-h-0"
             >
-              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-foreground/10 bg-background">
-                <div className="border-b border-foreground/10 px-3 py-2">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="border-b border-foreground/10 px-4 py-3">
+                  <div className="text-sm font-semibold text-foreground">
                     Validation
                   </div>
                   {parsedDraft.error ? (
@@ -136,7 +139,7 @@ export const ResourceJsonPanel = ({
                   )}
                 </div>
                 <ScrollArea className="flex-1 min-h-0">
-                  <div className="grid gap-2 p-3">
+                  <div className="grid gap-2 p-4">
                     {parsedDraft.error ? (
                       <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-2 text-xs text-destructive">
                         {parsedDraft.error}
