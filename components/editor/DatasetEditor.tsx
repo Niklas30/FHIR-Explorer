@@ -705,6 +705,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
             >
               <ResourceJsonPanel
                 resource={selectedResource}
+                fields={fields}
+                registry={registryState}
                 onUpdateResource={handleUpdateResource}
               />
             </ResizablePanel>

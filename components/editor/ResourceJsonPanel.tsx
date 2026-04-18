@@ -1,51 +1,78 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import type { DatasetResource } from "@/lib/datasets/content";
+import type { FhirRegistry } from "@/lib/fhir-editor/registry";
+import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
+import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
 
 type ResourceJsonPanelProps = {
   resource: DatasetResource | null;
+  fields: FieldDefinition[];
+  registry: FhirRegistry | null;
   onUpdateResource: (resource: DatasetResource) => void;
 };
 
 export const ResourceJsonPanel = ({
   resource,
+  fields,
+  registry,
   onUpdateResource,
 }: ResourceJsonPanelProps) => {
   const [draft, setDraft] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!resource) {
       setDraft("");
-      setError(null);
       return;
     }
     setDraft(JSON.stringify(resource.content, null, 2));
-    setError(null);
   }, [resource]);
 
-  const validateDraft = (nextDraft: string) => {
-    try {
-      const parsed = JSON.parse(nextDraft);
-      if (!parsed || typeof parsed !== "object") {
-        setError("JSON must be an object.");
-        return false;
-      }
-      setError(null);
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid JSON.");
-      return false;
+  const parsedDraft = useMemo(() => {
+    if (!resource) {
+      return { value: null as Record<string, unknown> | null, error: null as string | null };
     }
-  };
+
+    try {
+      const parsed = JSON.parse(draft);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return {
+          value: null as Record<string, unknown> | null,
+          error: "JSON must be an object.",
+        };
+      }
+      return {
+        value: parsed as Record<string, unknown>,
+        error: null as string | null,
+      };
+    } catch (err) {
+      return {
+        value: null as Record<string, unknown> | null,
+        error: err instanceof Error ? err.message : "Invalid JSON.",
+      };
+    }
+  }, [draft, resource]);
+
+  const validationIssues = useMemo(() => {
+    if (!resource || !parsedDraft.value) return [];
+    return validateResourceWithProfile(parsedDraft.value, fields, registry ?? undefined);
+  }, [fields, parsedDraft.value, registry, resource]);
+
+  const errorCount = validationIssues.filter((issue) => issue.severity === "error").length;
+  const warningCount = validationIssues.filter((issue) => issue.severity === "warning").length;
 
   const applyDraft = () => {
     if (!resource) return;
-    if (!validateDraft(draft)) return;
-    const parsed = JSON.parse(draft);
+    if (!parsedDraft.value) return;
     onUpdateResource({
       ...resource,
-      content: parsed as Record<string, unknown>,
+      content: parsedDraft.value,
       updatedAt: Date.now(),
     });
   };
@@ -67,27 +94,78 @@ export const ResourceJsonPanel = ({
       </div>
       <div className="flex-1 min-h-0 p-3">
         {resource ? (
-          <div className="flex h-full flex-col gap-2">
-            <textarea
-              value={draft}
-              onChange={(event) => {
-                const nextDraft = event.target.value;
-                setDraft(nextDraft);
-                validateDraft(nextDraft);
-              }}
-              onBlur={applyDraft}
-              className={[
-                "h-full min-h-0 w-full flex-1 resize-none rounded-lg border bg-slate-950/95 p-4 text-xs text-slate-100 focus-visible:outline-none focus-visible:ring-2",
-                error
-                  ? "border-destructive/60 focus-visible:ring-destructive/40"
-                  : "border-foreground/10 focus-visible:ring-foreground/30",
-              ].join(" ")}
-              spellCheck={false}
-            />
-            {error ? (
-              <div className="text-xs text-destructive">{error}</div>
-            ) : null}
-          </div>
+          <ResizablePanelGroup direction="vertical" className="h-full min-h-0">
+            <ResizablePanel id="resource-json-source" defaultSize={70} minSize={30} className="min-h-0">
+              <div className="flex h-full min-h-0 flex-col gap-2">
+                <textarea
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onBlur={applyDraft}
+                  className={[
+                    "h-full min-h-0 w-full flex-1 resize-none rounded-lg border bg-slate-950/95 p-4 text-xs text-slate-100 focus-visible:outline-none focus-visible:ring-2",
+                    parsedDraft.error
+                      ? "border-destructive/60 focus-visible:ring-destructive/40"
+                      : "border-foreground/10 focus-visible:ring-foreground/30",
+                  ].join(" ")}
+                  spellCheck={false}
+                />
+                {parsedDraft.error ? (
+                  <div className="text-xs text-destructive">{parsedDraft.error}</div>
+                ) : null}
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              id="resource-json-validation"
+              defaultSize={30}
+              minSize={15}
+              className="min-h-0"
+            >
+              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-foreground/10 bg-background">
+                <div className="border-b border-foreground/10 px-3 py-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Validation
+                  </div>
+                  {parsedDraft.error ? (
+                    <div className="mt-1 text-xs text-destructive">JSON parsing error</div>
+                  ) : (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {errorCount} error{errorCount === 1 ? "" : "s"}, {warningCount} warning
+                      {warningCount === 1 ? "" : "s"}
+                    </div>
+                  )}
+                </div>
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="grid gap-2 p-3">
+                    {parsedDraft.error ? (
+                      <div className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-2 text-xs text-destructive">
+                        {parsedDraft.error}
+                      </div>
+                    ) : validationIssues.length === 0 ? (
+                      <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2 py-2 text-xs text-emerald-700">
+                        Keine Validierungsfehler gefunden.
+                      </div>
+                    ) : (
+                      validationIssues.map((issue, index) => (
+                        <div
+                          key={`${issue.code}-${issue.path}-${index}`}
+                          className={[
+                            "rounded-md border px-2 py-2 text-xs",
+                            issue.severity === "error"
+                              ? "border-destructive/30 bg-destructive/5 text-destructive"
+                              : "border-amber-500/30 bg-amber-500/5 text-amber-700",
+                          ].join(" ")}
+                        >
+                          <div className="font-semibold">{issue.path}</div>
+                          <div className="mt-0.5">{issue.message}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         ) : (
           <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
             Select a resource to inspect the JSON payload.

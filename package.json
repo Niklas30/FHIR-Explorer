@@ -6,7 +6,9 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:turbo": "next dev",
+    "build:turbo": "next build"
   },
   "dependencies": {
     "@medplum/core": "^5.0.10",
