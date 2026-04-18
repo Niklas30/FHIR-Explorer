@@ -388,7 +388,9 @@ const FieldRow = ({
   onChange,
   onRemove,
 }: FieldRowProps) => {
-  const kind = resolveFieldKind(field);
+  const kind = field.path.endsWith(".identifier")
+    ? "Identifier"
+    : resolveFieldKind(field);
   const isRepeating = isRepeatingField(field);
   const rawValue = getFieldValue(content, field);
   const values = isRepeating ? (Array.isArray(rawValue) ? rawValue : []) : [rawValue];
@@ -466,6 +468,7 @@ const FieldRow = ({
             value={value}
             options={options}
             referenceOptions={availableReferenceOptions}
+            identifierSystems={field.identifierSystems}
             onChange={(nextValue) => updateItem(index, nextValue)}
             onRemove={isRepeating ? () => removeItem(index) : undefined}
           />
@@ -500,8 +503,11 @@ const ComplexFieldGroup = ({
 }: ComplexFieldGroupProps) => {
   const rootValue = getFieldValue(content, group.root);
   const isRepeating = isRepeatingField(group.root) || Array.isArray(rootValue);
-  const rootKind = resolveFieldKind(group.root);
+  const rootKind = group.root.path.endsWith(".identifier")
+    ? "Identifier"
+    : resolveFieldKind(group.root);
   const rootOptions = resolveValueSetChoices(group.root, registry ?? undefined);
+  const identifierSystems = group.root.identifierSystems ?? [];
   const showRootSelect =
     (rootKind === "CodeableConcept" || rootKind === "Coding") && rootOptions.length > 0;
   const childFields = group.children
@@ -574,7 +580,18 @@ const ComplexFieldGroup = ({
                   </button>
                 </div>
                 <div className="mt-3 grid gap-3">
-                  {showRootSelect ? (
+                  {rootKind === "Identifier" ? (
+                    <FieldInput
+                      kind={rootKind}
+                      value={itemContent}
+                      options={[]}
+                      referenceOptions={[]}
+                      identifierSystems={identifierSystems}
+                      onChange={(nextValue) =>
+                        handleItemChange(isRecord(nextValue) ? nextValue : {})
+                      }
+                    />
+                  ) : showRootSelect ? (
                     <FieldInput
                       kind={rootKind}
                       value={itemContent}
@@ -585,17 +602,19 @@ const ComplexFieldGroup = ({
                       }
                     />
                   ) : null}
-                  {filteredChildFields.map((field) => (
-                    <FieldRow
-                      key={`${field.id}-${index}`}
-                      field={field}
-                      content={itemContent}
-                      registry={registry}
-                      datasetResources={datasetResources}
-                      onChange={handleItemChange}
-                      onRemove={() => handleItemChange(removeFieldValue(itemContent, field))}
-                    />
-                  ))}
+                  {rootKind === "Identifier"
+                    ? null
+                    : filteredChildFields.map((field) => (
+                        <FieldRow
+                          key={`${field.id}-${index}`}
+                          field={field}
+                          content={itemContent}
+                          registry={registry}
+                          datasetResources={datasetResources}
+                          onChange={handleItemChange}
+                          onRemove={() => handleItemChange(removeFieldValue(itemContent, field))}
+                        />
+                      ))}
                 </div>
               </div>
             );
@@ -618,7 +637,18 @@ const ComplexFieldGroup = ({
         </Label>
       </div>
       <div className="mt-3 grid gap-3">
-        {showRootSelect ? (
+        {rootKind === "Identifier" ? (
+          <FieldInput
+            kind={rootKind}
+            value={objectValue}
+            options={[]}
+            referenceOptions={[]}
+            identifierSystems={identifierSystems}
+            onChange={(nextValue) =>
+              handleObjectChange(isRecord(nextValue) ? nextValue : {})
+            }
+          />
+        ) : showRootSelect ? (
           <FieldInput
             kind={rootKind}
             value={objectValue}
@@ -629,17 +659,19 @@ const ComplexFieldGroup = ({
             }
           />
         ) : null}
-        {filteredChildFields.map((field) => (
-          <FieldRow
-            key={field.id}
-            field={field}
-            content={objectValue}
-            registry={registry}
-            datasetResources={datasetResources}
-            onChange={handleObjectChange}
-            onRemove={() => handleObjectChange(removeFieldValue(objectValue, field))}
-          />
-        ))}
+        {rootKind === "Identifier"
+          ? null
+          : filteredChildFields.map((field) => (
+              <FieldRow
+                key={field.id}
+                field={field}
+                content={objectValue}
+                registry={registry}
+                datasetResources={datasetResources}
+                onChange={handleObjectChange}
+                onRemove={() => handleObjectChange(removeFieldValue(objectValue, field))}
+              />
+            ))}
       </div>
     </div>
   );
@@ -804,8 +836,36 @@ type FieldInputProps = {
   value: unknown;
   options: Array<{ system?: string; code: string; display?: string }>;
   referenceOptions: DatasetResource[];
+  identifierSystems?: Array<{ system: string; label: string }>;
   onChange: (value: unknown) => void;
   onRemove?: () => void;
+};
+
+const IDENTIFIER_USE_OPTIONS = ["usual", "official", "temp", "secondary", "old"];
+
+const getCodingAt = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== "object") return {};
+  const record = value as Record<string, unknown>;
+  const coding = record["coding"];
+  if (Array.isArray(coding) && coding.length > 0) {
+    const first = coding[0];
+    if (first && typeof first === "object") {
+      return first as Record<string, unknown>;
+    }
+  }
+  return record;
+};
+
+const setCodingAt = (value: Record<string, unknown>, coding: Record<string, unknown>) => {
+  if ("coding" in value || "text" in value) {
+    return {
+      ...value,
+      coding: [coding],
+    };
+  }
+  return {
+    coding: [coding],
+  };
 };
 
 const FieldInput = ({
@@ -813,10 +873,112 @@ const FieldInput = ({
   value,
   options,
   referenceOptions,
+  identifierSystems,
   onChange,
   onRemove,
 }: FieldInputProps) => {
   const [referenceQuery, setReferenceQuery] = useState("");
+  if (kind === "Identifier") {
+    const current = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+    const system = typeof current.system === "string" ? current.system : "";
+    const idValue = typeof current.value === "string" ? current.value : "";
+    const use = typeof current.use === "string" ? current.use : "";
+    const type = (current.type && typeof current.type === "object" ? current.type : {}) as Record<string, unknown>;
+    const coding = getCodingAt(type);
+    const typeSystem = typeof coding.system === "string" ? coding.system : "";
+    const typeCode = typeof coding.code === "string" ? coding.code : "";
+    const typeDisplay = typeof coding.display === "string" ? coding.display : "";
+    const typeText = typeof type["text"] === "string" ? (type["text"] as string) : "";
+
+    const systemOptions = identifierSystems ?? [];
+    return (
+      <div className="grid gap-2">
+        {systemOptions.length > 0 ? (
+          <select
+            value={system}
+            onChange={(event) =>
+              onChange({ ...current, system: event.target.value || undefined })
+            }
+            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
+          >
+            <option value="">Select system</option>
+            {systemOptions.map((option) => (
+              <option key={option.system} value={option.system}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        <div className="grid gap-2 md:grid-cols-2">
+          <Input
+            value={system}
+            onChange={(event) => onChange({ ...current, system: event.target.value })}
+            placeholder="System URI"
+          />
+          <Input
+            value={idValue}
+            onChange={(event) => onChange({ ...current, value: event.target.value })}
+            placeholder="Identifier value"
+          />
+        </div>
+        <div className="grid gap-2 md:grid-cols-2">
+          <select
+            value={use}
+            onChange={(event) =>
+              onChange({ ...current, use: event.target.value || undefined })
+            }
+            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
+          >
+            <option value="">Use (optional)</option>
+            {IDENTIFIER_USE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={typeText}
+            onChange={(event) =>
+              onChange({ ...current, type: { ...type, text: event.target.value } })
+            }
+            placeholder="Type text (optional)"
+          />
+        </div>
+        <div className="grid gap-2 md:grid-cols-3">
+          <Input
+            value={typeSystem}
+            onChange={(event) => {
+              const nextCoding = { ...coding, system: event.target.value };
+              onChange({ ...current, type: setCodingAt(type, nextCoding) });
+            }}
+            placeholder="Type system (optional)"
+          />
+          <Input
+            value={typeCode}
+            onChange={(event) => {
+              const nextCoding = { ...coding, code: event.target.value };
+              onChange({ ...current, type: setCodingAt(type, nextCoding) });
+            }}
+            placeholder="Type code (optional)"
+          />
+          <Input
+            value={typeDisplay}
+            onChange={(event) => {
+              const nextCoding = { ...coding, display: event.target.value };
+              onChange({ ...current, type: setCodingAt(type, nextCoding) });
+            }}
+            placeholder="Type display (optional)"
+          />
+        </div>
+        {onRemove ? (
+          <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
+            Remove
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
   if (kind === "boolean") {
     return (
       <div className="flex items-center gap-2">
