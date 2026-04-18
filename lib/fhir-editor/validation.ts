@@ -3,6 +3,7 @@ import {
   resolveFieldKind,
   resolveValueSetChoices,
 } from "@/lib/fhir-editor/fields";
+import { collectBrokenReferences } from "@/lib/fhir-editor/references";
 import { normalizeCanonical, type FhirRegistry } from "@/lib/fhir-editor/registry";
 import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
 
@@ -16,6 +17,10 @@ export type ValidationIssue = {
 type CodingValue = {
   system?: string;
   code?: string;
+};
+
+type ValidationOptions = {
+  existingReferences?: Set<string>;
 };
 
 type PathNode = {
@@ -292,7 +297,9 @@ const validateField = (
     parentSegments.length === 0
       ? [{ value: content, relativePath: "" } satisfies PathNode]
       : resolvePathNodes(content, parentSegments);
-  const parents = expandParentNodes(rawParents);
+  const parents = expandParentNodes(rawParents).filter(
+    (node) => node.value !== undefined && node.value !== null
+  );
 
   const repeating = isRepeatingField(field);
   const min = Math.max(0, field.min ?? 0);
@@ -402,11 +409,24 @@ const dedupeIssues = (issues: ValidationIssue[]) => {
 export const validateResourceWithProfile = (
   content: Record<string, unknown>,
   fields: FieldDefinition[],
-  registry?: FhirRegistry
+  registry?: FhirRegistry,
+  options?: ValidationOptions
 ): ValidationIssue[] => {
   const issues: ValidationIssue[] = [];
   for (const field of fields) {
     validateField(content, field, registry, issues);
   }
+
+  if (options?.existingReferences) {
+    const brokenReferences = collectBrokenReferences(content, options.existingReferences);
+    for (const issue of brokenReferences) {
+      pushIssue(issues, {
+        code: "reference-broken",
+        path: issue.jsonPath,
+        message: `Referenz "${issue.reference}" zeigt auf fehlende Resource "${issue.targetKey}".`,
+      });
+    }
+  }
+
   return dedupeIssues(issues);
 };

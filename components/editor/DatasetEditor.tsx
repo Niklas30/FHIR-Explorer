@@ -672,6 +672,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
             >
               <ResourceListPanel
                 resources={resources}
+                registry={registryState}
                 selectedId={selectedResourceId}
                 onSelect={handleSelectResource}
                 onCreateResource={() => setCreateDialogOpen(true)}
@@ -705,6 +706,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
             >
               <ResourceJsonPanel
                 resource={selectedResource}
+                datasetResources={resources}
                 fields={fields}
                 registry={registryState}
                 onUpdateResource={handleUpdateResource}
