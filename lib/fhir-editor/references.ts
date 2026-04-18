@@ -17,7 +17,29 @@ type ParsedReference = {
   key: string;
 };
 
-const REFERENCE_PATTERN = /^([A-Za-z][A-Za-z0-9]+)\/([^\/?#]+)(?:\/_history\/[^\/?#]+)?$/;
+const RESOURCE_TYPE_PATTERN = /^[A-Za-z][A-Za-z0-9]+$/;
+const REFERENCE_ID_PATTERN = /^[A-Za-z0-9\-.]{1,64}$/;
+
+const stripReferenceDecorators = (value: string) =>
+  value.split("?")[0]?.split("#")[0] ?? value;
+
+const resolveReferenceTail = (segments: string[]) => {
+  if (segments.length >= 4 && segments[segments.length - 2] === "_history") {
+    return {
+      resourceType: segments[segments.length - 4],
+      id: segments[segments.length - 3],
+    };
+  }
+
+  if (segments.length >= 2) {
+    return {
+      resourceType: segments[segments.length - 2],
+      id: segments[segments.length - 1],
+    };
+  }
+
+  return null;
+};
 
 const getResourceInstanceId = (resource: DatasetResource) => {
   const resourceId = resource.content.id;
@@ -51,12 +73,20 @@ export const parseLocalReference = (value: string): ParsedReference | null => {
   if (trimmed.includes("://")) return null;
   if (trimmed.startsWith("urn:")) return null;
 
-  const normalized = trimmed.replace(/^\/+/, "");
-  const match = normalized.match(REFERENCE_PATTERN);
-  if (!match) return null;
+  const normalized = stripReferenceDecorators(trimmed)
+    .replace(/^\/+/, "")
+    .replace(/^\.\/+/, "")
+    .replace(/\/+$/, "");
+  if (!normalized) return null;
 
-  const resourceType = match[1];
-  const id = match[2];
+  const segments = normalized.split("/").filter(Boolean);
+  const tail = resolveReferenceTail(segments);
+  if (!tail) return null;
+  const { resourceType, id } = tail;
+
+  if (!RESOURCE_TYPE_PATTERN.test(resourceType)) return null;
+  if (!REFERENCE_ID_PATTERN.test(id)) return null;
+
   return {
     resourceType,
     id,
