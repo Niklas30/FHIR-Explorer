@@ -77,6 +77,7 @@ export type ValueSet = FhirResource & {
 
 export type CodeSystem = FhirResource & {
   resourceType: "CodeSystem";
+  valueSet?: string;
   concept?: Array<{
     code?: string;
     display?: string;
@@ -181,6 +182,27 @@ const flattenConcepts = (
   return options;
 };
 
+const resolveCodeSystemOptions = (
+  canonical: string,
+  registry: FhirRegistry
+): CodingOption[] => {
+  const options: CodingOption[] = [];
+
+  const byUrl = registry.codeSystemsByUrl.get(canonical);
+  if (byUrl?.concept) {
+    options.push(...flattenConcepts(byUrl.concept, byUrl.url));
+  }
+
+  for (const codeSystem of registry.codeSystemsByUrl.values()) {
+    if (!codeSystem.valueSet) continue;
+    if (normalizeCanonical(codeSystem.valueSet) !== canonical) continue;
+    if (!codeSystem.concept) continue;
+    options.push(...flattenConcepts(codeSystem.concept, codeSystem.url));
+  }
+
+  return options;
+};
+
 const resolveValueSetOptionsInternal = (
   canonical: string | undefined,
   registry: FhirRegistry,
@@ -192,7 +214,9 @@ const resolveValueSetOptionsInternal = (
   visited.add(normalized);
 
   const valueSet = registry.valueSetsByUrl.get(normalized);
-  if (!valueSet) return [];
+  if (!valueSet) {
+    return resolveCodeSystemOptions(normalized, registry);
+  }
 
   const options: CodingOption[] = [];
 
