@@ -72,11 +72,13 @@ export const resolveFieldKind = (field: FieldDefinition): FieldKind => {
 };
 
 export const isRepeatingField = (field: FieldDefinition) => {
-  const effectiveMax = field.max ?? field.baseMax;
-  if (!effectiveMax && field.path.endsWith(".identifier")) {
+  // JSON shape follows the base model cardinality. A profile can constrain
+  // max (e.g. * -> 1), but the serialized field still remains array-shaped.
+  const shapeMax = field.baseMax ?? field.max;
+  if (!shapeMax && field.path.endsWith(".identifier")) {
     return true;
   }
-  return Boolean(effectiveMax && effectiveMax !== "1" && effectiveMax !== "0");
+  return Boolean(shapeMax && shapeMax !== "1" && shapeMax !== "0");
 };
 
 export const getFieldValue = (

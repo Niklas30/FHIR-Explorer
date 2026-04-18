@@ -278,6 +278,7 @@ export const buildFieldDefinitions = (
     : undefined;
   const baseDefinitions = collectBaseDefinitions(baseDefinition);
   const baseElements: ElementDefinition[] = [];
+  const structuralBaseMaxByPath = new Map<string, string | undefined>();
 
   const baseByPath = new Map<string, ElementDefinition>();
   for (const base of baseDefinitions.reverse()) {
@@ -285,6 +286,9 @@ export const buildFieldDefinitions = (
     baseElements.push(...baseDefinitionElements);
     for (const element of baseDefinitionElements) {
       if (!element.path) continue;
+      if (!structuralBaseMaxByPath.has(element.path)) {
+        structuralBaseMaxByPath.set(element.path, element.max);
+      }
       if (isSliceElementForPath(element)) continue;
       const previous = baseByPath.get(element.path);
       baseByPath.set(
@@ -660,7 +664,10 @@ export const buildFieldDefinitions = (
       label: buildLabel(merged, segments),
       min: merged.min,
       max: merged.max,
-      baseMax: baseElement?.max ?? typeBackedElement?.max,
+      baseMax:
+        structuralBaseMaxByPath.get(path) ??
+        baseElement?.max ??
+        typeBackedElement?.max,
       type: inferredType,
       binding: merged.binding,
       identifierSystems: path.endsWith(".identifier")
