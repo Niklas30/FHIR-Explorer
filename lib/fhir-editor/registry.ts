@@ -27,6 +27,13 @@ export type ElementDefinition = {
     strength?: string;
     valueSet?: string;
   };
+  patternCodeableConcept?: {
+    coding?: Array<{
+      system?: string;
+      code?: string;
+      display?: string;
+    }>;
+  };
 };
 
 export type StructureDefinition = FhirResource & {

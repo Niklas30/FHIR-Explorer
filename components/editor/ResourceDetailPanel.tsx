@@ -437,9 +437,6 @@ const FieldRow = ({
             </div>
           ) : null}
           <Label className="text-sm font-semibold text-foreground">{field.label}</Label>
-          {field.short ? (
-            <p className="text-xs text-muted-foreground">{field.short}</p>
-          ) : null}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {(field.min ?? 0) > 0 ? <span className="text-emerald-600">Required</span> : null}
@@ -469,6 +466,7 @@ const FieldRow = ({
             options={options}
             referenceOptions={availableReferenceOptions}
             identifierSystems={field.identifierSystems}
+            identifierTypeOptions={field.identifierTypeOptions}
             onChange={(nextValue) => updateItem(index, nextValue)}
             onRemove={isRepeating ? () => removeItem(index) : undefined}
           />
@@ -508,6 +506,7 @@ const ComplexFieldGroup = ({
     : resolveFieldKind(group.root);
   const rootOptions = resolveValueSetChoices(group.root, registry ?? undefined);
   const identifierSystems = group.root.identifierSystems ?? [];
+  const identifierTypeOptions = group.root.identifierTypeOptions ?? [];
   const showRootSelect =
     (rootKind === "CodeableConcept" || rootKind === "Coding") && rootOptions.length > 0;
   const childFields = group.children
@@ -587,6 +586,7 @@ const ComplexFieldGroup = ({
                       options={[]}
                       referenceOptions={[]}
                       identifierSystems={identifierSystems}
+                      identifierTypeOptions={identifierTypeOptions}
                       onChange={(nextValue) =>
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
@@ -644,6 +644,7 @@ const ComplexFieldGroup = ({
             options={[]}
             referenceOptions={[]}
             identifierSystems={identifierSystems}
+            identifierTypeOptions={identifierTypeOptions}
             onChange={(nextValue) =>
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
@@ -837,6 +838,7 @@ type FieldInputProps = {
   options: Array<{ system?: string; code: string; display?: string }>;
   referenceOptions: DatasetResource[];
   identifierSystems?: Array<{ system: string; label: string }>;
+  identifierTypeOptions?: Array<{ system?: string; code: string; display?: string }>;
   onChange: (value: unknown) => void;
   onRemove?: () => void;
 };
@@ -874,6 +876,7 @@ const FieldInput = ({
   options,
   referenceOptions,
   identifierSystems,
+  identifierTypeOptions,
   onChange,
   onRemove,
 }: FieldInputProps) => {
@@ -889,6 +892,8 @@ const FieldInput = ({
     const typeCode = typeof coding.code === "string" ? coding.code : "";
     const typeDisplay = typeof coding.display === "string" ? coding.display : "";
     const typeText = typeof type["text"] === "string" ? (type["text"] as string) : "";
+    const typeOptions = identifierTypeOptions ?? [];
+    const typeKey = typeCode ? `${typeSystem}|${typeCode}` : "";
 
     const systemOptions = identifierSystems ?? [];
     return (
@@ -907,6 +912,40 @@ const FieldInput = ({
                 {option.label}
               </option>
             ))}
+          </select>
+        ) : null}
+        {typeOptions.length > 0 ? (
+          <select
+            value={typeKey}
+            onChange={(event) => {
+              const nextKey = event.target.value;
+              if (!nextKey) {
+                const { type: _type, ...rest } = current;
+                onChange(rest);
+                return;
+              }
+              const [systemValue, codeValue] = nextKey.split("|");
+              const match = typeOptions.find(
+                (option) => `${option.system ?? ""}|${option.code}` === nextKey
+              );
+              const nextCoding = {
+                system: match?.system ?? systemValue,
+                code: match?.code ?? codeValue,
+                display: match?.display,
+              };
+              onChange({ ...current, type: setCodingAt(type, nextCoding) });
+            }}
+            className="h-9 w-full rounded-md border border-foreground/20 bg-background px-3 text-sm"
+          >
+            <option value="">Select identifier type</option>
+            {typeOptions.map((option) => {
+              const key = `${option.system ?? ""}|${option.code}`;
+              return (
+                <option key={key} value={key}>
+                  {formatOptionLabel(option.system, option.code, option.display)}
+                </option>
+              );
+            })}
           </select>
         ) : null}
         <div className="grid gap-2 md:grid-cols-2">
