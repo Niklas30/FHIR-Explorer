@@ -57,7 +57,7 @@ export const ResourceDetailPanel = ({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("fhir-compose-field-search-visible");
+    const stored = window.localStorage.getItem("fhir-explorer-field-search-visible");
     if (stored === "true" || stored === "false") {
       setShowSearch(stored === "true");
     }
@@ -67,7 +67,7 @@ export const ResourceDetailPanel = ({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!settingsLoaded) return;
-    window.localStorage.setItem("fhir-compose-field-search-visible", String(showSearch));
+    window.localStorage.setItem("fhir-explorer-field-search-visible", String(showSearch));
   }, [showSearch, settingsLoaded]);
 
   const groupedFields = useMemo(() => {

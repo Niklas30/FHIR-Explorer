@@ -11,7 +11,7 @@ export type DatasetResource = {
 
 type DatasetResourceStore = Record<string, DatasetResource[]>;
 
-const STORAGE_KEY = "fhir-compose-dataset-resources";
+const STORAGE_KEY = "fhir-explorer-dataset-resources";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));

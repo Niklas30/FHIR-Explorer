@@ -162,7 +162,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [zoomPercent, setZoomPercent] = useState(100);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [viewSettingsLoaded, setViewSettingsLoaded] = useState(false);
-  const layoutStorageKey = "fhir-compose-editor-layout";
+  const layoutStorageKey = "fhir-explorer-editor-layout";
   const [panelLayout, setPanelLayout] = useState<Layout | null>(null);
 
   const { snapshot, getResourcePayloadsByPackageKeys } = useImporter();
@@ -188,13 +188,19 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   }, [datasetId]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    const name = dataset?.name?.trim();
+    document.title = name ? `Editor - ${name}` : "Editor";
+  }, [dataset?.name]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     setViewSettingsLoaded(false);
-    const storedZoom = Number(window.localStorage.getItem("fhir-compose-zoom"));
+    const storedZoom = Number(window.localStorage.getItem("fhir-explorer-zoom"));
     if (!Number.isNaN(storedZoom) && storedZoom >= 70 && storedZoom <= 140) {
       setZoomPercent(storedZoom);
     }
-    const storedTheme = window.localStorage.getItem("fhir-compose-theme");
+    const storedTheme = window.localStorage.getItem("fhir-explorer-theme");
     if (storedTheme === "light" || storedTheme === "dark") {
       setTheme(storedTheme);
     }
@@ -220,7 +226,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!viewSettingsLoaded) return;
-    window.localStorage.setItem("fhir-compose-zoom", String(zoomPercent));
+    window.localStorage.setItem("fhir-explorer-zoom", String(zoomPercent));
   }, [zoomPercent]);
 
   useEffect(() => {
@@ -228,7 +234,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     if (typeof window !== "undefined") {
       if (!viewSettingsLoaded) return;
-      window.localStorage.setItem("fhir-compose-theme", theme);
+      window.localStorage.setItem("fhir-explorer-theme", theme);
     }
   }, [theme, viewSettingsLoaded]);
 
@@ -471,7 +477,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     if (!prepared) return;
 
     const payload: ComposeProjectExport = {
-      type: "fhir-compose-project",
+      type: "fhir-explorer-project",
       version: 1,
       targetKey: project.key,
       exportedAt: new Date().toISOString(),
@@ -519,7 +525,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     });
 
     const manifest: ComposeProjectArchiveManifest = {
-      type: "fhir-compose-project-archive",
+      type: "fhir-explorer-project-archive",
       version: 1,
       targetKey: project.key,
       exportedAt: new Date().toISOString(),

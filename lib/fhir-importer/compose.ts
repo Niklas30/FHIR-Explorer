@@ -23,7 +23,7 @@ export type ComposeDatasetExport = {
 };
 
 export type ComposeProjectExport = {
-  type: "fhir-compose-project";
+  type: "fhir-explorer-project";
   version: 1;
   targetKey?: string;
   exportedAt: string;
@@ -35,14 +35,14 @@ export const isComposeProjectExport = (value: unknown): value is ComposeProjectE
   if (!value || typeof value !== "object") return false;
   const candidate = value as ComposeProjectExport;
   return (
-    candidate.type === "fhir-compose-project" &&
+    candidate.type === "fhir-explorer-project" &&
     candidate.version === 1 &&
     Array.isArray(candidate.packages)
   );
 };
 
 export type ComposeProjectArchiveManifest = {
-  type: "fhir-compose-project-archive";
+  type: "fhir-explorer-project-archive";
   version: 1;
   targetKey?: string;
   exportedAt: string;
@@ -67,7 +67,7 @@ export const isComposeProjectArchive = (
   if (!value || typeof value !== "object") return false;
   const candidate = value as ComposeProjectArchiveManifest;
   return (
-    candidate.type === "fhir-compose-project-archive" &&
+    candidate.type === "fhir-explorer-project-archive" &&
     candidate.version === 1 &&
     Array.isArray(candidate.packages)
   );

@@ -362,12 +362,17 @@ export default function EditorOverviewPage() {
   const [exportDatasetId, setExportDatasetId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.title = "Projects";
+  }, []);
+
+  useEffect(() => {
     setDatasets(loadDatasets());
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const storedView = window.localStorage.getItem("fhir-compose-overview-viewmode");
+    const storedView = window.localStorage.getItem("fhir-explorer-overview-viewmode");
     if (storedView === "projects" || storedView === "datasets") {
       setViewMode(storedView);
     }
@@ -377,7 +382,7 @@ export default function EditorOverviewPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!viewModeLoaded) return;
-    window.localStorage.setItem("fhir-compose-overview-viewmode", viewMode);
+    window.localStorage.setItem("fhir-explorer-overview-viewmode", viewMode);
   }, [viewMode, viewModeLoaded]);
 
   const packages = snapshot?.packages ?? [];
@@ -856,7 +861,7 @@ export default function EditorOverviewPage() {
     if (!prepared) return;
 
     const payload: ComposeProjectExport = {
-      type: "fhir-compose-project",
+      type: "fhir-explorer-project",
       version: 1,
       targetKey: project.key,
       exportedAt: new Date().toISOString(),
@@ -904,7 +909,7 @@ export default function EditorOverviewPage() {
     });
 
     const manifest: ComposeProjectArchiveManifest = {
-      type: "fhir-compose-project-archive",
+      type: "fhir-explorer-project-archive",
       version: 1,
       targetKey: project.key,
       exportedAt: new Date().toISOString(),

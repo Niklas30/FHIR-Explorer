@@ -43,8 +43,8 @@ const getResourceSecondary = (resource: DatasetResource) => {
 
 type SortMode = "lastSelected" | "lastCreated" | "alphabetic";
 
-const SORT_STORAGE_KEY = "fhir-compose-resource-sort";
-const SEARCH_VISIBLE_KEY = "fhir-compose-resource-search-visible";
+const SORT_STORAGE_KEY = "fhir-explorer-resource-sort";
+const SEARCH_VISIBLE_KEY = "fhir-explorer-resource-search-visible";
 
 export const ResourceListPanel = ({
   resources,
