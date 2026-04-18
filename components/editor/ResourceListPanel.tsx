@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MoreVertical, Plus, Search } from "lucide-react";
+import { ChevronRight, MoreVertical, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -58,6 +58,7 @@ export const ResourceListPanel = ({
   const [sortMode, setSortMode] = useState<SortMode>("lastSelected");
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [collapsedTypes, setCollapsedTypes] = useState<Set<string>>(() => new Set());
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
@@ -117,8 +118,20 @@ export const ResourceListPanel = ({
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [resources, sortMode, query]);
 
+  const toggleType = (resourceType: string) => {
+    setCollapsedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(resourceType)) {
+        next.delete(resourceType);
+      } else {
+        next.add(resourceType);
+      }
+      return next;
+    });
+  };
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-foreground/10 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -162,7 +175,7 @@ export const ResourceListPanel = ({
           </div>
         ) : null}
       </div>
-      <ScrollArea className="h-full">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="grid gap-3 p-3">
           {resources.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
@@ -177,13 +190,26 @@ export const ResourceListPanel = ({
               ) : null}
             </div>
           ) : (
-            groupedResources.map(([resourceType, entries]) => (
+            groupedResources.map(([resourceType, entries]) => {
+              const isCollapsed = collapsedTypes.has(resourceType);
+              return (
               <div key={resourceType} className="grid gap-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {resourceType} · {entries.length}
-                </div>
-                <div className="grid gap-2">
-                  {entries.map((resource) => {
+                <button
+                  type="button"
+                  onClick={() => toggleType(resourceType)}
+                  className="flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  aria-expanded={!isCollapsed}
+                >
+                  <ChevronRight
+                    className={cn("size-3 transition-transform", isCollapsed ? "" : "rotate-90")}
+                  />
+                  <span>
+                    {resourceType} · {entries.length}
+                  </span>
+                </button>
+                {isCollapsed ? null : (
+                  <div className="grid gap-2">
+                    {entries.map((resource) => {
                     const isActive = resource.id === selectedId;
                     return (
                       <div
@@ -254,10 +280,12 @@ export const ResourceListPanel = ({
                         </span>
                       </div>
                     );
-                  })}
-                </div>
+                    })}
+                  </div>
+                )}
               </div>
-            ))
+            );
+            })
           )}
         </div>
       </ScrollArea>
