@@ -1,59 +1,78 @@
 # Health Compose Editor
 
-Local-first FHIR R4 project + dataset editor that builds forms from StructureDefinitions, validates resources live, and exports datasets/projects as JSON or ZIP.
+Local‑first FHIR R4 **package importer**, **project/dataset manager**, and **resource editor**.
+Health Compose Editor runs entirely in the browser: no backend required.
 
-This app is designed to run entirely in the browser:
+> Status: work in progress (internal tooling). APIs and UX may change.
 
-- Imported FHIR packages are cached locally (via the importer store/worker).
-- Datasets and dataset resources are stored locally (LocalStorage).
-- No backend is required.
+## What it does
 
-## Features
+- **Import FHIR packages** (target + transitive dependencies) and visualize the dependency graph.
+- **Create projects and datasets** and manage them from an overview.
+- **Edit resources** with profile‑driven forms generated from `StructureDefinition`.
+- **Validate resources live** (cardinality, required fields, bindings, references).
+- **Export** datasets/projects as JSON or ZIP.
 
-- Import FHIR packages (target + dependencies) and inspect the dependency graph
-- Create multiple datasets per project
-- Profile-driven forms generated from StructureDefinitions (FHIR R4)
-- Live validation (powered by `@medplum/core`)
-- Dataset editor with:
-  - Resource list + JSON preview
-  - Export dataset/resources/searchset
-  - Duplicate resources
-  - Dataset metadata dialog (name + project key)
-- Project/Dataset overview:
-  - Export / delete / duplicate datasets
-  - Edit dataset metadata from the context menu (same dialog as the editor)
-  - Dependency tree view
+## Key concepts
 
-## Getting Started
+- **Project**: A chosen “target package” plus its dependency closure.
+- **Dataset**: A collection of FHIR resources belonging to a project.
+- **Registry**: In‑memory index of `StructureDefinition`, `ValueSet`, `CodeSystem` used for rendering and validation.
+
+## Data model & privacy
+
+This application is designed for **local-first** usage:
+
+- Imported packages, cached resources, and datasets are stored **locally in your browser**.
+- There is **no server component** in the default setup.
+- Use the in‑app settings to clear local data when needed.
+
+If you work with sensitive data, treat your browser storage like any other local persistence layer.
+
+## Tech stack
+
+- Next.js (App Router), React, TypeScript
+- Tailwind CSS + Radix UI
+- `@medplum/core` for parts of FHIR handling/validation
+- Mermaid for dependency graph visualization
+- IndexedDB / LocalStorage (local persistence)
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js + npm
+- Node.js (recommended: **Node 20 LTS**)
+- npm
 
-### Install & Run
+### Install
 
 ```bash
 npm install
+```
+
+### Run (dev)
+
+```bash
 npm run dev
 ```
 
 Then open `http://localhost:3000`.
 
-## Project Structure (High Level)
+Tip: There are alternate scripts using Turbo mode:
 
-- `app/` – Next.js App Router pages (overview, importer, dataset editor routes)
-- `components/` – UI and editor components
-- `lib/` – importer, dependency graph, profile/field building, validation, dataset storage helpers
-- `tests/` – unit tests (FHIR importer/validation/profile logic)
+```bash
+npm run dev:turbo
+```
 
 ## Scripts
 
-- `npm run dev` – start dev server (Next.js)
-- `npm run build` – production build
+- `npm run dev` – start dev server (Webpack)
+- `npm run dev:turbo` – start dev server (Turbo)
+- `npm run build` – production build (Webpack)
+- `npm run build:turbo` – production build (Turbo)
 - `npm run start` – run production server
-- `npm run lint` – eslint
+- `npm run lint` – ESLint
 - `npm test` – unit tests (Vitest)
-- `npm run test:watch` – watch mode
 
 ## Testing
 
@@ -69,34 +88,26 @@ Run tests in watch mode:
 npm run test:watch
 ```
 
-Current FHIR unit tests live in `tests/` and cover:
+### Test fixtures
 
-- Profile/field construction and cardinality behavior
-- ValueSet/CodeSystem dependency resolution
-- Local reference parsing and broken-reference detection
-- Validation behavior (required fields, cardinality, references)
-- Simulated UI action flows (add/remove fields, add/remove array items, group edits)
+Unit tests use committed fixtures under `tests/fixtures/fhir-packages/`.
+At test start, fixtures are copied into a temporary directory and exposed via `FHIR_TEST_FIXTURE_ROOT`.
 
-### Fixture lifecycle
+## Project structure
 
-- Required FHIR fixture files are prepared automatically at test start in a temporary directory.
-- Source fixture data is committed under `tests/fixtures/fhir-packages/` and copied into that directory.
-- Temporary fixture files are deleted automatically after the test run.
+- `app/` – Next.js routes (overview, importer, editor)
+- `components/` – UI components (dialogs, editors, layout)
+- `lib/` – importer logic, dependency graph, profile/field building, validation, persistence
+- `tests/` – unit tests and fixture setup
 
-## Data & Privacy
+## Contributing
 
-This app stores imported packages, cached resources, and datasets locally in your browser storage.
-Use the in-app settings to clear local data if needed.
+This repository is being prepared for a broader release.
+If you contribute internally:
 
-## Contributing (Future Open Source)
-
-This repository is being prepared for open-source release. Until then:
-
-- Keep changes small and focused.
-- Prefer adding/adjusting tests for non-trivial behavior.
-- Ensure `npm test` and `npx tsc -p tsconfig.json --noEmit` are green.
-
-Once the project is public, we’ll add contribution guidelines, a code of conduct, and a license file.
+- Keep changes focused and well-scoped.
+- Add/adjust tests for non-trivial behavior.
+- Ensure `npm test` and `npm run lint` are green.
 
 ## Legal
 
