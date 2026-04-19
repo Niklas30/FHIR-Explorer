@@ -25,7 +25,12 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 const detectSystemLocale = (): Locale => {
   if (typeof navigator === "undefined") return "de";
-  return navigator.language.toLowerCase().startsWith("de") ? "de" : "en";
+  const normalized = navigator.language.toLowerCase();
+  if (normalized.startsWith("de")) return "de";
+  if (normalized.startsWith("fr")) return "fr";
+  if (normalized.startsWith("es")) return "es";
+  if (normalized.startsWith("it")) return "it";
+  return "en";
 };
 
 type I18nProviderProps = {
