@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { byLocale } from "@/lib/i18n/select";
 
 const defaultAccept = ".tgz,application/gzip,application/x-gzip";
 const defaultHint = "Drag & drop here, or click to choose a file.";
@@ -26,19 +28,48 @@ const toClipboardFile = (content: string, filename: string) =>
   new File([content], filename, { type: "application/json" });
 
 export const FileDropzone = ({
-  label = "Upload file",
+  label,
   helperText,
   disabled,
   onFiles,
   accept = defaultAccept,
-  hint = defaultHint,
+  hint,
   multiple = true,
-  chooseButtonLabel = "Choose File",
+  chooseButtonLabel,
   enableClipboard = false,
-  clipboardButtonLabel = "Paste from Clipboard",
-  clipboardHint = "Tip: focus this box and press Ctrl/Cmd+V",
+  clipboardButtonLabel,
+  clipboardHint,
   clipboardFilename = "clipboard-import.json",
 }: FileDropzoneProps) => {
+  const { locale } = useI18n();
+  const i18n = byLocale(locale, {
+    de: {
+      label: "Datei hochladen",
+      hint: "Dateien hier hineinziehen",
+      chooseFile: "Datei auswählen",
+      pasteFromClipboard: "Aus Zwischenablage einfügen",
+      clipboardTip: "Tipp: Feld fokussieren und Strg/Cmd+V drücken",
+      clipboardNotSupported:
+        "Zwischenablage-Zugriff wird in diesem Browser nicht unterstützt.",
+      clipboardEmpty: "Zwischenablage ist leer.",
+      clipboardImportedJson: "JSON-Text aus der Zwischenablage importiert.",
+      clipboardBlocked: "Zwischenablage-Zugriff wurde blockiert.",
+      clipboardImportedFiles: "Datei(en) aus der Zwischenablage importiert.",
+    },
+    en: {
+      label: "Upload file",
+      hint: "Drag & drop files here",
+      chooseFile: "Choose File",
+      pasteFromClipboard: "Paste from Clipboard",
+      clipboardTip: "Tip: focus this box and press Ctrl/Cmd+V",
+      clipboardNotSupported: "Clipboard access is not supported in this browser.",
+      clipboardEmpty: "Clipboard is empty.",
+      clipboardImportedJson: "Imported JSON text from clipboard.",
+      clipboardBlocked: "Clipboard access was blocked.",
+      clipboardImportedFiles: "Imported file(s) from clipboard.",
+    },
+  });
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [clipboardStatus, setClipboardStatus] = useState<string | null>(null);
@@ -53,20 +84,20 @@ export const FileDropzone = ({
   const handlePasteFromClipboard = async () => {
     if (disabled || !enableClipboard) return;
     if (typeof navigator === "undefined" || !navigator.clipboard?.readText) {
-      setClipboardStatus("Clipboard access is not supported in this browser.");
+      setClipboardStatus(i18n.clipboardNotSupported);
       return;
     }
     try {
-      const text = await navigator.clipboard.readText();
-      if (!text.trim()) {
-        setClipboardStatus("Clipboard is empty.");
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        setClipboardStatus(i18n.clipboardEmpty);
         return;
       }
-      handleFiles([toClipboardFile(text, clipboardFilename)]);
-      setClipboardStatus("Imported JSON text from clipboard.");
+      handleFiles([toClipboardFile(clipboardText, clipboardFilename)]);
+      setClipboardStatus(i18n.clipboardImportedJson);
     } catch (error) {
       console.error(error);
-      setClipboardStatus("Clipboard access was blocked.");
+      setClipboardStatus(i18n.clipboardBlocked);
     }
   };
 
@@ -103,21 +134,23 @@ export const FileDropzone = ({
         const pastedFiles = Array.from(event.clipboardData.files ?? []);
         if (pastedFiles.length > 0) {
           handleFiles(pastedFiles);
-          setClipboardStatus(`Imported ${pastedFiles.length} file(s) from clipboard.`);
+          setClipboardStatus(
+            `${pastedFiles.length} ${i18n.clipboardImportedFiles}`
+          );
           return;
         }
 
-        const text = event.clipboardData.getData("text/plain");
-        if (!text.trim()) {
-          setClipboardStatus("Clipboard is empty.");
+        const clipboardText = event.clipboardData.getData("text/plain");
+        if (!clipboardText.trim()) {
+          setClipboardStatus(i18n.clipboardEmpty);
           return;
         }
-        handleFiles([toClipboardFile(text, clipboardFilename)]);
-        setClipboardStatus("Imported JSON text from clipboard.");
+        handleFiles([toClipboardFile(clipboardText, clipboardFilename)]);
+        setClipboardStatus(i18n.clipboardImportedJson);
       }}
     >
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-sm font-medium text-foreground">{label ?? i18n.label}</p>
         {helperText ? (
           <p className="text-xs text-muted-foreground">{helperText}</p>
         ) : null}
@@ -129,7 +162,7 @@ export const FileDropzone = ({
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
         >
-          {chooseButtonLabel}
+          {chooseButtonLabel ?? i18n.chooseFile}
         </Button>
         {enableClipboard ? (
           <Button
@@ -138,7 +171,7 @@ export const FileDropzone = ({
             disabled={disabled}
             onClick={() => void handlePasteFromClipboard()}
           >
-            {clipboardButtonLabel}
+            {clipboardButtonLabel ?? i18n.pasteFromClipboard}
           </Button>
         ) : null}
         <input
@@ -149,11 +182,11 @@ export const FileDropzone = ({
           multiple={multiple}
           onChange={(event) => handleFiles(event.target.files)}
         />
-        <span className="text-xs text-muted-foreground">{hint}</span>
+        <span className="text-xs text-muted-foreground">{hint ?? i18n.hint}</span>
       </div>
       {enableClipboard ? (
         <p className="text-xs text-muted-foreground">
-          {clipboardStatus ?? clipboardHint}
+          {clipboardStatus ?? clipboardHint ?? i18n.clipboardTip}
         </p>
       ) : null}
     </div>

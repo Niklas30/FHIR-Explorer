@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import type {
   ImportProgress,
   ImporterSnapshot,
@@ -10,6 +11,7 @@ import type {
 import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
 import { ImporterClient } from "@/lib/fhir-importer/client";
 import { registryStrategies } from "@/lib/fhir-importer/registry";
+import { byLocale } from "@/lib/i18n/select";
 
 type UseImporterResult = {
   snapshot: ImporterSnapshot | null;
@@ -38,12 +40,27 @@ type UseImporterResult = {
 const defaultProgress: ImportProgress = { phase: "idle" };
 
 export const useImporter = (): UseImporterResult => {
+  const { locale } = useI18n();
   const [client, setClient] = useState<ImporterClient | null>(null);
 
   const [snapshot, setSnapshot] = useState<ImporterSnapshot | null>(null);
   const [progress, setProgress] = useState<ImportProgress>(defaultProgress);
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ImportResult | null>(null);
+  const text = byLocale(locale, {
+    de: {
+      failedToLoadState: "Importer-Status konnte nicht geladen werden",
+      importFailed: "Import fehlgeschlagen",
+      clientNotReady: "Importer-Client ist noch nicht bereit.",
+      composeImportFailed: "Import der Compose-Projektdatei fehlgeschlagen",
+    },
+    en: {
+      failedToLoadState: "Failed to load importer state",
+      importFailed: "Import failed",
+      clientNotReady: "Importer client is not ready yet.",
+      composeImportFailed: "Compose project import failed",
+    },
+  });
 
   const refresh = useCallback(async () => {
     if (!client) return;
@@ -54,9 +71,9 @@ export const useImporter = (): UseImporterResult => {
   useEffect(() => {
     if (!client) return;
     refresh().catch((err) => {
-      setError(err instanceof Error ? err.message : "Failed to load importer state");
+      setError(err instanceof Error ? err.message : text.failedToLoadState);
     });
-  }, [client, refresh]);
+  }, [client, refresh, text.failedToLoadState]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -125,13 +142,13 @@ export const useImporter = (): UseImporterResult => {
         await refresh();
         return result;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Import failed");
+        setError(err instanceof Error ? err.message : text.importFailed);
         return null;
       } finally {
         setProgress({ phase: "idle" });
       }
     },
-    [client, refresh]
+    [client, refresh, text.importFailed]
   );
 
   const importTargetFile = useCallback(
@@ -147,13 +164,13 @@ export const useImporter = (): UseImporterResult => {
         await refresh();
         return result;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Import failed");
+        setError(err instanceof Error ? err.message : text.importFailed);
         return null;
       } finally {
         setProgress({ phase: "idle" });
       }
     },
-    [client, refresh]
+    [client, refresh, text.importFailed]
   );
 
   const addImportHistory = useCallback(
@@ -176,11 +193,11 @@ export const useImporter = (): UseImporterResult => {
 
   const clearAllData = useCallback(async () => {
     if (!client) {
-      throw new Error("Importer client is not ready yet.");
+      throw new Error(text.clientNotReady);
     }
     await client.clearAllData();
     await refresh();
-  }, [client, refresh]);
+  }, [client, refresh, text.clientNotReady]);
 
   const importComposeProject = useCallback(
     async (bundle: ComposeProjectExport) => {
@@ -192,13 +209,13 @@ export const useImporter = (): UseImporterResult => {
         await refresh();
         return result;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Compose project import failed");
+        setError(err instanceof Error ? err.message : text.composeImportFailed);
         return null;
       } finally {
         setProgress({ phase: "idle" });
       }
     },
-    [client, refresh]
+    [client, refresh, text.composeImportFailed]
   );
 
   const getResourcePayloadsByPackageKeys = useCallback(

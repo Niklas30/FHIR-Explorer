@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useImporter } from "@/components/importer/useImporter";
 import { EditorCommandPalette } from "@/components/editor/commands/EditorCommandPalette";
 import { createEditorCommands } from "@/components/editor/commands/create-editor-commands";
@@ -60,6 +61,7 @@ import type {
 } from "@/lib/fhir-importer/compose";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
+import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
 import JSZip from "jszip";
 
@@ -210,6 +212,7 @@ const pushResourceNavigationEntry = (
 
 export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const router = useRouter();
+  const { locale } = useI18n();
   const resourceDetailRef = useRef<ResourceDetailPanelHandle | null>(null);
   const [dataset, setDataset] = useState<DatasetRecord | null>(null);
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
@@ -256,6 +259,106 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         label: `${entry.id}@${entry.version}`,
       }));
   }, [packages]);
+  const text = byLocale(locale, {
+    de: {
+      titleEditor: "Editor",
+      datasetNameRequired: "Dataset-Name ist erforderlich.",
+      projectKeyRequired: "Projekt-Key ist erforderlich.",
+      datasetInfoUpdated: "Dataset-Info wurde aktualisiert.",
+      datasetExported: "Dataset exportiert.",
+      noPackagesToExport: "Keine Pakete für den Export verfügbar.",
+      projectExported: "Projekt exportiert.",
+      projectPackageNotFound:
+        "Projektpaket für dieses Dataset wurde nicht gefunden.",
+      removeResourceConfirm:
+        "Diese Ressource wirklich aus dem Dataset entfernen?",
+      datasetNotFoundTitle: "Dataset nicht gefunden",
+      datasetNotFoundDescription:
+        "Die Dataset-ID konnte nicht aufgelöst werden. Gehe zurück zur Projektübersicht.",
+      missingIdPrefix: "Fehlende ID:",
+      editorInitErrorTitle: "Editor konnte nicht geladen werden",
+      editorInitErrorDescription:
+        "Beim Initialisieren der FHIR-Profile ist ein Fehler aufgetreten.",
+      devModeHintPrefix: "Für technische Details kann der Dev Mode über",
+      devModeHintSuffix: "aktiviert werden.",
+      datasetInfoTitle: "Dataset-Info",
+      datasetInfoDescription:
+        "Metadaten dieses Datasets anzeigen und bearbeiten.",
+      datasetNameLabel: "Name",
+      datasetNamePlaceholder: "Dataset-Name",
+      projectKeyLabel: "Projekt-Key",
+      noProjectsAvailable: "Keine importierten Projekte verfügbar",
+      customProjectKey: "Eigener Projekt-Key…",
+      projectKeyPlaceholder: "package-id@version",
+      projectKeyHint:
+        "Wähle ein importiertes Projekt oder gib einen eigenen Projekt-Key ein.",
+      datasetIdLabel: "Dataset-ID",
+      datasetIdReadonlyHint:
+        "Die Dataset-ID ist schreibgeschützt, da sie als Storage-Key verwendet wird.",
+      createdPrefix: "Erstellt:",
+      cancel: "Abbrechen",
+      save: "Speichern",
+      exportDialogTitle: "Dataset exportieren",
+      exportDialogDescription:
+        "Exportiere das aktuelle Dataset oder das vollständige Projekt inklusive Abhängigkeiten.",
+      exportScopeDataset: "Nur Dataset",
+      exportScopeProject: "Projekt + Abhängigkeiten",
+      exportScopeProjectHelper:
+        "Projekt-Export ist für Datasets ohne Projekt-Key nicht verfügbar.",
+      exportConfirmDataset: "Dataset exportieren",
+      exportConfirmProject: "Projekt exportieren",
+      loadingEditorOverlay: "Editor wird geladen…",
+      loadingFallback: "Editor wird geladen…",
+      errorLoadingResources: "FHIR-Paketressourcen konnten nicht geladen werden.",
+    },
+    en: {
+      titleEditor: "Editor",
+      datasetNameRequired: "Dataset name is required.",
+      projectKeyRequired: "Project key is required.",
+      datasetInfoUpdated: "Dataset info updated.",
+      datasetExported: "Dataset exported.",
+      noPackagesToExport: "No packages available to export.",
+      projectExported: "Project exported.",
+      projectPackageNotFound: "Project package not found for this dataset.",
+      removeResourceConfirm: "Remove this resource from the dataset?",
+      datasetNotFoundTitle: "Dataset not found",
+      datasetNotFoundDescription:
+        "The dataset id could not be resolved. Return to the projects overview.",
+      missingIdPrefix: "Missing id:",
+      editorInitErrorTitle: "Editor could not be loaded",
+      editorInitErrorDescription:
+        "An error occurred while initializing FHIR profiles.",
+      devModeHintPrefix: "For technical details, enable Dev Mode via",
+      devModeHintSuffix: ".",
+      datasetInfoTitle: "Dataset Info",
+      datasetInfoDescription: "Review and edit metadata for this dataset.",
+      datasetNameLabel: "Name",
+      datasetNamePlaceholder: "Dataset name",
+      projectKeyLabel: "Project key",
+      noProjectsAvailable: "No imported projects available",
+      customProjectKey: "Custom project key…",
+      projectKeyPlaceholder: "package-id@version",
+      projectKeyHint: "Select an imported project or enter a custom project key.",
+      datasetIdLabel: "Dataset ID",
+      datasetIdReadonlyHint:
+        "Dataset ID is read-only because it is used as the storage key.",
+      createdPrefix: "Created:",
+      cancel: "Cancel",
+      save: "Save",
+      exportDialogTitle: "Export dataset",
+      exportDialogDescription:
+        "Export the current dataset or the full project with dependencies.",
+      exportScopeDataset: "Dataset only",
+      exportScopeProject: "Project + dependencies",
+      exportScopeProjectHelper:
+        "Project export is unavailable for datasets without a project key.",
+      exportConfirmDataset: "Export dataset",
+      exportConfirmProject: "Export project",
+      loadingEditorOverlay: "Loading editor…",
+      loadingFallback: "Loading editor…",
+      errorLoadingResources: "Failed to load FHIR package resources.",
+    },
+  });
   const hasSuggestedProject = useMemo(
     () => projectSuggestions.some((project) => project.key === datasetProjectKeyDraft),
     [projectSuggestions, datasetProjectKeyDraft]
@@ -282,8 +385,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const name = dataset?.name?.trim();
-    document.title = name ? `Editor - ${name}` : "Editor";
-  }, [dataset?.name]);
+    document.title = name ? `${text.titleEditor} - ${name}` : text.titleEditor;
+  }, [dataset?.name, text.titleEditor]);
 
   useEffect(() => {
     if (!isDatasetInfoOpen || !dataset) return;
@@ -378,7 +481,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       .catch((error) => {
         if (!active) return;
         const normalizedError =
-          error instanceof Error ? error : new Error("Failed to load FHIR package resources.");
+          error instanceof Error ? error : new Error(text.errorLoadingResources);
         setRegistryState(null);
         setProfiles([]);
         setInitializationError(normalizedError);
@@ -388,7 +491,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     return () => {
       active = false;
     };
-  }, [dataset, packages, getResourcePayloadsByPackageKeys]);
+  }, [dataset, packages, getResourcePayloadsByPackageKeys, text.errorLoadingResources]);
 
   useEffect(() => {
     if (!datasetLoaded) return;
@@ -508,11 +611,11 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const nextName = datasetNameDraft.trim();
     const nextProjectKey = datasetProjectKeyDraft.trim();
     if (!nextName) {
-      toast.error("Dataset name is required.");
+      toast.error(text.datasetNameRequired);
       return;
     }
     if (!nextProjectKey) {
-      toast.error("Project key is required.");
+      toast.error(text.projectKeyRequired);
       return;
     }
     const nextDataset: DatasetRecord = {
@@ -524,7 +627,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     setDataset(nextDataset);
     setDatasets(nextDatasets);
     setDatasetInfoOpen(false);
-    toast.success("Dataset info updated.");
+    toast.success(text.datasetInfoUpdated);
   };
 
   const editorCommands = createEditorCommands({
@@ -540,6 +643,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     navigateForward: handleNavigateForward,
     canNavigateBack,
     canNavigateForward,
+    locale,
     theme,
     setTheme,
   });
@@ -547,7 +651,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   useEditorCommandShortcuts({ commands: editorCommands });
 
   const handleRemoveResource = (resourceId: string) => {
-    const ok = window.confirm("Remove this resource from the dataset?");
+    const ok = window.confirm(text.removeResourceConfirm);
     if (!ok) return;
     const nextResources = removeDatasetResource(datasetId, resourceId);
     setResources(nextResources);
@@ -635,7 +739,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       const blob = await zip.generateAsync({ type: "blob" });
       downloadBlob(zipName, blob);
     }
-    toast.success("Dataset exported.");
+    toast.success(text.datasetExported);
   };
 
   const prepareProjectExport = async (
@@ -654,7 +758,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       .filter((record): record is PackageRecord => Boolean(record));
 
     if (packageRecords.length === 0) {
-      toast.error("No packages available to export.");
+      toast.error(text.noPackagesToExport);
       return null;
     }
 
@@ -717,7 +821,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       toSafeFilename(`${project.id}-${project.version}-compose.json`) ||
       "compose-project.json";
     downloadJson(filename, payload);
-    toast.success("Project exported.");
+    toast.success(text.projectExported);
   };
 
   const exportProjectAsZip = async (project: PackageRecord, includeDatasets: boolean) => {
@@ -766,7 +870,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const filename =
       toSafeFilename(`${project.id}-${project.version}-compose.zip`) || "compose-project.zip";
     downloadBlob(filename, blob);
-    toast.success("Project exported.");
+    toast.success(text.projectExported);
   };
 
   const handleExportConfirm = async () => {
@@ -779,7 +883,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
 
     const targetProject = packages.find((pkg) => pkg.key === dataset.projectKey);
     if (!targetProject) {
-      toast.error("Project package not found for this dataset.");
+      toast.error(text.projectPackageNotFound);
       return;
     }
 
@@ -831,7 +935,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     return (
       <div className="relative flex h-[100dvh] items-center justify-center bg-muted/20">
         <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
-          Loading editor…
+          {text.loadingFallback}
         </div>
       </div>
     );
@@ -842,13 +946,15 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
         <Card className="border-foreground/10">
           <CardHeader>
-            <CardTitle className="text-2xl">Dataset not found</CardTitle>
+            <CardTitle className="text-2xl">{text.datasetNotFoundTitle}</CardTitle>
             <CardDescription>
-              The dataset id could not be resolved. Return to the projects overview.
+              {text.datasetNotFoundDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Missing id: {datasetId}</p>
+            <p className="text-sm text-muted-foreground">
+              {text.missingIdPrefix} {datasetId}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -865,10 +971,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
         <Card className="border-foreground/10">
           <CardHeader>
-            <CardTitle className="text-2xl">Editor konnte nicht geladen werden</CardTitle>
-            <CardDescription>
-              Beim Initialisieren der FHIR-Profile ist ein Fehler aufgetreten.
-            </CardDescription>
+            <CardTitle className="text-2xl">{text.editorInitErrorTitle}</CardTitle>
+            <CardDescription>{text.editorInitErrorDescription}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {isDevModeEnabled() ? (
@@ -877,8 +981,11 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               </pre>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Für technische Details kann Dev Mode über <Link href="/devmode" className="underline">/devmode</Link>{" "}
-                aktiviert werden.
+                {text.devModeHintPrefix}{" "}
+                <Link href="/devmode" className="underline">
+                  /devmode
+                </Link>{" "}
+                {text.devModeHintSuffix}
               </p>
             )}
           </CardContent>
@@ -895,7 +1002,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       {isInitializing ? (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
-            Loading editor…
+            {text.loadingEditorOverlay}
           </div>
         </div>
       ) : null}
@@ -990,23 +1097,21 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         <Dialog open={isDatasetInfoOpen} onOpenChange={setDatasetInfoOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Dataset Info</DialogTitle>
-              <DialogDescription>
-                Review and edit metadata for this dataset.
-              </DialogDescription>
+              <DialogTitle>{text.datasetInfoTitle}</DialogTitle>
+              <DialogDescription>{text.datasetInfoDescription}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-2">
-                <Label htmlFor="dataset-info-name">Name</Label>
+                <Label htmlFor="dataset-info-name">{text.datasetNameLabel}</Label>
                 <Input
                   id="dataset-info-name"
                   value={datasetNameDraft}
                   onChange={(event) => setDatasetNameDraft(event.target.value)}
-                  placeholder="Dataset name"
+                  placeholder={text.datasetNamePlaceholder}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="dataset-info-project">Project key</Label>
+                <Label htmlFor="dataset-info-project">{text.projectKeyLabel}</Label>
                 <select
                   id="dataset-info-project"
                   className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
@@ -1028,7 +1133,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                 >
                   {projectSuggestions.length === 0 ? (
                     <option value="__custom_project_key__">
-                      No imported projects available
+                      {text.noProjectsAvailable}
                     </option>
                   ) : null}
                   {projectSuggestions.map((project) => (
@@ -1036,35 +1141,31 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                       {project.label}
                     </option>
                   ))}
-                  <option value="__custom_project_key__">Custom project key…</option>
+                  <option value="__custom_project_key__">{text.customProjectKey}</option>
                 </select>
                 {!hasSuggestedProject ? (
                   <Input
                     value={datasetProjectKeyDraft}
                     onChange={(event) => setDatasetProjectKeyDraft(event.target.value)}
-                    placeholder="package-id@version"
+                    placeholder={text.projectKeyPlaceholder}
                   />
                 ) : null}
-                <p className="text-xs text-muted-foreground">
-                  Select an imported project or enter a custom project key.
-                </p>
+                <p className="text-xs text-muted-foreground">{text.projectKeyHint}</p>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="dataset-info-id">Dataset ID</Label>
+                <Label htmlFor="dataset-info-id">{text.datasetIdLabel}</Label>
                 <Input id="dataset-info-id" value={dataset.id} readOnly />
-                <p className="text-xs text-muted-foreground">
-                  Dataset ID is read-only because it is used as the storage key.
-                </p>
+                <p className="text-xs text-muted-foreground">{text.datasetIdReadonlyHint}</p>
               </div>
               <div className="text-xs text-muted-foreground">
-                Created: {new Date(dataset.createdAt).toLocaleString()}
+                {text.createdPrefix} {new Date(dataset.createdAt).toLocaleString()}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDatasetInfoOpen(false)}>
-                Cancel
+                {text.cancel}
               </Button>
-              <Button onClick={handleSaveDatasetInfo}>Save</Button>
+              <Button onClick={handleSaveDatasetInfo}>{text.save}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1076,17 +1177,17 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         <ExportDialog
           open={isExportDialogOpen}
           onOpenChange={setExportDialogOpen}
-          title="Export dataset"
-          description="Export the current dataset or the full project with dependencies."
+          title={text.exportDialogTitle}
+          description={text.exportDialogDescription}
           scope={exportScope}
           scopeOptions={[
-            { value: "dataset", label: "Dataset only" },
+            { value: "dataset", label: text.exportScopeDataset },
             {
               value: "project",
-              label: "Project + dependencies",
+              label: text.exportScopeProject,
               disabled: !dataset.projectKey,
               helper: !dataset.projectKey
-                ? "Project export is unavailable for datasets without a project key."
+                ? text.exportScopeProjectHelper
                 : undefined,
             },
           ]}
@@ -1097,7 +1198,11 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           onDatasetModeChange={setExportDatasetMode}
           includeDatasets={exportIncludeDatasets}
           onIncludeDatasetsChange={setExportIncludeDatasets}
-          confirmLabel={exportScope === "dataset" ? "Export dataset" : "Export project"}
+          confirmLabel={
+            exportScope === "dataset"
+              ? text.exportConfirmDataset
+              : text.exportConfirmProject
+          }
           onConfirm={handleExportConfirm}
         />
         <DatasetDiagramDialog

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ import { upsertDataset, type DatasetRecord } from "@/lib/datasets/storage";
 import { hydrateDatasetResources, saveDatasetResources } from "@/lib/datasets/content";
 import { toast } from "sonner";
 import JSZip from "jszip";
+import { byLocale } from "@/lib/i18n/select";
 
 const formatRequirement = (dependency: DependencyRequirement) => {
   if (dependency.exactVersion) {
@@ -33,6 +36,7 @@ const formatRequirement = (dependency: DependencyRequirement) => {
 };
 
 export const ImportWizard = () => {
+  const { locale } = useI18n();
   const {
     snapshot,
     progress,
@@ -65,6 +69,176 @@ export const ImportWizard = () => {
   const lastResultRef = useRef<string | null>(null);
   const progressToastId = useRef<string>("import-progress");
   const completionHandledRef = useRef<string | null>(null);
+  const text = byLocale(locale, {
+    de: {
+      none: "Keine",
+      failedComposeProjectImport: "Import der Compose-Projektdatei fehlgeschlagen.",
+      composeProjectImported: "Compose-Projekt importiert ({imported} Pakete, {skipped} übersprungen).",
+      packageAlreadyImported: "Paket {packageKey} ist bereits importiert.",
+      targetPackageImported: "Zielpaket {packageKey} importiert.",
+      dependencyImported: "Abhängigkeit {packageKey} importiert.",
+      packageImportedButNotMissing:
+        "Paket {packageKey} importiert, war aber nicht als fehlend gelistet.",
+      targetPackageAlreadyImported: "Zielpaket {packageKey} ist bereits importiert.",
+      importingPackage: "Paket wird importiert",
+      packageAlreadyImportedShort: "Paket {packageKey} bereits importiert.",
+      importedPackageShort: "{packageKey} importiert.",
+      errorPrefix: "Fehler: {error}",
+      title: "Paket-Import",
+      importer: "FHIR Importer",
+      cancelImport: "Import abbrechen",
+      projectsOverview: "Projektübersicht",
+      home: "Startseite",
+      intro:
+        "Importiere FHIR-Pakete und alle transitiven Abhängigkeiten vollständig im Browser. Der Assistent aktualisiert sich nach jedem Upload.",
+      imported: "Importiert: {count}",
+      missing: "Fehlend: {count}",
+      definitions: "Definitionen: {count}",
+      target: "Ziel: {value}",
+      importSuccessful: "Import erfolgreich",
+      importSuccessfulDescription:
+        "{targetKey} wurde erfolgreich importiert. Du kannst unten einen neuen Import starten oder zur Projektübersicht wechseln.",
+      goToProjectsOverview: "Zur Projektübersicht",
+      targetImported: "Ziel importiert: {value}",
+      targetPackage: "Zielpaket",
+      targetSetDescription:
+        "Ziel ist gesetzt. Lade das Paket herunter und lade es hoch, um den Import zu starten.",
+      targetUploadOrEnter:
+        "Lade das Zielpaket direkt hoch oder gib ID + Version ein.",
+      importStartedFor: "Import gestartet für:",
+      downloadPackages: "Download (packages2.fhir.org)",
+      copyLink: "Link kopieren",
+      uploadTargetPackage: "Zielpaket hochladen (.tgz)",
+      uploadTargetHelper:
+        "Lade das Ziel von packages2.fhir.org herunter und lade es hier hoch, um den Import zu starten.",
+      uploadTargetHint: "Ziehe die Ziel-.tgz-Datei hier hinein",
+      uploadTargetOrCompose:
+        "Zielpaket (.tgz) oder Compose-Projekt (.json/.zip) hochladen",
+      uploadTargetOrComposeHelper:
+        "Das Paket muss package/package.json enthalten",
+      uploadTargetOrComposeHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
+      packageId: "Paket-ID",
+      version: "Version",
+      setTarget: "Ziel setzen",
+      dependencies: "Abhängigkeiten",
+      dependenciesDescription:
+        "Lade fehlende Abhängigkeiten in beliebiger Reihenfolge hoch. Du kannst mehrere Downloads gleichzeitig starten.",
+      uploadTargetToDetect:
+        "Lade das Zielpaket hoch, um dessen Abhängigkeiten zu erkennen.",
+      allDependenciesResolved: "Alle Abhängigkeiten sind aufgelöst.",
+      required: "Erforderlich: {value}",
+      chooseVersion: "Version wählen",
+      setVersion: "Version setzen",
+      clear: "Leeren",
+      download: "Download:",
+      selectVersionForLink: "Wähle eine Version, um einen Link zu erzeugen",
+      openLink: "Link öffnen",
+      uploadPackageOrCompose:
+        "Paket (.tgz) oder Compose-Projekt (.json/.zip) hochladen",
+      uploadPackageOrComposeHelper:
+        "Lade Ziel- oder Abhängigkeitspakete hoch. Der Importer erkennt passende Pakete automatisch.",
+      uploadPackageOrComposeHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
+      importHistory: "Import-Historie",
+      importHistoryDescription: "Bisher importierte Zielpakete.",
+      noImportsYet: "Noch keine Importe.",
+      importLog: "Import-Log",
+      latestImportActions: "Neueste Aktionen während dieses Imports.",
+      importLogHistory: "Verlauf des letzten abgeschlossenen Imports.",
+      showLog: "Log anzeigen ({count})",
+      noLogEntries: "Noch keine Log-Einträge.",
+      conflicts: "Konflikte",
+      conflictsDescription:
+        "Löse diese Konflikte, bevor der Import abgeschlossen ist.",
+      versionConflict: "Versionskonflikt",
+    },
+    en: {
+      none: "None",
+      failedComposeProjectImport: "Failed to import compose project file.",
+      composeProjectImported:
+        "Compose project imported ({imported} packages, {skipped} skipped).",
+      packageAlreadyImported: "Package {packageKey} is already imported.",
+      targetPackageImported: "Target package {packageKey} imported.",
+      dependencyImported: "Dependency {packageKey} imported.",
+      packageImportedButNotMissing:
+        "Package {packageKey} imported, but it was not listed as missing.",
+      targetPackageAlreadyImported: "Target package {packageKey} is already imported.",
+      importingPackage: "Importing package",
+      packageAlreadyImportedShort: "Package {packageKey} already imported.",
+      importedPackageShort: "Imported {packageKey}.",
+      errorPrefix: "Error: {error}",
+      title: "Package Import",
+      importer: "FHIR Importer",
+      cancelImport: "Cancel Import",
+      projectsOverview: "Projects Overview",
+      home: "Home",
+      intro:
+        "Import FHIR packages and every transitive dependency entirely in the browser. The wizard updates after each upload.",
+      imported: "Imported: {count}",
+      missing: "Missing: {count}",
+      definitions: "Definitions: {count}",
+      target: "Target: {value}",
+      importSuccessful: "Import Successful",
+      importSuccessfulDescription:
+        "{targetKey} was imported successfully. You can start a new import below or go to the Projects Overview.",
+      goToProjectsOverview: "Go to Projects Overview",
+      targetImported: "Target imported: {value}",
+      targetPackage: "Target Package",
+      targetSetDescription:
+        "Target set. Download the package and upload it to start the import.",
+      targetUploadOrEnter:
+        "Upload the target package directly or enter id + version.",
+      importStartedFor: "Import started for:",
+      downloadPackages: "Download (packages2.fhir.org)",
+      copyLink: "Copy Link",
+      uploadTargetPackage: "Upload target package (.tgz)",
+      uploadTargetHelper:
+        "Download the target from packages2.fhir.org, then upload it here to start the import.",
+      uploadTargetHint: "Drag & drop the target .tgz file here",
+      uploadTargetOrCompose:
+        "Upload target package (.tgz) or compose project (.json/.zip)",
+      uploadTargetOrComposeHelper:
+        "The package must contain package/package.json",
+      uploadTargetOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+      packageId: "Package ID",
+      version: "Version",
+      setTarget: "Set Target",
+      dependencies: "Dependencies",
+      dependenciesDescription:
+        "Upload any missing dependency in any order. You can start multiple downloads at once.",
+      uploadTargetToDetect:
+        "Upload the target package to detect its dependencies.",
+      allDependenciesResolved: "All dependencies resolved.",
+      required: "Required: {value}",
+      chooseVersion: "Choose version",
+      setVersion: "Set Version",
+      clear: "Clear",
+      download: "Download:",
+      selectVersionForLink: "Select a version to generate a link",
+      openLink: "Open Link",
+      uploadPackageOrCompose:
+        "Upload package (.tgz) or compose project (.json/.zip)",
+      uploadPackageOrComposeHelper:
+        "Upload target or dependency packages. The importer will detect matches.",
+      uploadPackageOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+      importHistory: "Import History",
+      importHistoryDescription: "Previously imported target packages.",
+      noImportsYet: "No imports yet.",
+      importLog: "Import Log",
+      latestImportActions: "Latest actions during this import.",
+      importLogHistory: "History of the last completed import.",
+      showLog: "Show log ({count})",
+      noLogEntries: "No log entries yet.",
+      conflicts: "Conflicts",
+      conflictsDescription: "Resolve these before the import is complete.",
+      versionConflict: "Version conflict",
+    },
+	  });
+
+  const format = useCallback(
+    (template: string, values: Record<string, string | number>) =>
+      template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? "")),
+    []
+  );
 
   const currentTarget = snapshot?.state.currentTarget;
 
@@ -86,7 +260,7 @@ export const ImportWizard = () => {
       setVersion(currentTarget.version);
       setCompletedSummary(null);
     }
-  }, [currentTarget?.id, currentTarget?.version]);
+  }, [currentTarget]);
 
   const dependencyState = snapshot?.dependencyState;
   const missing = dependencyState?.missing ?? [];
@@ -113,10 +287,9 @@ export const ImportWizard = () => {
   const allResolved = Boolean(
     currentTarget && isTargetImported && missing.length === 0 && conflicts.length === 0
   );
-  const importedDependencies = packages.filter((pkg) => pkg.key !== targetKey);
   const importedTargetText = currentTarget
     ? `${currentTarget.id}@${currentTarget.version}`
-    : "None";
+    : text.none;
   const isTargetReady = Boolean(currentTarget && isTargetImported);
   const importedDefinitions = snapshot?.resourceIndexCount ?? 0;
   const lastImport = completedSummary;
@@ -135,7 +308,7 @@ export const ImportWizard = () => {
   const importComposeBundle = async (bundle: ComposeProjectExport) => {
     const result = await importComposeProject(bundle);
     if (!result) {
-      return "Failed to import compose project file.";
+      return text.failedComposeProjectImport;
     }
     const datasets = bundle.datasets ?? [];
 
@@ -157,7 +330,10 @@ export const ImportWizard = () => {
       }
     }
 
-    return `Compose project imported (${result.imported} packages, ${result.skipped} skipped).`;
+    return format(text.composeProjectImported, {
+      imported: result.imported,
+      skipped: result.skipped,
+    });
   };
 
   const parseComposeZip = async (file: File): Promise<ComposeProjectExport | null> => {
@@ -230,7 +406,7 @@ export const ImportWizard = () => {
       return await importComposeBundle(parsed);
     } catch (err) {
       console.error(err);
-      return "Failed to import compose project file.";
+      return text.failedComposeProjectImport;
     }
   };
 
@@ -252,18 +428,18 @@ export const ImportWizard = () => {
       const parsed = parsePackageKey(result.packageKey);
 
       if (result.status === "duplicate") {
-        notices.push(`Package ${result.packageKey} is already imported.`);
+        notices.push(format(text.packageAlreadyImported, { packageKey: result.packageKey }));
       } else if (
         currentTarget &&
         parsed.id === currentTarget.id &&
         parsed.version === currentTarget.version
       ) {
-        notices.push(`Target package ${result.packageKey} imported.`);
+        notices.push(format(text.targetPackageImported, { packageKey: result.packageKey }));
       } else if (missingIds.has(parsed.id)) {
-        notices.push(`Dependency ${result.packageKey} imported.`);
+        notices.push(format(text.dependencyImported, { packageKey: result.packageKey }));
       } else {
         notices.push(
-          `Package ${result.packageKey} imported, but it was not listed as missing.`
+          format(text.packageImportedButNotMissing, { packageKey: result.packageKey })
         );
       }
     }
@@ -290,9 +466,11 @@ export const ImportWizard = () => {
       if (!result) continue;
 
       if (result.status === "duplicate") {
-        notices.push(`Target package ${result.packageKey} is already imported.`);
+        notices.push(
+          format(text.targetPackageAlreadyImported, { packageKey: result.packageKey })
+        );
       } else {
-        notices.push(`Target package ${result.packageKey} imported.`);
+        notices.push(format(text.targetPackageImported, { packageKey: result.packageKey }));
       }
     }
 
@@ -302,20 +480,20 @@ export const ImportWizard = () => {
     }
   };
 
-  const addLog = (message: string) => {
+  const addLog = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     setImportLog((prev) => [`${timestamp} — ${message}`, ...prev].slice(0, 50));
-  };
+  }, []);
 
   useEffect(() => {
     if (progress.phase !== "idle") {
-      toast.loading(progress.message ?? "Importing package", {
+      toast.loading(text.importingPackage, {
         id: progressToastId.current,
       });
     } else {
       toast.dismiss(progressToastId.current);
     }
-  }, [progress.phase, progress.message]);
+  }, [progress.phase, text.importingPackage]);
 
   useEffect(() => {
     if (!lastResult) return;
@@ -324,25 +502,31 @@ export const ImportWizard = () => {
 
     const message =
       lastResult.status === "duplicate"
-        ? `Package ${lastResult.packageKey} already imported.`
-        : `Imported ${lastResult.packageKey}.`;
+        ? format(text.packageAlreadyImportedShort, { packageKey: lastResult.packageKey })
+        : format(text.importedPackageShort, { packageKey: lastResult.packageKey });
 
     toast.success(message);
     addLog(message);
-  }, [lastResult]);
+  }, [
+    addLog,
+    format,
+    lastResult,
+    text.importedPackageShort,
+    text.packageAlreadyImportedShort,
+  ]);
 
   useEffect(() => {
     if (!error) return;
     toast.error(error);
-    addLog(`Error: ${error}`);
-  }, [error]);
+    addLog(format(text.errorPrefix, { error }));
+  }, [addLog, error, format, text.errorPrefix]);
 
   useEffect(() => {
     if (!uploadNotice || uploadNotice === lastNoticeRef.current) return;
     lastNoticeRef.current = uploadNotice;
     toast.info(uploadNotice);
     addLog(uploadNotice);
-  }, [uploadNotice]);
+  }, [addLog, uploadNotice]);
 
   useEffect(() => {
     if (!allResolved || !currentTarget) return;
@@ -370,9 +554,9 @@ export const ImportWizard = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-              FHIR Importer
+              {text.importer}
             </p>
-            <h1 className="text-3xl font-semibold text-foreground">Package Import</h1>
+            <h1 className="text-3xl font-semibold text-foreground">{text.title}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {currentTarget ? (
@@ -388,48 +572,52 @@ export const ImportWizard = () => {
                     setImportLog([]);
                   }}
                 >
-                  Cancel Import
+                  {text.cancelImport}
                 </Button>
               ) : null
             ) : null}
+            <LanguageSwitcher />
             <Button asChild variant="ghost" size="sm">
-              <Link href="/">Projects Overview</Link>
+              <Link href="/">{text.projectsOverview}</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/">Home</Link>
+              <Link href="/">{text.home}</Link>
             </Button>
           </div>
         </div>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Import FHIR packages and every transitive dependency entirely in the browser.
-          The wizard updates after each upload.
+          {text.intro}
         </p>
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span>Imported: {importedCount}</span>
-          <span>Missing: {missingCount}</span>
-          <span>Definitions: {importedDefinitions}</span>
+          <span>{format(text.imported, { count: importedCount })}</span>
+          <span>{format(text.missing, { count: missingCount })}</span>
+          <span>{format(text.definitions, { count: importedDefinitions })}</span>
           <span>
-            Target: {currentTarget ? `${currentTarget.id}@${currentTarget.version}` : "None"}
+            {format(text.target, {
+              value: currentTarget ? `${currentTarget.id}@${currentTarget.version}` : text.none,
+            })}
           </span>
         </div>
         {lastImport ? (
           <Card className="border-foreground/20 bg-muted/20">
             <CardHeader>
-              <CardTitle>Import Successful</CardTitle>
+              <CardTitle>{text.importSuccessful}</CardTitle>
               <CardDescription>
-                {lastImport.targetKey} was imported successfully. You can start a new import below or go to the Projects Overview.
+                {format(text.importSuccessfulDescription, {
+                  targetKey: lastImport.targetKey,
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild size="lg" className="w-full">
-                <Link href="/">Go to Projects Overview</Link>
+                <Link href="/">{text.goToProjectsOverview}</Link>
               </Button>
             </CardContent>
           </Card>
         ) : null}
         {isTargetReady ? (
           <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-            Target imported: {importedTargetText}
+            {format(text.targetImported, { value: importedTargetText })}
           </div>
         ) : null}
       </header>
@@ -437,11 +625,11 @@ export const ImportWizard = () => {
       {!isTargetReady || allResolved ? (
         <Card>
           <CardHeader>
-            <CardTitle>Target Package</CardTitle>
+            <CardTitle>{text.targetPackage}</CardTitle>
             <CardDescription>
               {currentTarget
-                ? "Target set. Download the package and upload it to start the import."
-                : "Upload the target package directly or enter id + version."}
+                ? text.targetSetDescription
+                : text.targetUploadOrEnter}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -449,7 +637,7 @@ export const ImportWizard = () => {
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-foreground">Import started for:</span>
+                    <span className="font-medium text-foreground">{text.importStartedFor}</span>
                     <span className="text-foreground">
                       {currentTarget.id}@{currentTarget.version}
                     </span>
@@ -458,7 +646,7 @@ export const ImportWizard = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <Button asChild size="sm" variant="secondary">
                         <a href={targetDownloadUrl} target="_blank" rel="noreferrer">
-                          Download (packages2.fhir.org)
+                          {text.downloadPackages}
                         </a>
                       </Button>
                       <Button
@@ -466,33 +654,33 @@ export const ImportWizard = () => {
                         variant="outline"
                         onClick={() => handleCopy(targetDownloadUrl)}
                       >
-                        Copy Link
+                        {text.copyLink}
                       </Button>
                     </div>
                   ) : null}
                 </div>
                 <FileDropzone
-                  label="Upload target package (.tgz)"
-                  helperText="Download the target from packages2.fhir.org, then upload it here to start the import."
+                  label={text.uploadTargetPackage}
+                  helperText={text.uploadTargetHelper}
                   disabled={isUploading}
                   accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-                  hint="Drag & drop the target .tgz file here"
+                  hint={text.uploadTargetHint}
                   onFiles={handleTargetUpload}
                 />
               </>
             ) : (
               <>
                 <FileDropzone
-                  label="Upload target package (.tgz) or compose project (.json/.zip)"
-                  helperText="The package must contain package/package.json"
+                  label={text.uploadTargetOrCompose}
+                  helperText={text.uploadTargetOrComposeHelper}
                   disabled={isUploading}
                   accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-                  hint="Drag & drop .tgz, .json, or .zip files here"
+                  hint={text.uploadTargetOrComposeHint}
                   onFiles={handleTargetUpload}
                 />
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="grid gap-2">
-                    <Label htmlFor="package-id">Package ID</Label>
+                    <Label htmlFor="package-id">{text.packageId}</Label>
                     <Input
                       id="package-id"
                       value={packageId}
@@ -501,7 +689,7 @@ export const ImportWizard = () => {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="package-version">Version</Label>
+                    <Label htmlFor="package-version">{text.version}</Label>
                     <Input
                       id="package-version"
                       value={version}
@@ -515,7 +703,7 @@ export const ImportWizard = () => {
                       disabled={!trimmedPackageId || !trimmedVersion}
                       onClick={() => setTarget(trimmedPackageId, trimmedVersion)}
                     >
-                      Set Target
+                      {text.setTarget}
                     </Button>
                   </div>
                 </div>
@@ -528,21 +716,19 @@ export const ImportWizard = () => {
       {currentTarget && !allResolved ? (
         <Card>
           <CardHeader>
-            <CardTitle>Dependencies</CardTitle>
-            <CardDescription>
-              Upload any missing dependency in any order. You can start multiple downloads at once.
-            </CardDescription>
+            <CardTitle>{text.dependencies}</CardTitle>
+            <CardDescription>{text.dependenciesDescription}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             {!isTargetImported ? (
               <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
                 <p className="text-sm text-foreground">
-                  Upload the target package to detect its dependencies.
+                  {text.uploadTargetToDetect}
                 </p>
               </div>
             ) : missing.length === 0 ? (
               <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
-                <p className="text-sm text-foreground">All dependencies resolved.</p>
+                <p className="text-sm text-foreground">{text.allDependenciesResolved}</p>
               </div>
             ) : (
               <div className="grid gap-3">
@@ -564,7 +750,7 @@ export const ImportWizard = () => {
                         <div>
                           <p className="text-sm font-semibold text-foreground">{dependency.id}</p>
                           <p className="text-xs text-muted-foreground">
-                            Required: {formatRequirement(dependency)}
+                            {format(text.required, { value: formatRequirement(dependency) })}
                           </p>
                         </div>
                       </div>
@@ -572,7 +758,7 @@ export const ImportWizard = () => {
                       {needsSelection ? (
                         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto_auto]">
                           <div className="grid gap-2">
-                            <Label htmlFor={`version-${dependency.id}`}>Choose version</Label>
+                            <Label htmlFor={`version-${dependency.id}`}>{text.chooseVersion}</Label>
                             <Input
                               id={`version-${dependency.id}`}
                               value={draftValue}
@@ -591,8 +777,8 @@ export const ImportWizard = () => {
                               disabled={!draftValue}
                               onClick={() => setVersionSelection(dependency.id, draftValue)}
                             >
-                              Set Version
-                            </Button>
+                                {text.setVersion}
+                              </Button>
                           </div>
                           {dependency.chosenVersion ? (
                             <div className="flex items-end">
@@ -600,7 +786,7 @@ export const ImportWizard = () => {
                                 variant="ghost"
                                 onClick={() => clearVersionSelection(dependency.id)}
                               >
-                                Clear
+                                {text.clear}
                               </Button>
                             </div>
                           ) : null}
@@ -609,19 +795,19 @@ export const ImportWizard = () => {
 
                       <div className="mt-3 flex flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-medium text-foreground">Download:</span>
+                          <span className="font-medium text-foreground">{text.download}</span>
                           <span className="text-muted-foreground">
-                            {link ?? "Select a version to generate a link"}
+                            {link ?? text.selectVersionForLink}
                           </span>
                           {link ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <Button asChild size="sm" variant="secondary">
                                 <a href={link} target="_blank" rel="noreferrer">
-                                  Open Link
+                                  {text.openLink}
                                 </a>
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => handleCopy(link)}>
-                                Copy Link
+                                {text.copyLink}
                               </Button>
                             </div>
                           ) : null}
@@ -634,11 +820,11 @@ export const ImportWizard = () => {
             )}
             {missing.length > 0 ? (
               <FileDropzone
-                label="Upload package (.tgz) or compose project (.json/.zip)"
-                helperText="Upload target or dependency packages. The importer will detect matches."
+                label={text.uploadPackageOrCompose}
+                helperText={text.uploadPackageOrComposeHelper}
                 disabled={!currentTarget || isUploading}
                 accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-                hint="Drag & drop .tgz, .json, or .zip files here"
+                hint={text.uploadPackageOrComposeHint}
                 onFiles={handleUpload}
               />
             ) : null}
@@ -650,13 +836,13 @@ export const ImportWizard = () => {
       {!currentTarget ? (
         <Card>
           <CardHeader>
-            <CardTitle>Import History</CardTitle>
-            <CardDescription>Previously imported target packages.</CardDescription>
+            <CardTitle>{text.importHistory}</CardTitle>
+            <CardDescription>{text.importHistoryDescription}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-sm text-muted-foreground">
             {importHistory.length === 0 ? (
               <div className="rounded-lg border border-foreground/10 px-3 py-2 text-xs text-muted-foreground">
-                No imports yet.
+                {text.noImportsYet}
               </div>
             ) : (
               importHistory.map((entry) => (
@@ -678,17 +864,17 @@ export const ImportWizard = () => {
       {currentTarget ? (
         <Card>
           <CardHeader>
-            <CardTitle>Import Log</CardTitle>
-            <CardDescription>Latest actions during this import.</CardDescription>
+            <CardTitle>{text.importLog}</CardTitle>
+            <CardDescription>{text.latestImportActions}</CardDescription>
           </CardHeader>
           <CardContent>
             <details className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
               <summary className="cursor-pointer text-sm font-medium text-foreground">
-                Show log ({importLog.length})
+                {format(text.showLog, { count: importLog.length })}
               </summary>
               <div className="mt-3 flex max-h-64 flex-col gap-2 overflow-auto text-xs text-muted-foreground">
                 {importLog.length === 0 ? (
-                  <span>No log entries yet.</span>
+                  <span>{text.noLogEntries}</span>
                 ) : (
                   importLog.map((entry, index) => <span key={index}>{entry}</span>)
                 )}
@@ -699,13 +885,13 @@ export const ImportWizard = () => {
       ) : lastImportLog.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Import Log</CardTitle>
-            <CardDescription>History of the last completed import.</CardDescription>
+            <CardTitle>{text.importLog}</CardTitle>
+            <CardDescription>{text.importLogHistory}</CardDescription>
           </CardHeader>
           <CardContent>
             <details className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
               <summary className="cursor-pointer text-sm font-medium text-foreground">
-                Show log ({lastImportLog.length})
+                {format(text.showLog, { count: lastImportLog.length })}
               </summary>
               <div className="mt-3 flex max-h-64 flex-col gap-2 overflow-auto text-xs text-muted-foreground">
                 {lastImportLog.map((entry, index) => (
@@ -720,8 +906,8 @@ export const ImportWizard = () => {
       {conflicts.length > 0 && (
         <Card className="border-destructive/40">
           <CardHeader>
-            <CardTitle>Conflicts</CardTitle>
-            <CardDescription>Resolve these before the import is complete.</CardDescription>
+            <CardTitle>{text.conflicts}</CardTitle>
+            <CardDescription>{text.conflictsDescription}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2">
             {conflicts.map((conflict) => (
@@ -731,7 +917,7 @@ export const ImportWizard = () => {
               >
                 <p className="text-sm font-semibold text-foreground">{conflict.id}</p>
                 <p className="text-xs text-muted-foreground">
-                  {conflict.conflictReason ?? "Version conflict"}
+                  {conflict.conflictReason ?? text.versionConflict}
                 </p>
               </div>
             ))}

@@ -3,6 +3,8 @@
 import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import { SearchIcon } from "lucide-react"
+import { useI18n } from "@/components/i18n/I18nProvider"
+import { byLocale } from "@/lib/i18n/select"
 
 import { cn } from "@/lib/utils"
 import {
@@ -30,8 +32,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title,
+  description,
   children,
   className,
   showCloseButton = true,
@@ -42,11 +44,25 @@ function CommandDialog({
   className?: string
   showCloseButton?: boolean
 }) {
+  const { locale } = useI18n()
+  const localized = byLocale(locale, {
+    de: {
+      title: "Command-Palette",
+      description: "Suche nach einem Command, den du ausführen möchtest...",
+    },
+    en: {
+      title: "Command Palette",
+      description: "Search for a command to run...",
+    },
+  })
+  const effectiveTitle = title ?? localized.title
+  const effectiveDescription = description ?? localized.description
+
   return (
     <Dialog {...props}>
       <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
+        <DialogTitle>{effectiveTitle}</DialogTitle>
+        <DialogDescription>{effectiveDescription}</DialogDescription>
       </DialogHeader>
       <DialogContent
         className={cn("overflow-hidden p-0", className)}

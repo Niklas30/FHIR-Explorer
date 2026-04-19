@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { AlertTriangle, ArrowRight, Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import {
   validateResourceWithProfile,
   type ValidationIssue,
 } from "@/lib/fhir-editor/validation";
+import { byLocale } from "@/lib/i18n/select";
 import { cn } from "@/lib/utils";
 
 type ResourceDetailPanelProps = {
@@ -53,7 +55,7 @@ export type ResourceDetailPanelHandle = {
 };
 
 const formatOptionLabel = (system?: string, code?: string, display?: string) => {
-  const label = display || code || "Unknown";
+  const label = display || code || "?";
   if (system) {
     const tail = system.split("/").pop();
     return `${label} · ${tail ?? system}`;
@@ -85,6 +87,154 @@ const getFieldValidationIssues = (
       issue.code !== "reference-broken" && isIssueForPath(issue.path, targetPath)
   );
 
+const formatTemplate = (template: string, values: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+
+const useResourceDetailText = () => {
+  const { locale } = useI18n();
+  const text = byLocale(locale, {
+    de: {
+      unknownLabel: "Unbekannt",
+      fieldsTitle: "Felder",
+      pickResourceToEdit: "Wähle eine Ressource zum Bearbeiten",
+      selectResourceToStart: "Wähle eine Ressource aus, um ihre Felder zu bearbeiten.",
+      requiredCount: "{required} erforderlich, {optional} optional",
+      ariaToggleSearch: "Suche umschalten",
+      remove: "Entfernen",
+      addField: "Feld hinzufügen",
+      searchFields: "Felder suchen",
+      noFieldsForProfile: "Keine Felder für dieses Profil verfügbar.",
+      unknownFieldsTitle: "Unbekannte Felder",
+      unknownField: "Unbekanntes Feld",
+      notInProfile: "Nicht im Profil",
+      addValue: "Wert hinzufügen",
+      addFieldDialogTitle: "Feld hinzufügen",
+      addFieldDialogDescription:
+        "Suche ein Feld und füge es dieser Ressource hinzu.",
+      noFieldsAvailable: "Keine Felder verfügbar.",
+      close: "Schließen",
+      required: "Erforderlich",
+      multiple: "Mehrfach",
+      brokenReferenceTarget: "Fehlendes Referenzziel",
+      missingTarget: "Fehlendes Ziel",
+      validationErrorTooltip: "{count} Validierungsfehler",
+      noValuesYet: "Noch keine Werte.",
+      groupEntries: "Gruppe · {count} Einträge",
+      addEntry: "Eintrag hinzufügen",
+      noEntriesYet: "Noch keine Einträge.",
+      entry: "Eintrag {index}",
+      object: "Objekt",
+      noFieldsYet: "Noch keine Felder.",
+      rawJson: "Rohes JSON",
+      jsonMustBeObject: "JSON muss ein Objekt sein.",
+      invalidJson: "Ungültiges JSON",
+      popupSearchPlaceholder: "Suchen",
+      popupNoOptions: "Keine Optionen verfügbar.",
+      popupClear: "Leeren",
+      setDisplay: "Display setzen",
+      selectReference: "Referenz auswählen",
+      searchResources: "Ressourcen suchen",
+      noMatchingResources: "Keine passenden Ressourcen.",
+      referencePlaceholder: "Ressourcentyp/id",
+      openReferencedResource: "Referenzierte Ressource öffnen",
+      selectSystem: "System auswählen",
+      searchSystems: "Systeme suchen",
+      selectIdentifierType: "Identifiertyp auswählen",
+      searchIdentifierTypes: "Identifiertypen suchen",
+      systemUri: "System-URI",
+      identifierValue: "Identifier-Wert",
+      useOptional: "Verwendung (optional)",
+      searchUseValues: "Verwendungswerte suchen",
+      typeTextOptional: "Typ-Text (optional)",
+      typeSystemOptional: "Typ-System (optional)",
+      typeCodeOptional: "Typ-Code (optional)",
+      typeDisplayOptional: "Typ-Anzeige (optional)",
+      enabled: "Aktiv",
+      selectValue: "Wert auswählen",
+      searchValues: "Werte suchen",
+      enterCode: "Code eingeben",
+      orEnterCustomValue: "Oder eigenen Wert eingeben",
+      systemUrl: "System-URL",
+      code: "Code",
+      displayOptional: "Anzeige (optional)",
+      textOptional: "Text (optional)",
+      searchValue: "Wert suchen",
+      removeValue: "Wert entfernen",
+      enterValue: "Wert eingeben",
+    },
+    en: {
+      unknownLabel: "Unknown",
+      fieldsTitle: "Fields",
+      pickResourceToEdit: "Pick a resource to edit",
+      selectResourceToStart: "Select a resource to start editing its fields.",
+      requiredCount: "{required} required, {optional} optional",
+      ariaToggleSearch: "Toggle search",
+      remove: "Remove",
+      addField: "Add field",
+      searchFields: "Search fields",
+      noFieldsForProfile: "No fields available for this profile.",
+      unknownFieldsTitle: "Unknown fields",
+      unknownField: "Unknown field",
+      notInProfile: "Not in profile",
+      addValue: "Add value",
+      addFieldDialogTitle: "Add field",
+      addFieldDialogDescription: "Search and select a field to add to this resource.",
+      noFieldsAvailable: "No fields available.",
+      close: "Close",
+      required: "Required",
+      multiple: "Multiple",
+      brokenReferenceTarget: "Broken reference target",
+      missingTarget: "Missing target",
+      validationErrorTooltip: "{count} validation error{suffix}",
+      noValuesYet: "No values yet.",
+      groupEntries: "Group · {count} entries",
+      addEntry: "Add entry",
+      noEntriesYet: "No entries yet.",
+      entry: "Entry {index}",
+      object: "Object",
+      noFieldsYet: "No fields yet.",
+      rawJson: "Raw JSON",
+      jsonMustBeObject: "JSON must be an object.",
+      invalidJson: "Invalid JSON",
+      popupSearchPlaceholder: "Search",
+      popupNoOptions: "No options available.",
+      popupClear: "Clear",
+      setDisplay: "Set display",
+      selectReference: "Select reference",
+      searchResources: "Search resources",
+      noMatchingResources: "No matching resources.",
+      referencePlaceholder: "ResourceType/id",
+      openReferencedResource: "Open referenced resource",
+      selectSystem: "Select system",
+      searchSystems: "Search systems",
+      selectIdentifierType: "Select identifier type",
+      searchIdentifierTypes: "Search identifier types",
+      systemUri: "System URI",
+      identifierValue: "Identifier value",
+      useOptional: "Use (optional)",
+      searchUseValues: "Search use values",
+      typeTextOptional: "Type text (optional)",
+      typeSystemOptional: "Type system (optional)",
+      typeCodeOptional: "Type code (optional)",
+      typeDisplayOptional: "Type display (optional)",
+      enabled: "Enabled",
+      selectValue: "Select value",
+      searchValues: "Search values",
+      enterCode: "Enter code",
+      orEnterCustomValue: "Or enter a custom value",
+      systemUrl: "System URL",
+      code: "Code",
+      displayOptional: "Display (optional)",
+      textOptional: "Text (optional)",
+      searchValue: "Search value",
+      removeValue: "Remove value",
+      enterValue: "Enter value",
+    },
+  });
+
+  return { locale, text };
+};
+
 export const ResourceDetailPanel = forwardRef<
   ResourceDetailPanelHandle,
   ResourceDetailPanelProps
@@ -100,6 +250,7 @@ export const ResourceDetailPanel = forwardRef<
   },
   ref
 ) {
+  const { locale, text } = useResourceDetailText();
   const requiredFields = fields.filter((field) => (field.min ?? 0) > 0);
   const optionalFields = fields.filter((field) => (field.min ?? 0) === 0);
   const [fieldQuery, setFieldQuery] = useState("");
@@ -202,18 +353,19 @@ export const ResourceDetailPanel = forwardRef<
     if (!resource || !registry) return [];
     return validateResourceWithProfile(resource.content, fields, registry, {
       existingReferences: referenceIndex,
+      locale,
     });
-  }, [fields, referenceIndex, registry, resource]);
+  }, [fields, locale, referenceIndex, registry, resource]);
 
   if (!resource) {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b border-foreground/10 px-4 py-3">
-          <div className="text-sm font-semibold text-foreground">Fields</div>
-          <div className="text-xs text-muted-foreground">Pick a resource to edit</div>
+          <div className="text-sm font-semibold text-foreground">{text.fieldsTitle}</div>
+          <div className="text-xs text-muted-foreground">{text.pickResourceToEdit}</div>
         </div>
         <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
-          Select a resource to start editing its fields.
+          {text.selectResourceToStart}
         </div>
       </div>
     );
@@ -261,9 +413,12 @@ export const ResourceDetailPanel = forwardRef<
       <div className="border-b border-foreground/10 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold text-foreground">Fields</div>
+            <div className="text-sm font-semibold text-foreground">{text.fieldsTitle}</div>
             <div className="text-xs text-muted-foreground">
-              {requiredFields.length} required, {optionalFields.length} optional
+              {formatTemplate(text.requiredCount, {
+                required: requiredFields.length,
+                optional: optionalFields.length,
+              })}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -271,7 +426,7 @@ export const ResourceDetailPanel = forwardRef<
               type="button"
               onClick={() => setShowSearch((prev) => !prev)}
               className="flex h-8 w-8 items-center justify-center rounded-md border border-foreground/20 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-              aria-label="Toggle search"
+              aria-label={text.ariaToggleSearch}
             >
               <Search className="size-4" />
             </button>
@@ -281,7 +436,7 @@ export const ResourceDetailPanel = forwardRef<
               onClick={() => onRemoveResource(resource.id)}
               className="text-destructive hover:text-destructive"
             >
-              Remove
+              {text.remove}
             </Button>
             <Button
               size="sm"
@@ -293,7 +448,7 @@ export const ResourceDetailPanel = forwardRef<
               className="gap-1.5"
             >
               <Plus className="size-4" />
-              Add field
+              {text.addField}
             </Button>
           </div>
         </div>
@@ -303,7 +458,7 @@ export const ResourceDetailPanel = forwardRef<
               ref={searchInputRef}
               value={listQuery}
               onChange={(event) => setListQuery(event.target.value)}
-              placeholder="Search fields"
+              placeholder={text.searchFields}
               className="h-8"
             />
           </div>
@@ -313,7 +468,7 @@ export const ResourceDetailPanel = forwardRef<
         <div className="grid gap-4 p-4">
           {visibleGroups.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
-              <div>No fields available for this profile.</div>
+              <div>{text.noFieldsForProfile}</div>
               <div className="mt-3 flex justify-center">
                 <Button
                   size="sm"
@@ -325,7 +480,7 @@ export const ResourceDetailPanel = forwardRef<
                   className="gap-1.5"
                 >
                   <Plus className="size-4" />
-                  Add field
+                  {text.addField}
                 </Button>
               </div>
             </div>
@@ -362,7 +517,7 @@ export const ResourceDetailPanel = forwardRef<
           {unknownKeys.length > 0 ? (
             <div className="grid gap-3 rounded-lg border border-dashed border-foreground/15 px-4 py-3">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Unknown Fields
+                {text.unknownFieldsTitle}
               </div>
               <div className="grid gap-3">
                 {unknownKeys.map((key) => {
@@ -376,10 +531,12 @@ export const ResourceDetailPanel = forwardRef<
                           <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                             {key}
                           </div>
-                          <div className="text-sm font-semibold text-foreground">Unknown field</div>
+                          <div className="text-sm font-semibold text-foreground">
+                            {text.unknownField}
+                          </div>
                         </div>
                         <span className="rounded-full border border-foreground/20 px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
-                          Not in profile
+                          {text.notInProfile}
                         </span>
                       </div>
                       <div className="mt-3 grid gap-3">
@@ -412,7 +569,7 @@ export const ResourceDetailPanel = forwardRef<
                             }}
                             className="w-fit"
                           >
-                            Add value
+                            {text.addValue}
                           </Button>
                         ) : null}
                       </div>
@@ -435,21 +592,21 @@ export const ResourceDetailPanel = forwardRef<
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add field</DialogTitle>
+            <DialogTitle>{text.addFieldDialogTitle}</DialogTitle>
             <DialogDescription>
-              Search and select a field to add to this resource.
+              {text.addFieldDialogDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <Input
               value={fieldQuery}
               onChange={(event) => setFieldQuery(event.target.value)}
-              placeholder="Search fields"
+              placeholder={text.searchFields}
             />
             <div className="max-h-72 overflow-auto">
               {addableFields.length === 0 ? (
                 <div className="px-3 py-4 text-sm text-muted-foreground">
-                  No fields available.
+                  {text.noFieldsAvailable}
                 </div>
               ) : (
                 <div className="grid gap-1 p-2">
@@ -480,7 +637,7 @@ export const ResourceDetailPanel = forwardRef<
                 setFieldDialogOpen(false);
               }}
             >
-              Close
+              {text.close}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -514,6 +671,7 @@ const FieldRow = ({
   onRemove,
   onSelectResource,
 }: FieldRowProps) => {
+  const { locale, text } = useResourceDetailText();
   const kind = field.path.endsWith(".identifier")
     ? "Identifier"
     : resolveFieldKind(field);
@@ -592,21 +750,24 @@ const FieldRow = ({
           <Label className="text-sm font-semibold text-foreground">{field.label}</Label>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {(field.min ?? 0) > 0 ? <span className="text-emerald-600">Required</span> : null}
-          {effectiveRepeating ? <span>Multiple</span> : null}
+          {(field.min ?? 0) > 0 ? <span className="text-emerald-600">{text.required}</span> : null}
+          {effectiveRepeating ? <span>{text.multiple}</span> : null}
           {hasBrokenReference ? (
             <span
               className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
-              title="Broken reference target"
+              title={text.brokenReferenceTarget}
             >
               <AlertTriangle className="size-3" />
-              Missing target
+              {text.missingTarget}
             </span>
           ) : null}
           {fieldErrorCount > 0 ? (
             <span
               className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
-              title={`${fieldErrorCount} validation error${fieldErrorCount === 1 ? "" : "s"}`}
+              title={formatTemplate(text.validationErrorTooltip, {
+                count: fieldErrorCount,
+                suffix: locale === "en" && fieldErrorCount === 1 ? "" : "s",
+              })}
             >
               <AlertTriangle className="size-3" />
               {fieldErrorCount}
@@ -618,7 +779,7 @@ const FieldRow = ({
               onClick={onRemove}
               className="text-xs text-destructive hover:text-destructive/80"
             >
-              Remove
+              {text.remove}
             </button>
           ) : null}
         </div>
@@ -633,7 +794,7 @@ const FieldRow = ({
         ) : null}
         {values.length === 0 ? (
           <div className="rounded-md border border-dashed border-foreground/15 px-3 py-3 text-xs text-muted-foreground">
-            No values yet.
+            {text.noValuesYet}
           </div>
         ) : null}
         {values.map((value, index) => (
@@ -660,7 +821,7 @@ const FieldRow = ({
             className="w-fit"
             disabled={!canAddItem}
           >
-            Add value
+            {text.addValue}
           </Button>
         ) : null}
       </div>
@@ -692,6 +853,7 @@ const ComplexFieldGroup = ({
   onChange,
   onSelectResource,
 }: ComplexFieldGroupProps) => {
+  const { locale, text } = useResourceDetailText();
   const rootValue = getFieldValue(content, group.root);
   const isRepeating = isRepeatingField(group.root) || Array.isArray(rootValue);
   const rootKind = group.root.path.endsWith(".identifier")
@@ -748,12 +910,17 @@ const ComplexFieldGroup = ({
             <Label className="text-sm font-semibold text-foreground">
               {group.root.label}
             </Label>
-            <p className="text-xs text-muted-foreground">Group · {items.length} entries</p>
+            <p className="text-xs text-muted-foreground">
+              {formatTemplate(text.groupEntries, { count: items.length })}
+            </p>
           </div>
           {rootErrorCount > 0 ? (
             <span
               className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive"
-              title={`${rootErrorCount} validation error${rootErrorCount === 1 ? "" : "s"}`}
+              title={formatTemplate(text.validationErrorTooltip, {
+                count: rootErrorCount,
+                suffix: locale === "en" && rootErrorCount === 1 ? "" : "s",
+              })}
             >
               <AlertTriangle className="size-3" />
               {rootErrorCount}
@@ -768,13 +935,13 @@ const ComplexFieldGroup = ({
             }}
             disabled={!canAddEntry}
           >
-            Add entry
+            {text.addEntry}
           </Button>
         </div>
         <div className="mt-4 grid gap-4">
           {items.length === 0 ? (
             <div className="rounded-md border border-dashed border-foreground/15 px-3 py-3 text-xs text-muted-foreground">
-              No entries yet.
+              {text.noEntriesYet}
             </div>
           ) : null}
           {items.map((item, index) => {
@@ -797,7 +964,7 @@ const ComplexFieldGroup = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs font-semibold text-muted-foreground">
-                    Entry {index + 1}
+                    {formatTemplate(text.entry, { index: index + 1 })}
                   </div>
                   <button
                     type="button"
@@ -810,7 +977,7 @@ const ComplexFieldGroup = ({
                     )}
                     disabled={!canRemoveEntry}
                   >
-                    Remove
+                    {text.remove}
                   </button>
                 </div>
                 <div className="mt-3 grid gap-3">
@@ -977,6 +1144,7 @@ type UnknownValueEditorProps = {
 };
 
 const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
+  const { text } = useResourceDetailText();
   const [draft, setDraft] = useState(() => stringifyValue(value));
   const [error, setError] = useState<string | null>(null);
 
@@ -990,11 +1158,11 @@ const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
     return (
       <div className="rounded-md border border-foreground/10 bg-muted/30 px-3 py-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Object
+          {text.object}
         </div>
         <div className="mt-3 grid gap-2">
           {keys.length === 0 ? (
-            <div className="text-xs text-muted-foreground">No fields yet.</div>
+            <div className="text-xs text-muted-foreground">{text.noFieldsYet}</div>
           ) : null}
           {keys.map((key) => {
             const entry = value[key];
@@ -1025,7 +1193,7 @@ const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
           })}
           <div className="grid gap-2">
             <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Raw JSON
+              {text.rawJson}
             </div>
             <textarea
               value={draft}
@@ -1037,13 +1205,13 @@ const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
                 try {
                   const parsed = JSON.parse(draft);
                   if (!isPlainObject(parsed)) {
-                    setError("JSON must be an object.");
+                    setError(text.jsonMustBeObject);
                     return;
                   }
                   onChange(parsed);
                   setError(null);
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : "Invalid JSON");
+                  setError(err instanceof Error ? err.message : text.invalidJson);
                 }
               }}
               className="min-h-[120px] w-full rounded-md border border-foreground/10 bg-background p-2 text-xs"
@@ -1075,7 +1243,7 @@ const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
           onClick={() => onChange([...value, ""])}
           className="w-fit"
         >
-          Add value
+          {text.addValue}
         </Button>
       </div>
     );
@@ -1099,7 +1267,7 @@ const UnknownValueEditor = ({ value, onChange }: UnknownValueEditorProps) => {
             onChange(parsed);
             setError(null);
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Invalid JSON");
+            setError(err instanceof Error ? err.message : text.invalidJson);
           }
         }}
       />
@@ -1189,12 +1357,16 @@ const PopupSearchSelect = ({
   options,
   placeholder,
   onValueChange,
-  searchPlaceholder = "Search",
-  emptyMessage = "No options available.",
-  clearLabel = "Clear",
+  searchPlaceholder,
+  emptyMessage,
+  clearLabel,
 }: PopupSearchSelectProps) => {
+  const { text } = useResourceDetailText();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const effectiveSearchPlaceholder = searchPlaceholder ?? text.popupSearchPlaceholder;
+  const effectiveEmptyMessage = emptyMessage ?? text.popupNoOptions;
+  const effectiveClearLabel = clearLabel ?? text.popupClear;
   const selected = options.find((option) => option.value === value);
   const normalizedQuery = query.trim().toLowerCase();
   const filteredOptions = options.filter((option) => {
@@ -1233,7 +1405,7 @@ const PopupSearchSelect = ({
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={effectiveSearchPlaceholder}
             />
             <div className="max-h-80 overflow-auto rounded-md border border-foreground/10">
               <div className="grid gap-1 p-2">
@@ -1248,11 +1420,13 @@ const PopupSearchSelect = ({
                     !value ? "bg-muted/50" : ""
                   )}
                 >
-                  <span>{clearLabel}</span>
+                  <span>{effectiveClearLabel}</span>
                   {!value ? <Check className="size-4 text-muted-foreground" /> : null}
                 </button>
                 {filteredOptions.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">{emptyMessage}</div>
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    {effectiveEmptyMessage}
+                  </div>
                 ) : (
                   filteredOptions.map((option, index) => (
                     <button
@@ -1296,6 +1470,7 @@ const FieldInput = ({
   allDatasetResources = [],
   onOpenResource,
 }: FieldInputProps) => {
+  const { text } = useResourceDetailText();
   const [includeReferenceDisplay, setIncludeReferenceDisplay] = useState(false);
 
   const renderReferenceInput = (currentValue: unknown) => {
@@ -1369,14 +1544,14 @@ const FieldInput = ({
             checked={includeReferenceDisplay}
             onChange={(event) => setIncludeReferenceDisplay(event.target.checked)}
           />
-          <span>Set display</span>
+          <span>{text.setDisplay}</span>
         </label>
         <PopupSearchSelect
           value={normalizedReferenceKey || currentReference}
           options={referenceSelectOptions}
-          placeholder="Select reference"
-          searchPlaceholder="Search resources"
-          emptyMessage="No matching resources."
+          placeholder={text.selectReference}
+          searchPlaceholder={text.searchResources}
+          emptyMessage={text.noMatchingResources}
           onValueChange={(reference) => {
             if (!reference) {
               onChange(undefined);
@@ -1407,15 +1582,15 @@ const FieldInput = ({
             onChange={(event) =>
               onChange({ reference: event.target.value })
             }
-            placeholder="ResourceType/id"
+            placeholder={text.referencePlaceholder}
           />
           {existingReferenceTarget && onOpenResource ? (
             <Button
               type="button"
               variant="outline"
               size="icon-sm"
-              aria-label="Open referenced resource"
-              title="Open referenced resource"
+              aria-label={text.openReferencedResource}
+              title={text.openReferencedResource}
               onClick={() => onOpenResource(existingReferenceTarget.id)}
             >
               <ArrowRight className="size-4" />
@@ -1425,7 +1600,7 @@ const FieldInput = ({
         {brokenReference ? (
           <div className="inline-flex items-center gap-1 text-xs text-amber-700">
             <AlertTriangle className="size-3" />
-            Missing target: {brokenReference}
+            {text.missingTarget}: {brokenReference}
           </div>
         ) : null}
       </div>
@@ -1457,8 +1632,8 @@ const FieldInput = ({
               label: option.label,
               searchText: option.system,
             }))}
-            placeholder="Select system"
-            searchPlaceholder="Search systems"
+            placeholder={text.selectSystem}
+            searchPlaceholder={text.searchSystems}
             onValueChange={(nextSystem) =>
               onChange({ ...current, system: nextSystem || undefined })
             }
@@ -1475,8 +1650,8 @@ const FieldInput = ({
                 searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
               };
             })}
-            placeholder="Select identifier type"
-            searchPlaceholder="Search identifier types"
+            placeholder={text.selectIdentifierType}
+            searchPlaceholder={text.searchIdentifierTypes}
             onValueChange={(nextKey) => {
               if (!nextKey) {
                 const rest = { ...current };
@@ -1501,12 +1676,12 @@ const FieldInput = ({
           <Input
             value={system}
             onChange={(event) => onChange({ ...current, system: event.target.value })}
-            placeholder="System URI"
+            placeholder={text.systemUri}
           />
           <Input
             value={idValue}
             onChange={(event) => onChange({ ...current, value: event.target.value })}
-            placeholder="Identifier value"
+            placeholder={text.identifierValue}
           />
         </div>
         <div className="grid gap-2 md:grid-cols-2">
@@ -1516,8 +1691,8 @@ const FieldInput = ({
               value: option,
               label: option,
             }))}
-            placeholder="Use (optional)"
-            searchPlaceholder="Search use values"
+            placeholder={text.useOptional}
+            searchPlaceholder={text.searchUseValues}
             onValueChange={(nextUse) =>
               onChange({ ...current, use: nextUse || undefined })
             }
@@ -1527,7 +1702,7 @@ const FieldInput = ({
             onChange={(event) =>
               onChange({ ...current, type: { ...type, text: event.target.value } })
             }
-            placeholder="Type text (optional)"
+            placeholder={text.typeTextOptional}
           />
         </div>
         <div className="grid gap-2 md:grid-cols-3">
@@ -1537,7 +1712,7 @@ const FieldInput = ({
               const nextCoding = { ...coding, system: event.target.value };
               onChange({ ...current, type: setCodingAt(type, nextCoding) });
             }}
-            placeholder="Type system (optional)"
+            placeholder={text.typeSystemOptional}
           />
           <Input
             value={typeCode}
@@ -1545,7 +1720,7 @@ const FieldInput = ({
               const nextCoding = { ...coding, code: event.target.value };
               onChange({ ...current, type: setCodingAt(type, nextCoding) });
             }}
-            placeholder="Type code (optional)"
+            placeholder={text.typeCodeOptional}
           />
           <Input
             value={typeDisplay}
@@ -1553,12 +1728,12 @@ const FieldInput = ({
               const nextCoding = { ...coding, display: event.target.value };
               onChange({ ...current, type: setCodingAt(type, nextCoding) });
             }}
-            placeholder="Type display (optional)"
+            placeholder={text.typeDisplayOptional}
           />
         </div>
         {onRemove ? (
           <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
-            Remove
+            {text.remove}
           </Button>
         ) : null}
       </div>
@@ -1574,7 +1749,7 @@ const FieldInput = ({
           checked={Boolean(value)}
           onChange={(event) => onChange(event.target.checked)}
         />
-        <span className="text-xs text-muted-foreground">Enabled</span>
+        <span className="text-xs text-muted-foreground">{text.enabled}</span>
       </div>
     );
   }
@@ -1624,8 +1799,8 @@ const FieldInput = ({
             label: formatOptionLabel(option.system, option.code, option.display),
             searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
           }))}
-          placeholder="Select value"
-          searchPlaceholder="Search values"
+          placeholder={text.selectValue}
+          searchPlaceholder={text.searchValues}
           onValueChange={(nextValue) => {
             onChange(nextValue || undefined);
           }}
@@ -1636,7 +1811,7 @@ const FieldInput = ({
       <Input
         value={typeof value === "string" ? value : value ? String(value) : ""}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Enter code"
+        placeholder={text.enterCode}
       />
     );
   }
@@ -1652,14 +1827,14 @@ const FieldInput = ({
             label: formatOptionLabel(option.system, option.code, option.display),
             searchText: `${option.system ?? ""} ${option.code} ${option.display ?? ""}`,
           }))}
-          placeholder="Select value"
-          searchPlaceholder="Search values"
+          placeholder={text.selectValue}
+          searchPlaceholder={text.searchValues}
           onValueChange={(nextValue) => onChange(nextValue || undefined)}
         />
         <Input
           value={current}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Or enter a custom value"
+          placeholder={text.orEnterCustomValue}
         />
       </div>
     );
@@ -1724,8 +1899,8 @@ const FieldInput = ({
             <PopupSearchSelect
               value={currentKey}
               options={codingOptions}
-              placeholder="Select value"
-              searchPlaceholder="Search values"
+              placeholder={text.selectValue}
+              searchPlaceholder={text.searchValues}
               onValueChange={(nextKey) => {
                 if (!nextKey) {
                   onChange(undefined);
@@ -1747,22 +1922,22 @@ const FieldInput = ({
             <Input
               value={currentSystem}
               onChange={(event) => updateCoding({ system: event.target.value })}
-              placeholder="System URL"
+              placeholder={text.systemUrl}
             />
             <Input
               value={currentCode}
               onChange={(event) => updateCoding({ code: event.target.value })}
-              placeholder="Code"
+              placeholder={text.code}
             />
             <Input
               value={currentDisplay}
               onChange={(event) => updateCoding({ display: event.target.value })}
-              placeholder="Display (optional)"
+              placeholder={text.displayOptional}
             />
           </div>
           {onRemove ? (
             <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
-              Remove
+              {text.remove}
             </Button>
           ) : null}
         </div>
@@ -1854,11 +2029,11 @@ const FieldInput = ({
         <Input
           value={conceptText}
           onChange={(event) => updateConceptText(event.target.value)}
-          placeholder="Text (optional)"
+          placeholder={text.textOptional}
         />
         {conceptCodings.length === 0 ? (
           <div className="rounded-md border border-dashed border-foreground/15 px-3 py-2 text-xs text-muted-foreground">
-            No values yet.
+            {text.noValuesYet}
           </div>
         ) : null}
         {conceptCodings.map((coding, index) => {
@@ -1873,8 +2048,8 @@ const FieldInput = ({
                 <PopupSearchSelect
                   value={codingKey}
                   options={codingOptions}
-                  placeholder="Search value"
-                  searchPlaceholder="Search values"
+                  placeholder={text.searchValue}
+                  searchPlaceholder={text.searchValues}
                   onValueChange={(nextKey) => updateCodingFromOption(index, nextKey)}
                 />
               ) : null}
@@ -1882,17 +2057,17 @@ const FieldInput = ({
                 <Input
                   value={codingSystem}
                   onChange={(event) => updateCodingAt(index, { system: event.target.value })}
-                  placeholder="System URL"
+                  placeholder={text.systemUrl}
                 />
                 <Input
                   value={codingCode}
                   onChange={(event) => updateCodingAt(index, { code: event.target.value })}
-                  placeholder="Code"
+                  placeholder={text.code}
                 />
                 <Input
                   value={codingDisplay}
                   onChange={(event) => updateCodingAt(index, { display: event.target.value })}
-                  placeholder="Display (optional)"
+                  placeholder={text.displayOptional}
                 />
               </div>
               <Button
@@ -1901,13 +2076,13 @@ const FieldInput = ({
                 onClick={() => removeCodingAt(index)}
                 className="w-fit"
               >
-                Remove value
+                {text.removeValue}
               </Button>
             </div>
           );
         })}
         <Button variant="outline" size="sm" onClick={addCoding} className="w-fit">
-          Add value
+          {text.addValue}
         </Button>
       </div>
     );
@@ -1919,7 +2094,7 @@ const FieldInput = ({
         <UnknownValueEditor value={value} onChange={onChange} />
         {onRemove ? (
           <Button variant="ghost" size="sm" onClick={onRemove} className="w-fit">
-            Remove
+            {text.remove}
           </Button>
         ) : null}
       </div>
@@ -1931,11 +2106,11 @@ const FieldInput = ({
       <Input
         value={typeof value === "string" ? value : value ? String(value) : ""}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Enter value"
+        placeholder={text.enterValue}
       />
       {onRemove ? (
         <Button variant="ghost" size="sm" onClick={onRemove}>
-          Remove
+          {text.remove}
         </Button>
       ) : null}
     </div>

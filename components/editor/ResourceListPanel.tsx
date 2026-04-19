@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ChevronRight, MoreVertical, Plus, Search } from "lucide-react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { byLocale } from "@/lib/i18n/select";
 import { cn } from "@/lib/utils";
 import type { DatasetResource } from "@/lib/datasets/content";
 import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
@@ -72,11 +74,49 @@ export const ResourceListPanel = ({
   onExportResource,
   onDuplicateResource,
 }: ResourceListPanelProps) => {
+  const { locale } = useI18n();
   const [sortMode, setSortMode] = useState<SortMode>("lastSelected");
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [collapsedTypes, setCollapsedTypes] = useState<Set<string>>(() => new Set());
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const text = byLocale(locale, {
+    de: {
+      title: "Ressourcen",
+      inDataset: "{count} im Dataset",
+      ariaToggleSearch: "Suche umschalten",
+      sortLastSelected: "Zuletzt ausgewählt",
+      sortLastCreated: "Zuletzt erstellt",
+      sortAlphabetic: "Alphabetisch",
+      newResource: "Neue Ressource",
+      searchResources: "Ressourcen suchen",
+      noResourcesYet: "Noch keine Ressourcen.",
+      ariaOpenResourceMenu: "Ressourcenmenü öffnen",
+      exportResource: "Ressource exportieren",
+      duplicateResource: "Ressource duplizieren",
+      deleteResource: "Ressource löschen",
+      validationErrorTooltip: "{count} Validierungsfehler",
+    },
+    en: {
+      title: "Resources",
+      inDataset: "{count} in dataset",
+      ariaToggleSearch: "Toggle search",
+      sortLastSelected: "Last selected",
+      sortLastCreated: "Last added",
+      sortAlphabetic: "Alphabetic",
+      newResource: "New resource",
+      searchResources: "Search resources",
+      noResourcesYet: "No resources yet.",
+      ariaOpenResourceMenu: "Open resource menu",
+      exportResource: "Export resource",
+      duplicateResource: "Duplicate resource",
+      deleteResource: "Delete resource",
+      validationErrorTooltip: "{count} validation error{suffix}",
+    },
+  });
+
+  const format = (template: string, values: Record<string, string | number>) =>
+    template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -178,6 +218,7 @@ export const ResourceListPanel = ({
       try {
         issueCount = validateResourceWithProfile(resource.content, fields, registry, {
           existingReferences: referenceIndex,
+          locale,
         }).filter((issue) => issue.severity === "error").length;
       } catch (error) {
         console.error("Failed to validate resource", resource.id, error);
@@ -203,7 +244,7 @@ export const ResourceListPanel = ({
     }
 
     return byResourceId;
-  }, [resources, registry]);
+  }, [resources, registry, locale]);
 
   const toggleType = (resourceType: string) => {
     setCollapsedTypes((prev) => {
@@ -222,15 +263,17 @@ export const ResourceListPanel = ({
       <div className="border-b border-foreground/10 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold text-foreground">Resources</div>
-            <div className="text-xs text-muted-foreground">{resources.length} in dataset</div>
+            <div className="text-sm font-semibold text-foreground">{text.title}</div>
+            <div className="text-xs text-muted-foreground">
+              {format(text.inDataset, { count: resources.length })}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowSearch((prev) => !prev)}
               className="flex h-8 w-8 items-center justify-center rounded-md border border-foreground/20 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-              aria-label="Toggle search"
+              aria-label={text.ariaToggleSearch}
             >
               <Search className="size-4" />
             </button>
@@ -239,14 +282,14 @@ export const ResourceListPanel = ({
               onChange={(event) => setSortMode(event.target.value as SortMode)}
               className="h-8 rounded-md border border-foreground/20 bg-background px-2 text-xs"
             >
-              <option value="lastSelected">Last selected</option>
-              <option value="lastCreated">Last added</option>
-              <option value="alphabetic">Alphabetic</option>
+              <option value="lastSelected">{text.sortLastSelected}</option>
+              <option value="lastCreated">{text.sortLastCreated}</option>
+              <option value="alphabetic">{text.sortAlphabetic}</option>
             </select>
             {onCreateResource ? (
               <Button size="sm" onClick={onCreateResource} className="gap-1.5">
                 <Plus className="size-4" />
-                <span className="hidden md:inline">New resource</span>
+                <span className="hidden md:inline">{text.newResource}</span>
               </Button>
             ) : null}
           </div>
@@ -256,7 +299,7 @@ export const ResourceListPanel = ({
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search resources"
+              placeholder={text.searchResources}
               className="h-8"
             />
           </div>
@@ -266,12 +309,12 @@ export const ResourceListPanel = ({
         <div className="grid gap-3 p-3">
           {resources.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
-              <div>No resources yet.</div>
+              <div>{text.noResourcesYet}</div>
               {onCreateResource ? (
                 <div className="mt-3 flex justify-center">
                   <Button size="sm" onClick={onCreateResource} className="gap-1.5">
                     <Plus className="size-4" />
-                    New resource
+                    {text.newResource}
                   </Button>
                 </div>
               ) : null}
@@ -326,7 +369,7 @@ export const ResourceListPanel = ({
                                 type="button"
                                 onClick={(event) => event.stopPropagation()}
                                 className="flex h-7 w-7 items-center justify-center rounded-md border border-foreground/15 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                                aria-label="Open resource menu"
+                                aria-label={text.ariaOpenResourceMenu}
                               >
                                 <MoreVertical className="size-4" />
                               </button>
@@ -338,7 +381,7 @@ export const ResourceListPanel = ({
                                   onExportResource?.(resource);
                                 }}
                               >
-                                Export resource
+                                {text.exportResource}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(event) => {
@@ -346,7 +389,7 @@ export const ResourceListPanel = ({
                                   onDuplicateResource?.(resource);
                                 }}
                               >
-                                Duplicate resource
+                                {text.duplicateResource}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(event) => {
@@ -355,7 +398,7 @@ export const ResourceListPanel = ({
                                 }}
                                 className="text-destructive focus:text-destructive"
                               >
-                                Delete resource
+                                {text.deleteResource}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -371,7 +414,10 @@ export const ResourceListPanel = ({
                           {hasValidationErrors ? (
                             <span
                               className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
-                              title={`${errorCount} validation error${errorCount === 1 ? "" : "s"}`}
+                              title={format(text.validationErrorTooltip, {
+                                count: errorCount,
+                                suffix: locale === "en" && errorCount === 1 ? "" : "s",
+                              })}
                             >
                               <AlertTriangle className="size-3" />
                               {errorCount}

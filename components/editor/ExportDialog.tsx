@@ -1,8 +1,10 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { byLocale } from "@/lib/i18n/select";
 
 export type ExportScope = "dataset" | "project";
 export type ExportFormat = "json" | "zip";
@@ -59,11 +61,49 @@ export const ExportDialog = ({
   onConfirm,
   confirmDisabled,
 }: ExportDialogProps) => {
+  const { locale } = useI18n();
   const activeScope = scopeOptions ? scope ?? scopeOptions[0]?.value : scope;
   const showDatasetMode = activeScope === "dataset" && datasetMode && onDatasetModeChange;
   const showIncludeDatasets = activeScope === "project" && typeof includeDatasets === "boolean";
   const showDatasetSelect =
     activeScope === "dataset" && datasetOptions && onDatasetChange !== undefined;
+  const text = byLocale(locale, {
+    de: {
+      exportScope: "Export-Umfang",
+      exportFormat: "Export-Format",
+      singleJson: "Einzelne JSON",
+      zipArchive: "ZIP-Archiv",
+      formatHint:
+        "JSON exportiert alles in einer Datei. ZIP teilt Daten in Dateien mit Manifest auf.",
+      dataset: "Dataset",
+      noDatasetsAvailable: "Keine Datasets verfügbar.",
+      datasetPayload: "Dataset-Inhalt",
+      datasetPackage: "Dataset-Paket",
+      resourcesList: "Ressourcenliste",
+      fhirSearchset: "FHIR Searchset",
+      payloadHint:
+        "Ressourcenliste exportiert rohe Ressourcen-JSON. Searchset exportiert ein FHIR Bundle mit Typ",
+      includeDatasets: "Datasets einschließen",
+      cancel: "Abbrechen",
+    },
+    en: {
+      exportScope: "Export scope",
+      exportFormat: "Export format",
+      singleJson: "Single JSON",
+      zipArchive: "ZIP archive",
+      formatHint: "JSON exports everything in one file. ZIP splits data into files with a manifest.",
+      dataset: "Dataset",
+      noDatasetsAvailable: "No datasets available.",
+      datasetPayload: "Dataset payload",
+      datasetPackage: "Dataset package",
+      resourcesList: "Resources list",
+      fhirSearchset: "FHIR searchset",
+      payloadHint:
+        "Resources list exports raw resource JSON. Searchset exports a FHIR Bundle with type",
+      includeDatasets: "Include datasets",
+      cancel: "Cancel",
+    },
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +115,7 @@ export const ExportDialog = ({
         <div className="grid gap-4">
           {scopeOptions && onScopeChange ? (
             <div className="grid gap-2">
-              <Label>Export scope</Label>
+              <Label>{text.exportScope}</Label>
               <div className="flex flex-wrap items-center gap-2">
                 {scopeOptions.map((option) => (
                   <Button
@@ -101,7 +141,7 @@ export const ExportDialog = ({
           ) : null}
 
           <div className="grid gap-2">
-            <Label>Export format</Label>
+            <Label>{text.exportFormat}</Label>
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
@@ -109,7 +149,7 @@ export const ExportDialog = ({
                 variant={exportFormat === "json" ? "secondary" : "outline"}
                 onClick={() => onExportFormatChange("json")}
               >
-                Single JSON
+                {text.singleJson}
               </Button>
               <Button
                 type="button"
@@ -117,17 +157,17 @@ export const ExportDialog = ({
                 variant={exportFormat === "zip" ? "secondary" : "outline"}
                 onClick={() => onExportFormatChange("zip")}
               >
-                ZIP archive
+                {text.zipArchive}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              JSON exports everything in one file. ZIP splits data into files with a manifest.
+              {text.formatHint}
             </p>
           </div>
 
           {showDatasetSelect ? (
             <div className="grid gap-2">
-              <Label>Dataset</Label>
+              <Label>{text.dataset}</Label>
               {datasetOptions.length > 0 ? (
                 <select
                   value={selectedDataset ?? datasetOptions[0]?.value}
@@ -141,14 +181,14 @@ export const ExportDialog = ({
                   ))}
                 </select>
               ) : (
-                <p className="text-xs text-muted-foreground">No datasets available.</p>
+                <p className="text-xs text-muted-foreground">{text.noDatasetsAvailable}</p>
               )}
             </div>
           ) : null}
 
           {showDatasetMode ? (
             <div className="grid gap-2">
-              <Label>Dataset payload</Label>
+              <Label>{text.datasetPayload}</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
@@ -156,7 +196,7 @@ export const ExportDialog = ({
                   variant={datasetMode === "package" ? "secondary" : "outline"}
                   onClick={() => onDatasetModeChange?.("package")}
                 >
-                  Dataset package
+                  {text.datasetPackage}
                 </Button>
                 <Button
                   type="button"
@@ -164,7 +204,7 @@ export const ExportDialog = ({
                   variant={datasetMode === "resources" ? "secondary" : "outline"}
                   onClick={() => onDatasetModeChange?.("resources")}
                 >
-                  Resources list
+                  {text.resourcesList}
                 </Button>
                 <Button
                   type="button"
@@ -172,12 +212,11 @@ export const ExportDialog = ({
                   variant={datasetMode === "searchset" ? "secondary" : "outline"}
                   onClick={() => onDatasetModeChange?.("searchset")}
                 >
-                  FHIR searchset
+                  {text.fhirSearchset}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Resources list exports raw resource JSON. Searchset exports a FHIR Bundle
-                with type <span className="font-semibold">searchset</span>.
+                {text.payloadHint} <span className="font-semibold">searchset</span>.
               </p>
             </div>
           ) : null}
@@ -191,13 +230,13 @@ export const ExportDialog = ({
                 onChange={(event) => onIncludeDatasetsChange?.(event.target.checked)}
                 className="h-4 w-4 rounded border border-foreground/30"
               />
-              <Label htmlFor="export-include-datasets">Include datasets</Label>
+              <Label htmlFor="export-include-datasets">{text.includeDatasets}</Label>
             </div>
           ) : null}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {text.cancel}
           </Button>
           <Button onClick={onConfirm} disabled={confirmDisabled}>
             {confirmLabel}

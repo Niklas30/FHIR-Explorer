@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download, Maximize2, RefreshCcw, SlidersHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import type { DatasetResource } from "@/lib/datasets/content";
 import { parseLocalReference } from "@/lib/fhir-editor/references";
+import { byLocale } from "@/lib/i18n/select";
 
 type DatasetDiagramDialogProps = {
   open: boolean;
@@ -171,10 +173,11 @@ const collectReferences = (
 const buildMermaidDefinition = (
   resources: DatasetResource[],
   selectedFieldsByType: DiagramFieldSelection,
-  hideIdWhenName: boolean
+  hideIdWhenName: boolean,
+  emptyLabel: string
 ) => {
   if (resources.length === 0) {
-    return "flowchart LR\n  empty[\"No resources in dataset\"]";
+    return `flowchart LR\n  empty["${sanitizeLabel(emptyLabel)}"]`;
   }
 
   const nodes = new Map<string, string>();
@@ -240,6 +243,7 @@ export const DatasetDiagramDialog = ({
   onOpenChange,
   resources,
 }: DatasetDiagramDialogProps) => {
+  const { locale } = useI18n();
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -249,6 +253,50 @@ export const DatasetDiagramDialog = ({
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const panZoomRef = useRef<PanZoomInstance | null>(null);
+  const text = byLocale(locale, {
+    de: {
+      noResourcesInDataset: "Keine Ressourcen im Dataset",
+      failedToRenderDiagram: "Diagramm konnte nicht gerendert werden",
+      title: "Dataset-Beziehungen",
+      toggleDiagramSettings: "Diagramm-Einstellungen umschalten",
+      settings: "Einstellungen",
+      diagramSettings: "Diagramm-Einstellungen",
+      chooseFields: "Wähle, welche Felder pro Ressourcentyp angezeigt werden.",
+      compactLayout: "Kompaktes Layout",
+      hideIdWhenName: "ID ausblenden, wenn Name vorhanden",
+      resourcesOne: "Ressource",
+      resourcesMany: "Ressourcen",
+      noDisplayableFields: "Keine darstellbaren Felder gefunden.",
+      selectAll: "Alle auswählen",
+      clear: "Leeren",
+      ariaZoomIn: "Vergrößern",
+      ariaZoomOut: "Verkleinern",
+      ariaResetZoom: "Zoom zurücksetzen",
+      ariaFitToView: "Auf Ansicht anpassen",
+      ariaDownloadDiagram: "Diagramm herunterladen",
+    },
+    en: {
+      noResourcesInDataset: "No resources in dataset",
+      failedToRenderDiagram: "Failed to render diagram",
+      title: "Dataset relations",
+      toggleDiagramSettings: "Toggle diagram settings",
+      settings: "Settings",
+      diagramSettings: "Diagram settings",
+      chooseFields: "Choose which fields appear on each resource type.",
+      compactLayout: "Compact layout",
+      hideIdWhenName: "Hide ID when name exists",
+      resourcesOne: "resource",
+      resourcesMany: "resources",
+      noDisplayableFields: "No displayable fields found.",
+      selectAll: "Select all",
+      clear: "Clear",
+      ariaZoomIn: "Zoom in",
+      ariaZoomOut: "Zoom out",
+      ariaResetZoom: "Reset zoom",
+      ariaFitToView: "Fit to view",
+      ariaDownloadDiagram: "Download diagram",
+    },
+  });
 
   const resourcesByType = useMemo(() => {
     const map = new Map<string, DatasetResource[]>();
@@ -287,8 +335,14 @@ export const DatasetDiagramDialog = ({
   }, [availableFieldsByType, fieldSelection]);
 
   const diagram = useMemo(
-    () => buildMermaidDefinition(resources, normalizedFieldSelection, hideIdWhenName),
-    [resources, normalizedFieldSelection, hideIdWhenName]
+    () =>
+      buildMermaidDefinition(
+        resources,
+        normalizedFieldSelection,
+        hideIdWhenName,
+        text.noResourcesInDataset
+      ),
+    [resources, normalizedFieldSelection, hideIdWhenName, text.noResourcesInDataset]
   );
 
   useEffect(() => {
@@ -354,7 +408,7 @@ export const DatasetDiagramDialog = ({
         }
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : "Failed to render diagram");
+          setError(err instanceof Error ? err.message : text.failedToRenderDiagram);
         }
       }
     };
@@ -364,7 +418,7 @@ export const DatasetDiagramDialog = ({
     return () => {
       active = false;
     };
-  }, [compactLayout, diagram, open]);
+  }, [compactLayout, diagram, open, text.failedToRenderDiagram]);
 
   useEffect(() => {
     if (!open) return;
@@ -433,7 +487,7 @@ export const DatasetDiagramDialog = ({
         <div className="relative h-full w-full rounded-lg border border-foreground/10 bg-background">
           <div className="absolute inset-4 overflow-hidden rounded-md bg-background">
             <div className="pointer-events-none absolute left-3 top-3 z-10">
-              <DialogTitle className="text-lg">Dataset relations</DialogTitle>
+              <DialogTitle className="text-lg">{text.title}</DialogTitle>
             </div>
 
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -442,11 +496,11 @@ export const DatasetDiagramDialog = ({
                 variant="outline"
                 onClick={() => setSettingsOpen((prev) => !prev)}
                 aria-expanded={settingsOpen}
-                aria-label="Toggle diagram settings"
+                aria-label={text.toggleDiagramSettings}
                 className="gap-1.5"
               >
                 <SlidersHorizontal className="size-4" />
-                <span className="hidden sm:inline">Settings</span>
+                <span className="hidden sm:inline">{text.settings}</span>
               </Button>
             </div>
 
@@ -455,16 +509,16 @@ export const DatasetDiagramDialog = ({
                 <div className="rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur">
                   <div className="border-b border-foreground/10 px-3 py-2">
                     <div className="text-sm font-semibold text-foreground">
-                      Diagram settings
+                      {text.diagramSettings}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Choose which fields appear on each resource type.
+                      {text.chooseFields}
                     </div>
                   </div>
                   <ScrollArea className="max-h-[calc(100dvh-9rem)]">
                     <div className="grid gap-4 px-3 py-3">
                       <label className="flex items-center justify-between gap-3 text-sm">
-                        <span>Compact layout</span>
+                        <span>{text.compactLayout}</span>
                         <input
                           type="checkbox"
                           className="h-4 w-4 accent-foreground"
@@ -473,7 +527,7 @@ export const DatasetDiagramDialog = ({
                         />
                       </label>
                       <label className="flex items-center justify-between gap-3 text-sm">
-                        <span>Hide ID when name exists</span>
+                        <span>{text.hideIdWhenName}</span>
                         <input
                           type="checkbox"
                           className="h-4 w-4 accent-foreground"
@@ -494,13 +548,14 @@ export const DatasetDiagramDialog = ({
                             <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-foreground">
                               {resourceType}
                               <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                {list.length} resource{list.length === 1 ? "" : "s"}
+                                {list.length}{" "}
+                                {list.length === 1 ? text.resourcesOne : text.resourcesMany}
                               </span>
                             </summary>
                             <div className="grid gap-2 px-3 pb-3">
                               {availableFields.length === 0 ? (
                                 <div className="text-xs text-muted-foreground">
-                                  No displayable fields found.
+                                  {text.noDisplayableFields}
                                 </div>
                               ) : (
                                 <div className="grid gap-2">
@@ -515,7 +570,7 @@ export const DatasetDiagramDialog = ({
                                         }))
                                       }
                                     >
-                                      Select all
+                                      {text.selectAll}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -528,7 +583,7 @@ export const DatasetDiagramDialog = ({
                                         })
                                       }
                                     >
-                                      Clear
+                                      {text.clear}
                                     </Button>
                                   </div>
                                   <div className="grid gap-1">
@@ -581,7 +636,7 @@ export const DatasetDiagramDialog = ({
                 size="sm"
                 variant="outline"
                 onClick={() => panZoomRef.current?.zoomIn()}
-                aria-label="Zoom in"
+                aria-label={text.ariaZoomIn}
               >
                 <ZoomIn className="size-4" />
               </Button>
@@ -589,7 +644,7 @@ export const DatasetDiagramDialog = ({
                 size="sm"
                 variant="outline"
                 onClick={() => panZoomRef.current?.zoomOut()}
-                aria-label="Zoom out"
+                aria-label={text.ariaZoomOut}
               >
                 <ZoomOut className="size-4" />
               </Button>
@@ -605,7 +660,7 @@ export const DatasetDiagramDialog = ({
                   panZoomRef.current.fit();
                   panZoomRef.current.center();
                 }}
-                aria-label="Reset zoom"
+                aria-label={text.ariaResetZoom}
               >
                 <RefreshCcw className="size-4" />
               </Button>
@@ -617,7 +672,7 @@ export const DatasetDiagramDialog = ({
                   panZoomRef.current.fit();
                   panZoomRef.current.center();
                 }}
-                aria-label="Fit to view"
+                aria-label={text.ariaFitToView}
               >
                 <Maximize2 className="size-4" />
               </Button>
@@ -625,7 +680,7 @@ export const DatasetDiagramDialog = ({
                 size="sm"
                 variant="outline"
                 onClick={handleDownload}
-                aria-label="Download diagram"
+                aria-label={text.ariaDownloadDiagram}
               >
                 <Download className="size-4" />
               </Button>

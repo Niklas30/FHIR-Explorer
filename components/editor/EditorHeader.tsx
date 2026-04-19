@@ -1,6 +1,8 @@
- "use client";
+"use client";
 
 import Link from "next/link";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LanguageMenuSub } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,6 +25,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { byLocale } from "@/lib/i18n/select";
 
 type EditorHeaderProps = {
   datasetName: string;
@@ -58,22 +61,44 @@ const ViewMenu = ({
   onThemeChange,
   compactTrigger = false,
 }: ViewMenuProps) => {
+  const { locale } = useI18n();
+  const text = byLocale(locale, {
+    de: {
+      view: "Ansicht",
+      zoom: "Zoom",
+      theme: "Theme",
+      language: "Sprache",
+      light: "Hell",
+      dark: "Dunkel",
+      ariaViewOptions: "Ansichtsoptionen",
+    },
+    en: {
+      view: "View",
+      zoom: "Zoom",
+      theme: "Theme",
+      language: "Language",
+      light: "Light",
+      dark: "Dark",
+      ariaViewOptions: "View options",
+    },
+  });
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {compactTrigger ? (
-          <Button variant="outline" size="icon-sm" aria-label="View options">
+          <Button variant="outline" size="icon-sm" aria-label={text.ariaViewOptions}>
             <Settings2 className="size-4" />
           </Button>
         ) : (
           <Button variant="outline">
             <Settings2 className="size-4" />
-            View
+            {text.view}
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
-        <DropdownMenuLabel>Zoom</DropdownMenuLabel>
+        <DropdownMenuLabel>{text.zoom}</DropdownMenuLabel>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <Button size="sm" variant="outline" onClick={onZoomOut}>
             <ZoomOut className="size-4" />
@@ -84,21 +109,24 @@ const ViewMenu = ({
           </Button>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuLabel>{text.theme}</DropdownMenuLabel>
         <DropdownMenuItem
           onClick={() => onThemeChange("light")}
           className={theme === "light" ? "font-semibold" : undefined}
         >
           <Sun className="size-4" />
-          Light
+          {text.light}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onThemeChange("dark")}
           className={theme === "dark" ? "font-semibold" : undefined}
         >
           <Moon className="size-4" />
-          Dark
+          {text.dark}
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{text.language}</DropdownMenuLabel>
+        <LanguageMenuSub />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -120,13 +148,41 @@ export const EditorHeader = ({
   onNavigateForward,
   onOpenCommands,
 }: EditorHeaderProps) => {
+  const { locale } = useI18n();
+  const text = byLocale(locale, {
+    de: {
+      projects: "Projekte",
+      previousResource: "Vorherige Ressource",
+      nextResource: "Nächste Ressource",
+      openCommands: "Commands öffnen",
+      commands: "Commands",
+      datasetInfo: "Dataset-Info",
+      visualize: "Visualisieren",
+      export: "Export",
+      moreActions: "Mehr Aktionen",
+      actions: "Aktionen",
+    },
+    en: {
+      projects: "Projects",
+      previousResource: "Previous resource",
+      nextResource: "Next resource",
+      openCommands: "Open commands",
+      commands: "Commands",
+      datasetInfo: "Dataset Info",
+      visualize: "Visualize",
+      export: "Export",
+      moreActions: "More actions",
+      actions: "Actions",
+    },
+  });
+
   return (
     <header className="border-b border-foreground/10 bg-background/90 px-3 py-3 sm:px-6 sm:py-4">
       <div className="flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
             <Link href="/" className="text-sm font-medium text-foreground">
-              Projects
+              {text.projects}
             </Link>
             <span>/</span>
             <span className="truncate text-sm font-semibold text-foreground sm:text-base">
@@ -138,8 +194,8 @@ export const EditorHeader = ({
           <Button
             variant="outline"
             size="icon"
-            aria-label="Previous resource"
-            title="Previous resource"
+            aria-label={text.previousResource}
+            title={text.previousResource}
             disabled={!canNavigateBack}
             onClick={onNavigateBack}
           >
@@ -148,8 +204,8 @@ export const EditorHeader = ({
           <Button
             variant="outline"
             size="icon"
-            aria-label="Next resource"
-            title="Next resource"
+            aria-label={text.nextResource}
+            title={text.nextResource}
             disabled={!canNavigateForward}
             onClick={onNavigateForward}
           >
@@ -162,7 +218,7 @@ export const EditorHeader = ({
             onClick={onOpenCommands}
           >
             <Command className="size-4" />
-            Commands
+            {text.commands}
             <span className="text-xs text-muted-foreground">.</span>
           </Button>
           <Button
@@ -170,8 +226,8 @@ export const EditorHeader = ({
             size="icon-sm"
             className="lg:hidden"
             onClick={onOpenCommands}
-            aria-label="Open commands"
-            title="Open commands (.)"
+            aria-label={text.openCommands}
+            title={`${text.openCommands} (.)`}
           >
             <Command className="size-4" />
           </Button>
@@ -179,14 +235,14 @@ export const EditorHeader = ({
           <div className="hidden items-center gap-2 lg:flex">
             <Button variant="outline" onClick={onOpenDatasetInfo} className="gap-1.5">
               <Info className="size-4" />
-              Dataset Info
+              {text.datasetInfo}
             </Button>
             <Button variant="outline" onClick={onOpenDiagram}>
-              Visualize
+              {text.visualize}
             </Button>
             <Button variant="outline" onClick={onOpenExport} className="gap-1.5">
               <Download className="size-4" />
-              Export
+              {text.export}
             </Button>
             <ViewMenu
               theme={theme}
@@ -209,20 +265,25 @@ export const EditorHeader = ({
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm" className="lg:hidden" aria-label="More actions">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="lg:hidden"
+                aria-label={text.moreActions}
+              >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[220px]">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>{text.actions}</DropdownMenuLabel>
               <DropdownMenuItem onClick={onOpenDatasetInfo}>
                 <Info className="size-4" />
-                Dataset Info
+                {text.datasetInfo}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onOpenDiagram}>Visualize</DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenDiagram}>{text.visualize}</DropdownMenuItem>
               <DropdownMenuItem onClick={onOpenExport}>
                 <Download className="size-4" />
-                Export
+                {text.export}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

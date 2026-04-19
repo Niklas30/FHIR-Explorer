@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { byLocale } from "@/lib/i18n/select";
 import type { ProfileSummary } from "@/lib/fhir-editor/profiles";
 
 type NewResourceDialogProps = {
@@ -18,9 +20,42 @@ export const NewResourceDialog = ({
   profiles,
   onCreate,
 }: NewResourceDialogProps) => {
+  const { locale } = useI18n();
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [resourceId, setResourceId] = useState<string>("");
   const [query, setQuery] = useState("");
+  const text = byLocale(locale, {
+    de: {
+      title: "Neue Ressource",
+      description: "Wähle ein Profil und starte mit einer Ressourceninstanz.",
+      search: "Suche",
+      searchProfiles: "Profile suchen",
+      noMatchingProfiles: "Keine passenden Profile.",
+      profileFallback: "Profil",
+      matchingProfiles: "Passende Profile",
+      noProfilesAvailable: "Keine Profile verfügbar",
+      resourceIdLabel: "FHIR-ID (optional)",
+      resourceIdPlaceholder: "endpoint-001",
+      resourceIdHint: "Verwende eine ID, wenn andere Ressourcen darauf referenzieren sollen.",
+      cancel: "Abbrechen",
+      createResource: "Ressource erstellen",
+    },
+    en: {
+      title: "New resource",
+      description: "Pick a profile and start composing a resource instance.",
+      search: "Search",
+      searchProfiles: "Search profiles",
+      noMatchingProfiles: "No matching profiles.",
+      profileFallback: "Profile",
+      matchingProfiles: "Matching profiles",
+      noProfilesAvailable: "No profiles available",
+      resourceIdLabel: "FHIR ID (optional)",
+      resourceIdPlaceholder: "endpoint-001",
+      resourceIdHint: "Use an ID if the resource should be referenced by others.",
+      cancel: "Cancel",
+      createResource: "Create resource",
+    },
+  });
 
   const createDefaultId = () => {
     if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -75,31 +110,31 @@ export const NewResourceDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New resource</DialogTitle>
+          <DialogTitle>{text.title}</DialogTitle>
           <DialogDescription>
-            Pick a profile and start composing a resource instance.
+            {text.description}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-2">
-            <Label htmlFor="profile-search">Search</Label>
+            <Label htmlFor="profile-search">{text.search}</Label>
             <Input
               id="profile-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search profiles"
+              placeholder={text.searchProfiles}
             />
           </div>
           <div className="grid gap-2">
             <div className="max-h-56 overflow-auto">
               {filteredProfiles.length === 0 ? (
                 <div className="px-2 py-3 text-sm text-muted-foreground">
-                  No matching profiles.
+                  {text.noMatchingProfiles}
                 </div>
               ) : (
                 <div className="grid gap-2">
                   {filteredProfiles.map((profile) => {
-                    const name = profile.name ?? profile.title ?? profile.url ?? "Profile";
+                    const name = profile.name ?? profile.title ?? profile.url ?? text.profileFallback;
                     const isActive = profile.url === selectedProfile;
                     return (
                       <button
@@ -125,7 +160,7 @@ export const NewResourceDialog = ({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="profile-select">Matching profiles</Label>
+            <Label htmlFor="profile-select">{text.matchingProfiles}</Label>
             <select
               id="profile-select"
               value={selectedProfile}
@@ -133,7 +168,7 @@ export const NewResourceDialog = ({
               className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
             >
               {filteredProfiles.length === 0 ? (
-                <option value="">No profiles available</option>
+                <option value="">{text.noProfilesAvailable}</option>
               ) : (
                 filteredProfiles.map((profile) => (
                   <option key={profile.url} value={profile.url}>
@@ -144,24 +179,24 @@ export const NewResourceDialog = ({
             </select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="resource-id">FHIR id (optional)</Label>
+            <Label htmlFor="resource-id">{text.resourceIdLabel}</Label>
             <Input
               id="resource-id"
               value={resourceId}
               onChange={(event) => setResourceId(event.target.value)}
-              placeholder="endpoint-001"
+              placeholder={text.resourceIdPlaceholder}
             />
             <p className="text-xs text-muted-foreground">
-              Use an id if the resource should be referenced by others.
+              {text.resourceIdHint}
             </p>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {text.cancel}
           </Button>
           <Button onClick={handleCreate} disabled={!selectedProfile}>
-            Create resource
+            {text.createResource}
           </Button>
         </DialogFooter>
       </DialogContent>

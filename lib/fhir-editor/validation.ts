@@ -4,6 +4,8 @@ import {
   resolveValueSetChoices,
 } from "@/lib/fhir-editor/fields";
 import { collectBrokenReferences } from "@/lib/fhir-editor/references";
+import { byLocale } from "@/lib/i18n/select";
+import type { Locale } from "@/lib/i18n/types";
 import { normalizeCanonical, type FhirRegistry } from "@/lib/fhir-editor/registry";
 import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
 
@@ -21,12 +23,65 @@ type CodingValue = {
 
 type ValidationOptions = {
   existingReferences?: Set<string>;
+  locale?: Locale;
 };
 
 type PathNode = {
   value: unknown;
   relativePath: string;
 };
+
+type ValidationText = {
+  bindingCode: string;
+  bindingSystem: string;
+  identifierSystem: string;
+  identifierType: string;
+  bindingRequired: string;
+  bindingPrimitive: string;
+  required: string;
+  cardinalityArray: string;
+  cardinalityMin: string;
+  cardinalityMax: string;
+  cardinalitySingle: string;
+  referenceBroken: string;
+};
+
+const format = (template: string, values: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+
+const getValidationText = (locale: Locale): ValidationText =>
+  byLocale(locale, {
+    de: {
+      bindingCode: 'Code "{code}" ist im gebundenen ValueSet nicht erlaubt.',
+      bindingSystem:
+        'System "{system}" ist für Code "{code}" im gebundenen ValueSet nicht erlaubt.',
+      identifierSystem: 'Identifier-System "{system}" ist im Profil nicht erlaubt.',
+      identifierType: 'Identifier-Typ "{code}" ist im Profil nicht erlaubt.',
+      bindingRequired: "Mindestens ein Coding aus dem gebundenen ValueSet ist erforderlich.",
+      bindingPrimitive: 'Wert "{value}" ist im gebundenen ValueSet nicht erlaubt.',
+      required: "Pflichtfeld ist nicht befüllt.",
+      cardinalityArray: "Dieses Feld muss als Array geführt werden.",
+      cardinalityMin: "Mindestens {min} Wert(e) erforderlich, aktuell {count}.",
+      cardinalityMax: "Maximal {max} Wert(e) erlaubt, aktuell {count}.",
+      cardinalitySingle: "Dieses Feld darf nur einmal vorkommen, aktuell {count} Einträge.",
+      referenceBroken: 'Referenz "{reference}" zeigt auf fehlende Resource "{targetKey}".',
+    },
+    en: {
+      bindingCode: 'Code "{code}" is not allowed in the bound ValueSet.',
+      bindingSystem:
+        'System "{system}" is not allowed for code "{code}" in the bound ValueSet.',
+      identifierSystem: 'Identifier system "{system}" is not allowed by the profile.',
+      identifierType: 'Identifier type "{code}" is not allowed by the profile.',
+      bindingRequired: "At least one coding from the bound ValueSet is required.",
+      bindingPrimitive: 'Value "{value}" is not allowed in the bound ValueSet.',
+      required: "Required field is missing.",
+      cardinalityArray: "This field must be represented as an array.",
+      cardinalityMin: "At least {min} value(s) required, currently {count}.",
+      cardinalityMax: "At most {max} value(s) allowed, currently {count}.",
+      cardinalitySingle: "This field may occur only once, currently {count} entries.",
+      referenceBroken: 'Reference "{reference}" points to missing resource "{targetKey}".',
+    },
+  });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -138,7 +193,8 @@ const validateCodingAgainstOptions = (
   coding: CodingValue,
   options: Array<{ system?: string; code: string }>,
   path: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  text: ValidationText
 ) => {
   if (!coding.code || options.length === 0) return;
 
@@ -147,7 +203,7 @@ const validateCodingAgainstOptions = (
     pushIssue(issues, {
       code: "binding-code",
       path,
-      message: `Code "${coding.code}" ist im gebundenen ValueSet nicht erlaubt.`,
+      message: format(text.bindingCode, { code: coding.code }),
     });
     return;
   }
@@ -162,7 +218,10 @@ const validateCodingAgainstOptions = (
       pushIssue(issues, {
         code: "binding-system",
         path,
-        message: `System "${coding.system}" ist für Code "${coding.code}" im gebundenen ValueSet nicht erlaubt.`,
+        message: format(text.bindingSystem, {
+          system: coding.system,
+          code: coding.code,
+        }),
       });
     }
   }
@@ -173,7 +232,8 @@ const validateSingleFieldValue = (
   value: unknown,
   path: string,
   registry: FhirRegistry | undefined,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  text: ValidationText
 ) => {
   const kind = field.path.endsWith(".identifier")
     ? "Identifier"
@@ -196,7 +256,7 @@ const validateSingleFieldValue = (
         pushIssue(issues, {
           code: "identifier-system",
           path: `${path}.system`,
-          message: `Identifier-System "${system}" ist im Profil nicht erlaubt.`,
+          message: format(text.identifierSystem, { system }),
         });
       }
     }
@@ -210,7 +270,7 @@ const validateSingleFieldValue = (
         pushIssue(issues, {
           code: "identifier-type",
           path: `${path}.type`,
-          message: `Identifier-Typ "${typeCoding.code}" ist im Profil nicht erlaubt.`,
+          message: format(text.identifierType, { code: typeCoding.code }),
         });
       }
     }
@@ -226,7 +286,8 @@ const validateSingleFieldValue = (
       },
       options,
       path,
-      issues
+      issues,
+      text
     );
     return;
   }
@@ -247,7 +308,7 @@ const validateSingleFieldValue = (
       pushIssue(issues, {
         code: "binding-required",
         path,
-        message: "Mindestens ein Coding aus dem gebundenen ValueSet ist erforderlich.",
+        message: text.bindingRequired,
       });
     }
 
@@ -259,7 +320,8 @@ const validateSingleFieldValue = (
         },
         options,
         `${path}.coding[${index}]`,
-        issues
+        issues,
+        text
       );
     });
     return;
@@ -275,7 +337,7 @@ const validateSingleFieldValue = (
       pushIssue(issues, {
         code: "binding-primitive",
         path,
-        message: `Wert "${value}" ist im gebundenen ValueSet nicht erlaubt.`,
+        message: format(text.bindingPrimitive, { value }),
       });
     }
   }
@@ -285,7 +347,8 @@ const validateField = (
   content: Record<string, unknown>,
   field: FieldDefinition,
   registry: FhirRegistry | undefined,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  text: ValidationText
 ) => {
   if (field.segments.length === 0) return;
   if (field.path === "id") return;
@@ -310,7 +373,7 @@ const validateField = (
       pushIssue(issues, {
         code: "required",
         path: field.path,
-        message: "Pflichtfeld ist nicht befüllt.",
+        message: text.required,
       });
     }
     return;
@@ -330,7 +393,7 @@ const validateField = (
         pushIssue(issues, {
           code: "cardinality-array",
           path: fieldPath,
-          message: "Dieses Feld muss als Array geführt werden.",
+          message: text.cardinalityArray,
         });
       }
 
@@ -338,7 +401,7 @@ const validateField = (
         pushIssue(issues, {
           code: "cardinality-min",
           path: fieldPath,
-          message: `Mindestens ${min} Wert(e) erforderlich, aktuell ${count}.`,
+          message: format(text.cardinalityMin, { min, count }),
         });
       }
 
@@ -346,16 +409,23 @@ const validateField = (
         pushIssue(issues, {
           code: "cardinality-max",
           path: fieldPath,
-          message: `Maximal ${max} Wert(e) erlaubt, aktuell ${count}.`,
+          message: format(text.cardinalityMax, { max, count }),
         });
       }
 
       if (Array.isArray(value)) {
         value.forEach((entry, index) =>
-          validateSingleFieldValue(field, entry, `${fieldPath}[${index}]`, registry, issues)
+          validateSingleFieldValue(
+            field,
+            entry,
+            `${fieldPath}[${index}]`,
+            registry,
+            issues,
+            text
+          )
         );
       } else if (value !== undefined && value !== null) {
-        validateSingleFieldValue(field, value, fieldPath, registry, issues);
+        validateSingleFieldValue(field, value, fieldPath, registry, issues, text);
       }
       continue;
     }
@@ -365,7 +435,7 @@ const validateField = (
         pushIssue(issues, {
           code: "cardinality-min",
           path: fieldPath,
-          message: `Mindestens ${min} Wert(e) erforderlich, aktuell ${value.length}.`,
+          message: format(text.cardinalityMin, { min, count: value.length }),
         });
         continue;
       }
@@ -373,12 +443,19 @@ const validateField = (
         pushIssue(issues, {
           code: "cardinality-single",
           path: fieldPath,
-          message: `Dieses Feld darf nur einmal vorkommen, aktuell ${value.length} Einträge.`,
+          message: format(text.cardinalitySingle, { count: value.length }),
         });
         continue;
       }
       if (value.length === 1) {
-        validateSingleFieldValue(field, value[0], `${fieldPath}[0]`, registry, issues);
+        validateSingleFieldValue(
+          field,
+          value[0],
+          `${fieldPath}[0]`,
+          registry,
+          issues,
+          text
+        );
       }
       continue;
     }
@@ -387,12 +464,12 @@ const validateField = (
       pushIssue(issues, {
         code: "required",
         path: fieldPath,
-        message: "Pflichtfeld ist nicht befüllt.",
+        message: text.required,
       });
       continue;
     }
 
-    validateSingleFieldValue(field, value, fieldPath, registry, issues);
+    validateSingleFieldValue(field, value, fieldPath, registry, issues, text);
   }
 };
 
@@ -412,9 +489,11 @@ export const validateResourceWithProfile = (
   registry?: FhirRegistry,
   options?: ValidationOptions
 ): ValidationIssue[] => {
+  const locale = options?.locale ?? "de";
+  const text = getValidationText(locale);
   const issues: ValidationIssue[] = [];
   for (const field of fields) {
-    validateField(content, field, registry, issues);
+    validateField(content, field, registry, issues, text);
   }
 
   if (options?.existingReferences) {
@@ -423,7 +502,10 @@ export const validateResourceWithProfile = (
       pushIssue(issues, {
         code: "reference-broken",
         path: issue.jsonPath,
-        message: `Referenz "${issue.reference}" zeigt auf fehlende Resource "${issue.targetKey}".`,
+        message: format(text.referenceBroken, {
+          reference: issue.reference,
+          targetKey: issue.targetKey,
+        }),
       });
     }
   }
