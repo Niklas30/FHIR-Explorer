@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import mermaid from "mermaid";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, Maximize2, RefreshCcw, SlidersHorizontal, ZoomIn, ZoomOut } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { DatasetResource } from "@/lib/datasets/content";
 import { parseLocalReference } from "@/lib/fhir-editor/references";
 import { byLocale } from "@/lib/i18n/select";
@@ -17,21 +16,50 @@ type DatasetDiagramDialogProps = {
   resources: DatasetResource[];
 };
 
-type PanZoomInstance = {
-  destroy: () => void;
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetZoom: () => void;
-  fit: () => void;
-  center: () => void;
-};
-
 type DiagramFieldSelection = Record<string, string[]>;
+type DiagramSettings = {
+  compactLayout: boolean;
+  hideIdWhenName: boolean;
+  fieldSelection: DiagramFieldSelection;
+};
 
 const DIAGRAM_SETTINGS_KEY = "fhir-explorer-diagram-settings";
 const FIELD_VALUE_LIMIT = 48;
 const FIELD_PREVIEW_LIMIT = 3;
 const EXCLUDED_FIELDS = new Set(["resourceType", "id", "meta"]);
+const DEFAULT_DIAGRAM_SETTINGS: DiagramSettings = {
+  compactLayout: true,
+  hideIdWhenName: false,
+  fieldSelection: {},
+};
+
+const loadStoredDiagramSettings = (): DiagramSettings => {
+  if (typeof window === "undefined") {
+    return DEFAULT_DIAGRAM_SETTINGS;
+  }
+  const raw = window.localStorage.getItem(DIAGRAM_SETTINGS_KEY);
+  if (!raw) return DEFAULT_DIAGRAM_SETTINGS;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<DiagramSettings>;
+    return {
+      compactLayout:
+        typeof parsed.compactLayout === "boolean"
+          ? parsed.compactLayout
+          : DEFAULT_DIAGRAM_SETTINGS.compactLayout,
+      hideIdWhenName:
+        typeof parsed.hideIdWhenName === "boolean"
+          ? parsed.hideIdWhenName
+          : DEFAULT_DIAGRAM_SETTINGS.hideIdWhenName,
+      fieldSelection:
+        parsed.fieldSelection && typeof parsed.fieldSelection === "object"
+          ? parsed.fieldSelection
+          : DEFAULT_DIAGRAM_SETTINGS.fieldSelection,
+    };
+  } catch {
+    return DEFAULT_DIAGRAM_SETTINGS;
+  }
+};
 
 const sanitizeLabel = (value: string) =>
   value.replace(/"/g, "'").replace(/\\n/g, " ").replace(/\\r/g, " ");
@@ -244,15 +272,13 @@ export const DatasetDiagramDialog = ({
   resources,
 }: DatasetDiagramDialogProps) => {
   const { locale } = useI18n();
-  const [svg, setSvg] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
+  const [initialSettings] = useState<DiagramSettings>(loadStoredDiagramSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [compactLayout, setCompactLayout] = useState(true);
-  const [hideIdWhenName, setHideIdWhenName] = useState(false);
-  const [fieldSelection, setFieldSelection] = useState<DiagramFieldSelection>({});
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const panZoomRef = useRef<PanZoomInstance | null>(null);
+  const [compactLayout, setCompactLayout] = useState(initialSettings.compactLayout);
+  const [hideIdWhenName, setHideIdWhenName] = useState(initialSettings.hideIdWhenName);
+  const [fieldSelection, setFieldSelection] = useState<DiagramFieldSelection>(
+    initialSettings.fieldSelection
+  );
   const enText = {
     noResourcesInDataset: "No resources in dataset",
     failedToRenderDiagram: "Failed to render diagram",
@@ -381,359 +407,169 @@ export const DatasetDiagramDialog = ({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(DIAGRAM_SETTINGS_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as Partial<{
-          compactLayout: boolean;
-          hideIdWhenName: boolean;
-          fieldSelection: DiagramFieldSelection;
-        }>;
-        if (typeof parsed.compactLayout === "boolean") {
-          setCompactLayout(parsed.compactLayout);
-        }
-        if (typeof parsed.hideIdWhenName === "boolean") {
-          setHideIdWhenName(parsed.hideIdWhenName);
-        }
-        if (parsed.fieldSelection && typeof parsed.fieldSelection === "object") {
-          setFieldSelection(parsed.fieldSelection);
-        }
-      } catch {
-        // ignore invalid stored settings
-      }
-    }
-    setSettingsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!settingsLoaded) return;
     window.localStorage.setItem(
       DIAGRAM_SETTINGS_KEY,
       JSON.stringify({ compactLayout, hideIdWhenName, fieldSelection })
     );
-  }, [compactLayout, fieldSelection, hideIdWhenName, settingsLoaded]);
-
-  useEffect(() => {
-    if (!open) return;
-    let active = true;
-
-    mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: "strict",
-      theme: "neutral",
-      flowchart: {
-        htmlLabels: false,
-        nodeSpacing: compactLayout ? 20 : 40,
-        rankSpacing: compactLayout ? 30 : 60,
-        useMaxWidth: false,
-      },
-    });
-
-    const renderDiagram = async () => {
-      try {
-        const { svg: nextSvg } = await mermaid.render(
-          `diagram-${Date.now()}`,
-          diagram
-        );
-        if (active) {
-          setSvg(nextSvg);
-          setError(null);
-        }
-      } catch (err) {
-        if (active) {
-          setError(err instanceof Error ? err.message : text.failedToRenderDiagram);
-        }
-      }
-    };
-
-    renderDiagram();
-
-    return () => {
-      active = false;
-    };
-  }, [compactLayout, diagram, open, text.failedToRenderDiagram]);
-
-  useEffect(() => {
-    if (!open) return;
-    if (!containerRef.current) return;
-    const svgElement = containerRef.current.querySelector("svg");
-    if (!svgElement) return;
-
-    if (panZoomRef.current) {
-      panZoomRef.current.destroy();
-      panZoomRef.current = null;
-    }
-
-    svgElement.setAttribute("width", "100%");
-    svgElement.setAttribute("height", "100%");
-    svgElement.style.width = "100%";
-    svgElement.style.height = "100%";
-    svgElement.style.maxWidth = "none";
-    svgElement.style.maxHeight = "none";
-
-    let active = true;
-    const setupPanZoom = async () => {
-      const mod = (await import("svg-pan-zoom")) as unknown as {
-        default: (
-          element: SVGSVGElement,
-          options: Record<string, unknown>
-        ) => PanZoomInstance;
-      };
-      if (!active) return;
-      panZoomRef.current = mod.default(svgElement as SVGSVGElement, {
-        zoomEnabled: true,
-        controlIconsEnabled: false,
-        fit: true,
-        center: true,
-        minZoom: 0.2,
-        maxZoom: 10,
-      });
-    };
-    setupPanZoom();
-
-    return () => {
-      active = false;
-      if (panZoomRef.current) {
-        panZoomRef.current.destroy();
-        panZoomRef.current = null;
-      }
-    };
-  }, [open, svg]);
-
-  const handleDownload = () => {
-    if (typeof window === "undefined") return;
-    if (!svg) return;
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `dataset-diagram-${new Date().toISOString().slice(0, 10)}.svg`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-  };
+  }, [compactLayout, fieldSelection, hideIdWhenName]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed inset-4 flex h-[calc(100dvh-2rem)] w-[calc(100dvw-2rem)] max-w-none translate-x-0 translate-y-0 flex-col gap-4 rounded-lg p-0 sm:max-w-none">
-        <div className="relative h-full w-full rounded-lg border border-foreground/10 bg-background">
-          <div className="absolute inset-4 overflow-hidden rounded-md bg-background">
-            <div className="pointer-events-none absolute left-3 top-3 z-10">
-              <DialogTitle className="text-lg">{text.title}</DialogTitle>
-            </div>
-
-            <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSettingsOpen((prev) => !prev)}
-                aria-expanded={settingsOpen}
-                aria-label={text.toggleDiagramSettings}
-                className="gap-1.5"
-              >
-                <SlidersHorizontal className="size-4" />
-                <span className="hidden sm:inline">{text.settings}</span>
-              </Button>
-            </div>
-
-            {settingsOpen ? (
-              <div className="absolute right-3 top-12 z-10 w-80 max-w-[90vw]">
-                <div className="rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur">
-                  <div className="border-b border-foreground/10 px-3 py-2">
-                    <div className="text-sm font-semibold text-foreground">
-                      {text.diagramSettings}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {text.chooseFields}
-                    </div>
-                  </div>
-                  <ScrollArea className="max-h-[calc(100dvh-9rem)]">
-                    <div className="grid gap-4 px-3 py-3">
-                      <label className="flex items-center justify-between gap-3 text-sm">
-                        <span>{text.compactLayout}</span>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-foreground"
-                          checked={compactLayout}
-                          onChange={(event) => setCompactLayout(event.target.checked)}
-                        />
-                      </label>
-                      <label className="flex items-center justify-between gap-3 text-sm">
-                        <span>{text.hideIdWhenName}</span>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-foreground"
-                          checked={hideIdWhenName}
-                          onChange={(event) => setHideIdWhenName(event.target.checked)}
-                        />
-                      </label>
-
-                      {Array.from(resourcesByType.entries()).map(([resourceType, list]) => {
-                        const availableFields = availableFieldsByType.get(resourceType) ?? [];
-                        const selected = new Set(fieldSelection[resourceType] ?? []);
-                        return (
-                          <details
-                            key={resourceType}
-                            className="rounded-md border border-foreground/10 bg-background"
-                            open
-                          >
-                            <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-foreground">
-                              {resourceType}
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                {list.length}{" "}
-                                {list.length === 1 ? text.resourcesOne : text.resourcesMany}
-                              </span>
-                            </summary>
-                            <div className="grid gap-2 px-3 pb-3">
-                              {availableFields.length === 0 ? (
-                                <div className="text-xs text-muted-foreground">
-                                  {text.noDisplayableFields}
-                                </div>
-                              ) : (
-                                <div className="grid gap-2">
-                                  <div className="flex flex-wrap gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() =>
-                                        setFieldSelection((prev) => ({
-                                          ...prev,
-                                          [resourceType]: [...availableFields],
-                                        }))
-                                      }
-                                    >
-                                      {text.selectAll}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() =>
-                                        setFieldSelection((prev) => {
-                                          const next = { ...prev };
-                                          delete next[resourceType];
-                                          return next;
-                                        })
-                                      }
-                                    >
-                                      {text.clear}
-                                    </Button>
-                                  </div>
-                                  <div className="grid gap-1">
-                                    {availableFields.map((field) => (
-                                      <label
-                                        key={field}
-                                        className="flex items-center gap-2 text-xs text-foreground"
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          className="h-4 w-4 accent-foreground"
-                                          checked={selected.has(field)}
-                                          onChange={(event) => {
-                                            const checked = event.target.checked;
-                                            setFieldSelection((prev) => {
-                                              const current = new Set(prev[resourceType] ?? []);
-                                              if (checked) {
-                                                current.add(field);
-                                              } else {
-                                                current.delete(field);
-                                              }
-                                              const next = { ...prev };
-                                              if (current.size > 0) {
-                                                next[resourceType] = Array.from(current);
-                                              } else {
-                                                delete next[resourceType];
-                                              }
-                                              return next;
-                                            });
-                                          }}
-                                        />
-                                        <span>{field}</span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </details>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
+    <MermaidDiagramDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={text.title}
+      diagram={diagram}
+      downloadFilename={`dataset-diagram-${new Date().toISOString().slice(0, 10)}.svg`}
+      failedToRenderMessage={text.failedToRenderDiagram}
+      ariaZoomIn={text.ariaZoomIn}
+      ariaZoomOut={text.ariaZoomOut}
+      ariaResetZoom={text.ariaResetZoom}
+      ariaFitToView={text.ariaFitToView}
+      ariaDownloadDiagram={text.ariaDownloadDiagram}
+      nodeSpacing={compactLayout ? 20 : 40}
+      rankSpacing={compactLayout ? 30 : 60}
+      topRightSlot={
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSettingsOpen((prev) => !prev)}
+            aria-expanded={settingsOpen}
+            aria-label={text.toggleDiagramSettings}
+            className="gap-1.5"
+          >
+            <SlidersHorizontal className="size-4" />
+            <span className="hidden sm:inline">{text.settings}</span>
+          </Button>
+        </div>
+      }
+      overlaySlot={
+        settingsOpen ? (
+          <div className="absolute right-3 top-12 z-10 w-80 max-w-[90vw]">
+            <div className="rounded-lg border border-foreground/10 bg-background/95 shadow-lg backdrop-blur">
+              <div className="border-b border-foreground/10 px-3 py-2">
+                <div className="text-sm font-semibold text-foreground">
+                  {text.diagramSettings}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {text.chooseFields}
                 </div>
               </div>
-            ) : null}
+              <ScrollArea className="max-h-[calc(100dvh-9rem)]">
+                <div className="grid gap-4 px-3 py-3">
+                  <label className="flex items-center justify-between gap-3 text-sm">
+                    <span>{text.compactLayout}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-foreground"
+                      checked={compactLayout}
+                      onChange={(event) => setCompactLayout(event.target.checked)}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3 text-sm">
+                    <span>{text.hideIdWhenName}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-foreground"
+                      checked={hideIdWhenName}
+                      onChange={(event) => setHideIdWhenName(event.target.checked)}
+                    />
+                  </label>
 
-            <div className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => panZoomRef.current?.zoomIn()}
-                aria-label={text.ariaZoomIn}
-              >
-                <ZoomIn className="size-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => panZoomRef.current?.zoomOut()}
-                aria-label={text.ariaZoomOut}
-              >
-                <ZoomOut className="size-4" />
-              </Button>
-            </div>
-
-            <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (!panZoomRef.current) return;
-                  panZoomRef.current.resetZoom();
-                  panZoomRef.current.fit();
-                  panZoomRef.current.center();
-                }}
-                aria-label={text.ariaResetZoom}
-              >
-                <RefreshCcw className="size-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (!panZoomRef.current) return;
-                  panZoomRef.current.fit();
-                  panZoomRef.current.center();
-                }}
-                aria-label={text.ariaFitToView}
-              >
-                <Maximize2 className="size-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownload}
-                aria-label={text.ariaDownloadDiagram}
-              >
-                <Download className="size-4" />
-              </Button>
-            </div>
-
-            <div className="absolute inset-0">
-              {error ? (
-                <div className="p-4 text-sm text-destructive">{error}</div>
-              ) : (
-                <div
-                  ref={containerRef}
-                  className="h-full w-full overflow-hidden [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-none [&_svg]:max-h-none"
-                  dangerouslySetInnerHTML={{ __html: svg }}
-                />
-              )}
+                  {Array.from(resourcesByType.entries()).map(([resourceType, list]) => {
+                    const availableFields = availableFieldsByType.get(resourceType) ?? [];
+                    const selected = new Set(fieldSelection[resourceType] ?? []);
+                    return (
+                      <details
+                        key={resourceType}
+                        className="rounded-md border border-foreground/10 bg-background"
+                        open
+                      >
+                        <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold text-foreground">
+                          {resourceType}
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {list.length} {list.length === 1 ? text.resourcesOne : text.resourcesMany}
+                          </span>
+                        </summary>
+                        <div className="grid gap-2 px-3 pb-3">
+                          {availableFields.length === 0 ? (
+                            <div className="text-xs text-muted-foreground">
+                              {text.noDisplayableFields}
+                            </div>
+                          ) : (
+                            <div className="grid gap-2">
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    setFieldSelection((prev) => ({
+                                      ...prev,
+                                      [resourceType]: [...availableFields],
+                                    }))
+                                  }
+                                >
+                                  {text.selectAll}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    setFieldSelection((prev) => {
+                                      const next = { ...prev };
+                                      delete next[resourceType];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  {text.clear}
+                                </Button>
+                              </div>
+                              <div className="grid gap-1">
+                                {availableFields.map((field) => (
+                                  <label
+                                    key={field}
+                                    className="flex items-center gap-2 text-xs text-foreground"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 accent-foreground"
+                                      checked={selected.has(field)}
+                                      onChange={(event) => {
+                                        const checked = event.target.checked;
+                                        setFieldSelection((prev) => {
+                                          const current = new Set(prev[resourceType] ?? []);
+                                          if (checked) {
+                                            current.add(field);
+                                          } else {
+                                            current.delete(field);
+                                          }
+                                          const next = { ...prev };
+                                          if (current.size > 0) {
+                                            next[resourceType] = Array.from(current);
+                                          } else {
+                                            delete next[resourceType];
+                                          }
+                                          return next;
+                                        });
+                                      }}
+                                    />
+                                    <span>{field}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        ) : null
+      }
+    />
   );
 };
