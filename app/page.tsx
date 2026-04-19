@@ -19,6 +19,7 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useImporter } from "@/components/importer/useImporter";
+import { DatasetInfoDialog } from "@/components/editor/DatasetInfoDialog";
 import { DependencyTreeDialog } from "@/components/editor/DependencyTreeDialog";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
@@ -72,6 +73,8 @@ const createDatasetId = () => {
   }
   return `dataset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 };
+
+const getTimestamp = () => Date.now();
 
 
 const matchesFilter = (
@@ -152,8 +155,12 @@ const overviewText = {
     createdPrefix: "Erstellt",
     open: "Öffnen",
     datasetActionsAria: "Datasetaktionen",
+    editDatasetInfo: "Dataset-Info",
+    duplicateDataset: "Dataset duplizieren",
     exportDataset: "Dataset exportieren",
     deleteDataset: "Dataset löschen",
+    duplicateDatasetName: "{name} (Kopie)",
+    datasetDuplicated: 'Dataset "{name}" dupliziert.',
     selectProjectForDataset: "Wähle ein Projekt für dieses Dataset aus.",
     datasetNameRequired: "Dataset-Name ist erforderlich.",
     datasetCreated: "Dataset erstellt.",
@@ -295,8 +302,12 @@ const overviewText = {
     createdPrefix: "Created",
     open: "Open",
     datasetActionsAria: "Dataset actions",
+    editDatasetInfo: "Dataset info",
+    duplicateDataset: "Duplicate dataset",
     exportDataset: "Export dataset",
     deleteDataset: "Delete dataset",
+    duplicateDatasetName: "{name} (Copy)",
+    datasetDuplicated: 'Dataset "{name}" duplicated.',
     selectProjectForDataset: "Select a project for this dataset.",
     datasetNameRequired: "Dataset name is required.",
     datasetCreated: "Dataset created.",
@@ -442,8 +453,12 @@ const localizedOverviewText = {
     open: "Ouvrir",
     exportProject: "Exporter le projet...",
     deleteProject: "Supprimer le projet",
+    editDatasetInfo: "Infos du dataset",
+    duplicateDataset: "Dupliquer le dataset",
     exportDataset: "Exporter le dataset",
     deleteDataset: "Supprimer le dataset",
+    duplicateDatasetName: "{name} (Copie)",
+    datasetDuplicated: 'Dataset "{name}" dupliqué.',
   },
   es: {
     ...overviewText.en,
@@ -475,8 +490,12 @@ const localizedOverviewText = {
     open: "Abrir",
     exportProject: "Exportar proyecto...",
     deleteProject: "Eliminar proyecto",
+    editDatasetInfo: "Informacion del dataset",
+    duplicateDataset: "Duplicar dataset",
     exportDataset: "Exportar dataset",
     deleteDataset: "Eliminar dataset",
+    duplicateDatasetName: "{name} (Copia)",
+    datasetDuplicated: 'Dataset "{name}" duplicado.',
   },
   it: {
     ...overviewText.en,
@@ -508,8 +527,12 @@ const localizedOverviewText = {
     open: "Apri",
     exportProject: "Esporta progetto...",
     deleteProject: "Elimina progetto",
+    editDatasetInfo: "Info dataset",
+    duplicateDataset: "Duplica dataset",
     exportDataset: "Esporta dataset",
     deleteDataset: "Elimina dataset",
+    duplicateDatasetName: "{name} (Copia)",
+    datasetDuplicated: 'Dataset "{name}" duplicato.',
   },
 } satisfies Record<"de" | "en" | "fr" | "es" | "it", OverviewText>;
 
@@ -528,6 +551,8 @@ type ProjectCardProps = {
   onOpenDependencyTree: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
+  onEditDatasetInfo: (dataset: DatasetRecord) => void;
+  onDuplicateDataset: (dataset: DatasetRecord) => void;
   onDeleteProject: (project: PackageRecord) => void;
   onDeleteDataset: (dataset: DatasetRecord) => void;
   canDeleteProject: boolean;
@@ -548,6 +573,8 @@ const ProjectCard = ({
   onOpenDependencyTree,
   onOpenExportDialog,
   onExportDataset,
+  onEditDatasetInfo,
+  onDuplicateDataset,
   onDeleteProject,
   onDeleteDataset,
   canDeleteProject,
@@ -687,6 +714,18 @@ const ProjectCard = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={datasetActionsDisabled}
+                          onClick={() => onEditDatasetInfo(dataset)}
+                        >
+                          {text.editDatasetInfo}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={datasetActionsDisabled}
+                          onClick={() => onDuplicateDataset(dataset)}
+                        >
+                          {text.duplicateDataset}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onExportDataset(dataset)}>
                           {text.exportDataset}
                         </DropdownMenuItem>
@@ -735,6 +774,8 @@ export default function EditorOverviewPage() {
     "package" | "resources" | "searchset"
   >("package");
   const [exportDatasetId, setExportDatasetId] = useState<string | null>(null);
+  const [datasetInfoOpen, setDatasetInfoOpen] = useState(false);
+  const [datasetInfoId, setDatasetInfoId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -886,6 +927,14 @@ export default function EditorOverviewPage() {
       return a.version.localeCompare(b.version);
     });
   }, [packages]);
+  const datasetInfoProjectSuggestions = useMemo(
+    () =>
+      projectOptions.map((entry) => ({
+        key: entry.key,
+        label: `${entry.id}@${entry.version}`,
+      })),
+    [projectOptions]
+  );
   const selectableProjectOptions = projectOptions.filter((project) =>
     isProjectDatasetSelectable(project.key)
   );
@@ -1117,14 +1166,78 @@ export default function EditorOverviewPage() {
   };
 
   const handleDeleteDataset = (dataset: DatasetRecord) => {
-    const ok = window.confirm(
-      formatText(text.confirmDeleteDataset, { name: dataset.name })
-    );
+    const ok = window.confirm(formatText(text.confirmDeleteDataset, { name: dataset.name }));
     if (!ok) return;
     clearDatasetResources(dataset.id);
     const next = removeDataset(dataset.id);
     setDatasets(next);
     toast.success(text.datasetDeleted);
+  };
+
+  const handleDuplicateDataset = (dataset: DatasetRecord) => {
+    if (!isProjectDatasetSelectable(dataset.projectKey)) {
+      toast.error(text.datasetActionsBlockedUntilImportComplete);
+      return;
+    }
+
+    const cloneJson = <T,>(value: T): T => {
+      if (typeof structuredClone === "function") return structuredClone(value);
+      return JSON.parse(JSON.stringify(value)) as T;
+    };
+
+    const baseName = formatText(text.duplicateDatasetName, { name: dataset.name });
+    const existingNames = new Set(
+      datasets
+        .filter((entry) => entry.projectKey === dataset.projectKey)
+        .map((entry) => entry.name)
+    );
+    let name = baseName;
+    for (let i = 2; existingNames.has(name); i += 1) {
+      name = `${baseName} ${i}`;
+    }
+
+    const duplicated: DatasetRecord = {
+      id: createDatasetId(),
+      name,
+      projectKey: dataset.projectKey,
+      createdAt: getTimestamp(),
+    };
+
+    const resources = loadDatasetResources(dataset.id);
+    const copiedResources = resources.map((resource) => ({
+      ...resource,
+      content: cloneJson(resource.content),
+      createdAt: duplicated.createdAt,
+      updatedAt: duplicated.createdAt,
+      lastSelectedAt: undefined,
+    }));
+    saveDatasetResources(duplicated.id, copiedResources);
+
+    const next = upsertDataset(duplicated);
+    setDatasets(next);
+    toast.success(formatText(text.datasetDuplicated, { name: duplicated.name }));
+  };
+
+  const handleOpenDatasetInfo = (dataset: DatasetRecord) => {
+    if (!isProjectDatasetSelectable(dataset.projectKey)) {
+      toast.error(text.datasetActionsBlockedUntilImportComplete);
+      return;
+    }
+    setDatasetInfoId(dataset.id);
+    setDatasetInfoOpen(true);
+  };
+
+  const datasetInfoDataset = useMemo(() => {
+    if (!datasetInfoId) return null;
+    return datasets.find((entry) => entry.id === datasetInfoId) ?? null;
+  }, [datasets, datasetInfoId]);
+
+  const handleSaveDatasetInfo = (payload: { id: string; name: string; projectKey: string }) => {
+    const existing = datasets.find((entry) => entry.id === payload.id);
+    if (!existing) return;
+    const nextDataset: DatasetRecord = { ...existing, name: payload.name, projectKey: payload.projectKey };
+    const next = upsertDataset(nextDataset);
+    setDatasets(next);
   };
 
   const handleDeleteProject = async (project: PackageRecord) => {
@@ -1492,6 +1605,8 @@ export default function EditorOverviewPage() {
                       onOpenDependencyTree={openDependencyTree}
                       onOpenExportDialog={openExportDialog}
                       onExportDataset={handleExportDataset}
+                      onEditDatasetInfo={handleOpenDatasetInfo}
+                      onDuplicateDataset={handleDuplicateDataset}
                       onDeleteDataset={handleDeleteDataset}
                       onDeleteProject={handleDeleteProject}
                       canDeleteProject={canDeleteProject(target.key)}
@@ -1563,6 +1678,8 @@ export default function EditorOverviewPage() {
                     onOpenDependencyTree={openDependencyTree}
                     onOpenExportDialog={openExportDialog}
                     onExportDataset={handleExportDataset}
+                    onEditDatasetInfo={handleOpenDatasetInfo}
+                    onDuplicateDataset={handleDuplicateDataset}
                     onDeleteDataset={handleDeleteDataset}
                     onDeleteProject={handleDeleteProject}
                     canDeleteProject={canDeleteProject(project.key)}
@@ -1622,6 +1739,18 @@ export default function EditorOverviewPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              disabled={!isProjectDatasetSelectable(dataset.projectKey)}
+                              onClick={() => handleOpenDatasetInfo(dataset)}
+                            >
+                              {text.editDatasetInfo}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!isProjectDatasetSelectable(dataset.projectKey)}
+                              onClick={() => handleDuplicateDataset(dataset)}
+                            >
+                              {text.duplicateDataset}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleExportDataset(dataset)}>
                               {text.exportDataset}
                             </DropdownMenuItem>
@@ -1872,13 +2001,25 @@ export default function EditorOverviewPage() {
         rootProjectKey={dependencyTreeRootKey}
       />
 
+      <DatasetInfoDialog
+        open={datasetInfoOpen}
+        onOpenChange={(open) => {
+          setDatasetInfoOpen(open);
+          if (!open) {
+            setDatasetInfoId(null);
+          }
+        }}
+        dataset={datasetInfoDataset}
+        projectSuggestions={datasetInfoProjectSuggestions}
+        onOpenDependencyTree={(projectKey) => setDependencyTreeRootKey(projectKey)}
+        onSave={handleSaveDatasetInfo}
+      />
+
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{text.settingsTitle}</DialogTitle>
-            <DialogDescription>
-              {text.settingsDescription}
-            </DialogDescription>
+            <DialogDescription>{text.settingsDescription}</DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             {text.settingsDeleteInfo}
