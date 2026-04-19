@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -7,6 +8,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import type { DatasetResource } from "@/lib/datasets/content";
+import { byLocale } from "@/lib/i18n/select";
 import type { FhirRegistry } from "@/lib/fhir-editor/registry";
 import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
@@ -27,7 +29,41 @@ export const ResourceJsonPanel = ({
   registry,
   onUpdateResource,
 }: ResourceJsonPanelProps) => {
+  const { locale } = useI18n();
   const [draft, setDraft] = useState("");
+  const text = byLocale(locale, {
+    de: {
+      jsonMustBeObject: "JSON muss ein Objekt sein.",
+      invalidJson: "Ungültiges JSON.",
+      title: "Ressourcen-JSON",
+      subtitle: "JSON bearbeiten und mit dem Formular synchronisieren",
+      apply: "Übernehmen",
+      validation: "Validierung",
+      jsonParsingError: "JSON-Parsing-Fehler",
+      noValidationIssues: "Keine Validierungsprobleme gefunden.",
+      emptyState: "Wähle eine Ressource aus, um den JSON-Inhalt zu prüfen.",
+      issueSummary: "{errors} Fehler, {warnings} Warnung{warningsSuffix}",
+      errorsSuffix: "",
+      warningsSuffix: "en",
+    },
+    en: {
+      jsonMustBeObject: "JSON must be an object.",
+      invalidJson: "Invalid JSON.",
+      title: "Resource JSON",
+      subtitle: "Edit JSON and sync with the form",
+      apply: "Apply",
+      validation: "Validation",
+      jsonParsingError: "JSON parsing error",
+      noValidationIssues: "No validation issues found.",
+      emptyState: "Select a resource to inspect the JSON payload.",
+      issueSummary: "{errors} error{errorsSuffix}, {warnings} warning{warningsSuffix}",
+      errorsSuffix: "s",
+      warningsSuffix: "s",
+    },
+  });
+
+  const format = (template: string, values: Record<string, string | number>) =>
+    template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
 
   useEffect(() => {
     if (!resource) {
@@ -47,7 +83,7 @@ export const ResourceJsonPanel = ({
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         return {
           value: null as Record<string, unknown> | null,
-          error: "JSON must be an object.",
+          error: text.jsonMustBeObject,
         };
       }
       return {
@@ -57,10 +93,10 @@ export const ResourceJsonPanel = ({
     } catch (err) {
       return {
         value: null as Record<string, unknown> | null,
-        error: err instanceof Error ? err.message : "Invalid JSON.",
+        error: err instanceof Error ? err.message : text.invalidJson,
       };
     }
-  }, [draft, resource]);
+  }, [draft, resource, text.invalidJson, text.jsonMustBeObject]);
 
   const existingReferences = useMemo(
     () => buildDatasetReferenceIndex(datasetResources),
@@ -71,8 +107,9 @@ export const ResourceJsonPanel = ({
     if (!resource || !parsedDraft.value) return [];
     return validateResourceWithProfile(parsedDraft.value, fields, registry ?? undefined, {
       existingReferences,
+      locale,
     });
-  }, [existingReferences, fields, parsedDraft.value, registry, resource]);
+  }, [existingReferences, fields, locale, parsedDraft.value, registry, resource]);
 
   const errorCount = validationIssues.filter((issue) => issue.severity === "error").length;
   const warningCount = validationIssues.filter((issue) => issue.severity === "warning").length;
@@ -92,13 +129,13 @@ export const ResourceJsonPanel = ({
       <div className="border-b border-foreground/10 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold text-foreground">Resource JSON</div>
+            <div className="text-sm font-semibold text-foreground">{text.title}</div>
             <div className="text-xs text-muted-foreground">
-              Edit JSON and sync with the form
+              {text.subtitle}
             </div>
           </div>
           <Button size="sm" variant="outline" onClick={applyDraft} disabled={!resource}>
-            Apply
+            {text.apply}
           </Button>
         </div>
       </div>
@@ -137,14 +174,22 @@ export const ResourceJsonPanel = ({
               <div className="flex h-full min-h-0 flex-col">
                 <div className="border-b border-foreground/10 px-4 py-3">
                   <div className="text-sm font-semibold text-foreground">
-                    Validation
+                    {text.validation}
                   </div>
                   {parsedDraft.error ? (
-                    <div className="mt-1 text-xs text-destructive">JSON parsing error</div>
+                    <div className="mt-1 text-xs text-destructive">{text.jsonParsingError}</div>
                   ) : (
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {errorCount} error{errorCount === 1 ? "" : "s"}, {warningCount} warning
-                      {warningCount === 1 ? "" : "s"}
+                      {format(text.issueSummary, {
+                        errors: errorCount,
+                        warnings: warningCount,
+                        errorsSuffix:
+                          locale === "en" && errorCount === 1 ? "" : text.errorsSuffix ?? "",
+                        warningsSuffix:
+                          locale === "en" && warningCount === 1
+                            ? ""
+                            : text.warningsSuffix ?? "",
+                      })}
                     </div>
                   )}
                 </div>
@@ -156,7 +201,7 @@ export const ResourceJsonPanel = ({
                       </div>
                     ) : validationIssues.length === 0 ? (
                       <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2 py-2 text-xs text-emerald-700">
-                        Keine Validierungsfehler gefunden.
+                        {text.noValidationIssues}
                       </div>
                     ) : (
                       validationIssues.map((issue, index) => (
@@ -181,7 +226,7 @@ export const ResourceJsonPanel = ({
           </ResizablePanelGroup>
         ) : (
           <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
-            Select a resource to inspect the JSON payload.
+            {text.emptyState}
           </div>
         )}
       </div>

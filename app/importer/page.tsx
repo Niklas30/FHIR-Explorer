@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { ImporterLoadingFallback } from "@/components/importer/ImporterLoadingFallback";
 import { ImportWizard } from "@/components/importer/ImportWizard";
 
 export const metadata: Metadata = {
-  title: "Importer",
+  title: "FHIR-Explorer",
 };
 
 export default function ImporterPage() {
   return (
-    <Suspense
-      fallback={<div className="px-6 py-8 text-sm text-muted-foreground">Loading importer…</div>}
-    >
+    <Suspense fallback={<ImporterLoadingFallback />}>
       <ImportWizard />
     </Suspense>
   );

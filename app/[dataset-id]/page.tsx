@@ -2,7 +2,7 @@ import { DatasetEditor } from "@/components/editor/DatasetEditor";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Editor",
+  title: "FHIR-Explorer",
 };
 
 export default async function DatasetEditorPage({

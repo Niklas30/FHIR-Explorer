@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   CommandDialog,
   CommandEmpty,
@@ -16,6 +17,7 @@ import {
   toShortcutArray,
 } from "@/components/editor/commands/shortcut-utils";
 import type { EditorCommand } from "@/components/editor/commands/types";
+import { byLocale } from "@/lib/i18n/select";
 
 type EditorCommandPaletteProps = {
   open: boolean;
@@ -51,18 +53,33 @@ export const EditorCommandPalette = ({
   onOpenChange,
   commands,
 }: EditorCommandPaletteProps) => {
+  const { locale } = useI18n();
+  const text = byLocale(locale, {
+    de: {
+      title: "Editor-Commands",
+      description: "Suche und führe einen Command aus.",
+      inputPlaceholder: "Command tippen oder suchen...",
+      noResults: "Keine Treffer gefunden.",
+    },
+    en: {
+      title: "Editor Commands",
+      description: "Search and run a command.",
+      inputPlaceholder: "Type a command or search...",
+      noResults: "No results found.",
+    },
+  });
   const groupedCommands = useMemo(() => groupCommands(commands), [commands]);
 
   return (
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Editor Commands"
-      description="Search and run editor commands."
+      title={text.title}
+      description={text.description}
     >
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder={text.inputPlaceholder} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{text.noResults}</CommandEmpty>
         {groupedCommands.map((group, groupIndex) => (
           <Fragment key={group.name}>
             <CommandGroup heading={group.name}>

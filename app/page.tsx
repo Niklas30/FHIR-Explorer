@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +44,7 @@ import {
   loadDatasetResources,
   saveDatasetResources,
 } from "@/lib/datasets/content";
+import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
 import { Database, LayoutGrid, MoreHorizontal, Plus, Settings, Upload } from "lucide-react";
 import JSZip from "jszip";
@@ -178,12 +181,295 @@ const toSafeFilename = (value: string) =>
     .replace(/^-+/, "")
     .replace(/-+$/, "");
 
+const overviewText = {
+  de: {
+    pageBrowserTitle: "Projekte",
+    datasetSuffix: "Datensatz",
+    noDescriptionProvided: "Keine Beschreibung verfügbar.",
+    kindTarget: "Ziel",
+    kindDependency: "Abhängigkeit",
+    resourcesCount: "{count} Ressourcen",
+    projectActionsAria: "Projektaktionen",
+    projectActions: "Projektaktionen",
+    exportProject: "Projekt exportieren...",
+    deleteProject: "Projekt löschen",
+    addedPrefix: "Hinzugefügt:",
+    dependenciesPrefix: "Abhängigkeiten:",
+    datasetsPrefix: "Datasets:",
+    usedByPrefix: "Verwendet von:",
+    datasetsSectionTitle: "Datasets",
+    datasetsSectionDescription:
+      "Erstelle Datasets für dieses Projekt und öffne sie im Editor.",
+    createDatasetAria: "Dataset erstellen",
+    importDatasetAria: "Dataset importieren",
+    noDatasetsYet: "Noch keine Datasets.",
+    createdPrefix: "Erstellt",
+    open: "Öffnen",
+    datasetActionsAria: "Datasetaktionen",
+    exportDataset: "Dataset exportieren",
+    deleteDataset: "Dataset löschen",
+    selectProjectForDataset: "Wähle ein Projekt für dieses Dataset aus.",
+    datasetNameRequired: "Dataset-Name ist erforderlich.",
+    datasetCreated: "Dataset erstellt.",
+    chooseDatasetFile: "Wähle eine Dataset-Datei zum Importieren aus.",
+    zipNoJson: "ZIP enthält keine JSON-Dataset-Datei.",
+    datasetNameMissingImport: "Dataset-Name fehlt in der Importdatei.",
+    datasetImported: "Dataset importiert.",
+    datasetImportFailed: "Dataset-Datei konnte nicht importiert werden.",
+    confirmDeleteDataset:
+      'Dataset "{name}" löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    datasetDeleted: "Dataset gelöscht.",
+    projectRequiredByOthers: "Dieses Projekt wird von anderen Projekten benötigt.",
+    confirmDeleteProject:
+      'Projekt "{project}" löschen? Dabei werden gespeicherte Ressourcen entfernt.',
+    projectDeleted: "Projekt gelöscht.",
+    datasetExported: "Dataset exportiert.",
+    noPackagesToExport: "Keine Pakete für den Export verfügbar.",
+    projectExported: "Projekt exportiert.",
+    noDatasetSelected: "Kein Dataset ausgewählt.",
+    cannotDeleteUsedBy:
+      "Löschen nicht möglich, solange verwendet von {projects}.",
+    confirmDeleteAllData:
+      "Alle lokal gespeicherten Daten löschen? Dabei werden importierte Projekte, Ressourcen und Datasets entfernt.",
+    localDataCleared: "Lokale Daten gelöscht.",
+    failedClearLocalData:
+      "Lokale Daten konnten nicht gelöscht werden. Bitte erneut versuchen.",
+    editorEyebrow: "Editor",
+    pageTitle: "Projektübersicht",
+    refresh: "Aktualisieren",
+    pageDescription:
+      "Prüfe importierte Zielpakete, inspiziere Abhängigkeiten und starte Datasets. Öffne ein Dataset, um Ressourcen mit profilbasierten Formularen zu erstellen.",
+    projectsOverviewTitle: "Projektübersicht",
+    datasetsOverviewTitle: "Datasetübersicht",
+    projectsOverviewDescription:
+      "Prüfe importierte Zielprojekte und deren Abhängigkeiten.",
+    datasetsOverviewDescription:
+      "Verwalte Datasets und sieh, zu welchem Projekt sie gehören.",
+    importProject: "Projekt importieren",
+    createDataset: "Dataset erstellen",
+    settingsAria: "Einstellungen",
+    filterPlaceholder: "Filtern",
+    projectViewAria: "Projektansicht",
+    datasetViewAria: "Datasetansicht",
+    noTargetsTitle: "Noch keine Ziele",
+    noTargetsDescription:
+      "Importiere ein Zielpaket, um Datasets und Abhängigkeiten aufzubauen.",
+    goToImporter: "Zum Importer",
+    missingTargetTitle: "Fehlendes Zielpaket",
+    missingTargetDescription:
+      "{targetKey} ist in der Historie, aber nicht mehr im Speicher verfügbar.",
+    reimportInImporter: "Im Importer erneut importieren",
+    dependencyProjectsTitle: "Abhängigkeitsprojekte",
+    dependencyProjectsDescription:
+      "Pakete, die zur Erfüllung von Zielabhängigkeiten importiert wurden.",
+    noDependenciesTitle: "Keine Abhängigkeiten sichtbar",
+    noDependenciesDescription:
+      "Importiere ein Ziel mit Abhängigkeiten oder entferne den Filter.",
+    noDatasetsTitle: "Keine Datasets sichtbar",
+    noDatasetsDescription:
+      "Erstelle oder importiere Datasets über eine Projektkarte, um diese Ansicht zu füllen.",
+    projectPrefix: "Projekt:",
+    unknownProject: "Unbekannt",
+    exportProjectButton: "Projekt exportieren",
+    createDatasetDialogTitle: "Dataset erstellen",
+    createDatasetDialogDescription:
+      "Erstelle ein Dataset-Grundgerüst für {project} und beginne mit dem Erstellen von Ressourcen.",
+    projectLabel: "Projekt",
+    selectProject: "Projekt auswählen",
+    chooseProjectHint: "Wähle das Projekt, zu dem dieses Dataset gehört.",
+    datasetNameLabel: "Dataset-Name",
+    datasetNamePlaceholder: "Projekt-Dataset",
+    createDatasetHint:
+      "Nutze dies, wenn du ein komplett neues Dataset anlegen willst.",
+    cancel: "Abbrechen",
+    createDatasetConfirm: "Dataset erstellen",
+    importDatasetDialogTitle: "Dataset importieren",
+    importDatasetDialogDescription:
+      "Importiere ein Dataset-JSON für {project}.",
+    datasetFileLabel: "Dataset-Datei (.json/.zip)",
+    uploadDatasetFileLabel: "Dataset-Datei hochladen",
+    uploadDatasetHelper:
+      "Du kannst Dateien hier hineinziehen oder JSON aus der Zwischenablage einfügen.",
+    uploadDatasetHint: ".json oder .zip hierher ziehen",
+    chooseFile: "Datei auswählen",
+    pasteJson: "JSON einfügen",
+    clipboardHint:
+      "Nutze den Button oder fokussiere dieses Feld und drücke Strg/Cmd+V.",
+    clipboardFilename: "dataset-aus-zwischenablage.json",
+    selectedPrefix: "Ausgewählt:",
+    clear: "Leeren",
+    datasetFileSupportHint:
+      "Unterstützt JSON/ZIP-Dataset-Exporte, Ressourcenlisten oder FHIR-Searchset-Bundles.",
+    fallbackNameLabel: "Fallback-Name (optional)",
+    fallbackNameHint:
+      "Wird nur genutzt, wenn die Importdatei keinen Namen enthält.",
+    importDatasetConfirm: "Dataset importieren",
+    exportProjectDialogTitle: "Projekt exportieren",
+    exportProjectDialogDescription:
+      "Exportiere {project} oder eines seiner Datasets.",
+    scopeProjectDependencies: "Projekt + Abhängigkeiten",
+    scopeDatasetOnly: "Nur Dataset",
+    scopeNoDatasetHelper: "Keine Datasets für dieses Projekt verfügbar.",
+    exportDatasetConfirm: "Dataset exportieren",
+    exportProjectConfirm: "Projekt exportieren",
+    settingsTitle: "Einstellungen",
+    settingsDescription:
+      "Verwalte lokal gespeicherte Daten in diesem Browser.",
+    settingsDeleteInfo:
+      "Beim Löschen werden importierte Pakete, Abhängigkeitsmetadaten, gecachte Ressourcen und alle in diesem Browser gespeicherten Datasets entfernt.",
+    close: "Schließen",
+    deleteAllLocalData: "Alle lokalen Daten löschen",
+    thisProject: "dieses Projekt",
+  },
+  en: {
+    pageBrowserTitle: "Projects",
+    datasetSuffix: "Dataset",
+    noDescriptionProvided: "No description provided.",
+    kindTarget: "Target",
+    kindDependency: "Dependency",
+    resourcesCount: "{count} resources",
+    projectActionsAria: "Project actions",
+    projectActions: "Project actions",
+    exportProject: "Export project...",
+    deleteProject: "Delete project",
+    addedPrefix: "Added:",
+    dependenciesPrefix: "Dependencies:",
+    datasetsPrefix: "Datasets:",
+    usedByPrefix: "Used by:",
+    datasetsSectionTitle: "Datasets",
+    datasetsSectionDescription:
+      "Create datasets for this project and open them in the editor.",
+    createDatasetAria: "Create dataset",
+    importDatasetAria: "Import dataset",
+    noDatasetsYet: "No datasets yet.",
+    createdPrefix: "Created",
+    open: "Open",
+    datasetActionsAria: "Dataset actions",
+    exportDataset: "Export dataset",
+    deleteDataset: "Delete dataset",
+    selectProjectForDataset: "Select a project for this dataset.",
+    datasetNameRequired: "Dataset name is required.",
+    datasetCreated: "Dataset created.",
+    chooseDatasetFile: "Choose a dataset file to import.",
+    zipNoJson: "ZIP does not contain a JSON dataset file.",
+    datasetNameMissingImport: "Dataset name is missing in the import file.",
+    datasetImported: "Dataset imported.",
+    datasetImportFailed: "Failed to import dataset file.",
+    confirmDeleteDataset:
+      'Delete dataset "{name}"? This cannot be undone.',
+    datasetDeleted: "Dataset deleted.",
+    projectRequiredByOthers: "This project is required by other projects.",
+    confirmDeleteProject:
+      'Delete project "{project}"? This removes stored resources.',
+    projectDeleted: "Project deleted.",
+    datasetExported: "Dataset exported.",
+    noPackagesToExport: "No packages available to export.",
+    projectExported: "Project exported.",
+    noDatasetSelected: "No dataset selected.",
+    cannotDeleteUsedBy: "Cannot delete while used by {projects}.",
+    confirmDeleteAllData:
+      "Delete all locally stored data? This removes imported projects, resources, and datasets.",
+    localDataCleared: "Local data cleared.",
+    failedClearLocalData: "Failed to clear local data. Please try again.",
+    editorEyebrow: "Editor",
+    pageTitle: "Projects Overview",
+    refresh: "Refresh",
+    pageDescription:
+      "Review imported target packages, inspect dependencies, and start datasets. Open a dataset to compose resources with profile-driven forms.",
+    projectsOverviewTitle: "Project Overview",
+    datasetsOverviewTitle: "Dataset Overview",
+    projectsOverviewDescription:
+      "Review imported target projects and their dependencies.",
+    datasetsOverviewDescription:
+      "Manage datasets and see which project they belong to.",
+    importProject: "Import Project",
+    createDataset: "Create dataset",
+    settingsAria: "Settings",
+    filterPlaceholder: "Filter",
+    projectViewAria: "Project view",
+    datasetViewAria: "Dataset view",
+    noTargetsTitle: "No targets yet",
+    noTargetsDescription:
+      "Import a target package to start building datasets and dependencies.",
+    goToImporter: "Go to Importer",
+    missingTargetTitle: "Missing target package",
+    missingTargetDescription:
+      "{targetKey} is in history but no longer available in storage.",
+    reimportInImporter: "Re-import in Importer",
+    dependencyProjectsTitle: "Dependency Projects",
+    dependencyProjectsDescription:
+      "Packages pulled in to satisfy target dependencies.",
+    noDependenciesTitle: "No dependencies to show",
+    noDependenciesDescription:
+      "Import a target with dependencies or clear the filter to see more.",
+    noDatasetsTitle: "No datasets to show",
+    noDatasetsDescription:
+      "Create or import datasets from a project card to populate this view.",
+    projectPrefix: "Project:",
+    unknownProject: "Unknown",
+    exportProjectButton: "Export project",
+    createDatasetDialogTitle: "Create dataset",
+    createDatasetDialogDescription:
+      "Create a dataset shell for {project} and start composing resources.",
+    projectLabel: "Project",
+    selectProject: "Select project",
+    chooseProjectHint: "Choose the project this dataset belongs to.",
+    datasetNameLabel: "Dataset name",
+    datasetNamePlaceholder: "Project dataset",
+    createDatasetHint: "Use this when you want to create a brand new dataset.",
+    cancel: "Cancel",
+    createDatasetConfirm: "Create dataset",
+    importDatasetDialogTitle: "Import dataset",
+    importDatasetDialogDescription:
+      "Import a dataset JSON for {project}.",
+    datasetFileLabel: "Dataset file (.json/.zip)",
+    uploadDatasetFileLabel: "Upload dataset file",
+    uploadDatasetHelper:
+      "You can drag files here or paste JSON from your clipboard.",
+    uploadDatasetHint: "Drag & drop .json or .zip here",
+    chooseFile: "Choose file",
+    pasteJson: "Paste JSON",
+    clipboardHint: "Use the button or focus this box and press Ctrl/Cmd+V.",
+    clipboardFilename: "dataset-from-clipboard.json",
+    selectedPrefix: "Selected:",
+    clear: "Clear",
+    datasetFileSupportHint:
+      "Supports JSON/ZIP dataset exports, resource lists, or FHIR searchset bundles.",
+    fallbackNameLabel: "Fallback name (optional)",
+    fallbackNameHint:
+      "Used only if the import file does not include a name.",
+    importDatasetConfirm: "Import dataset",
+    exportProjectDialogTitle: "Export project",
+    exportProjectDialogDescription:
+      "Export {project} or one of its datasets.",
+    scopeProjectDependencies: "Project + dependencies",
+    scopeDatasetOnly: "Dataset only",
+    scopeNoDatasetHelper: "No datasets available for this project.",
+    exportDatasetConfirm: "Export dataset",
+    exportProjectConfirm: "Export project",
+    settingsTitle: "Settings",
+    settingsDescription: "Manage locally stored data for this browser.",
+    settingsDeleteInfo:
+      "Deleting data removes imported packages, dependency metadata, cached resources, and all datasets saved in this browser.",
+    close: "Close",
+    deleteAllLocalData: "Delete all local data",
+    thisProject: "this project",
+  },
+};
+
+type OverviewText = Record<keyof (typeof overviewText)["en"], string>;
+const localizedOverviewText: { de: OverviewText; en: OverviewText } = overviewText;
+
+const formatText = (template: string, values: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+
 type ProjectCardProps = {
   kind: "Target" | "Dependency";
   project: PackageRecord;
   dependencyCount?: number;
   owners?: string[];
   datasets: DatasetRecord[];
+  text: OverviewText;
   onCreateDataset: (project: PackageRecord) => void;
   onImportDataset: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
@@ -200,6 +486,7 @@ const ProjectCard = ({
   dependencyCount,
   owners,
   datasets,
+  text,
   onCreateDataset,
   onImportDataset,
   onOpenExportDialog,
@@ -210,7 +497,7 @@ const ProjectCard = ({
   deleteReason,
 }: ProjectCardProps) => {
   const title = project.manifest.title ?? project.manifest.name ?? project.id;
-  const description = project.manifest.description ?? "No description provided.";
+  const description = project.manifest.description ?? text.noDescriptionProvided;
 
   return (
     <Card className="border-foreground/10">
@@ -221,26 +508,30 @@ const ProjectCard = ({
             <CardDescription>{project.key}</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={kind === "Target" ? "secondary" : "outline"}>{kind}</Badge>
-            <Badge variant="outline">{project.resourceCount} resources</Badge>
+            <Badge variant={kind === "Target" ? "secondary" : "outline"}>
+              {kind === "Target" ? text.kindTarget : text.kindDependency}
+            </Badge>
+            <Badge variant="outline">
+              {formatText(text.resourcesCount, { count: project.resourceCount })}
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon-sm" variant="ghost" aria-label="Project actions">
+                <Button size="icon-sm" variant="ghost" aria-label={text.projectActionsAria}>
                   <MoreHorizontal className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Project actions</DropdownMenuLabel>
+                <DropdownMenuLabel>{text.projectActions}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onOpenExportDialog(project)}>
-                  Export project...
+                  {text.exportProject}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   disabled={!canDeleteProject}
                   onClick={() => onDeleteProject(project)}
                 >
-                  Delete project
+                  {text.deleteProject}
                 </DropdownMenuItem>
                 {!canDeleteProject && deleteReason ? (
                   <DropdownMenuLabel className="text-xs text-muted-foreground">
@@ -255,21 +546,29 @@ const ProjectCard = ({
       <CardContent className="grid gap-4">
         <p className="text-sm text-muted-foreground">{description}</p>
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span>Added: {formatTimestamp(project.addedAt)}</span>
+          <span>
+            {text.addedPrefix} {formatTimestamp(project.addedAt)}
+          </span>
           {typeof dependencyCount === "number" ? (
-            <span>Dependencies: {dependencyCount}</span>
+            <span>
+              {text.dependenciesPrefix} {dependencyCount}
+            </span>
           ) : null}
-          <span>Datasets: {datasets.length}</span>
+          <span>
+            {text.datasetsPrefix} {datasets.length}
+          </span>
           {owners && owners.length > 0 ? (
-            <span>Used by: {owners.join(", ")}</span>
+            <span>
+              {text.usedByPrefix} {owners.join(", ")}
+            </span>
           ) : null}
         </div>
         <div className="rounded-lg border border-foreground/10 bg-muted/30 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-foreground">Datasets</p>
+              <p className="text-sm font-semibold text-foreground">{text.datasetsSectionTitle}</p>
               <p className="text-xs text-muted-foreground">
-                Create datasets for this project and open them in the editor.
+                {text.datasetsSectionDescription}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -277,7 +576,7 @@ const ProjectCard = ({
                 size="icon-sm"
                 variant="secondary"
                 onClick={() => onCreateDataset(project)}
-                aria-label="Create dataset"
+                aria-label={text.createDatasetAria}
               >
                 <Plus className="size-4" />
               </Button>
@@ -285,7 +584,7 @@ const ProjectCard = ({
                 size="icon-sm"
                 variant="outline"
                 onClick={() => onImportDataset(project)}
-                aria-label="Import dataset"
+                aria-label={text.importDatasetAria}
               >
                 <Upload className="size-4" />
               </Button>
@@ -293,7 +592,7 @@ const ProjectCard = ({
           </div>
           <div className="mt-3 grid gap-2">
             {datasets.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No datasets yet.</p>
+              <p className="text-xs text-muted-foreground">{text.noDatasetsYet}</p>
             ) : (
               datasets.map((dataset) => (
                 <div
@@ -303,29 +602,29 @@ const ProjectCard = ({
                   <div>
                     <p className="text-sm font-medium text-foreground">{dataset.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Created {formatTimestamp(dataset.createdAt)}
+                      {text.createdPrefix} {formatTimestamp(dataset.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button asChild size="sm" variant="secondary">
-                      <Link href={`/${dataset.id}`}>Open</Link>
+                      <Link href={`/${dataset.id}`}>{text.open}</Link>
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon-sm" variant="ghost" aria-label="Dataset actions">
+                        <Button size="icon-sm" variant="ghost" aria-label={text.datasetActionsAria}>
                           <MoreHorizontal className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onExportDataset(dataset)}>
-                          Export dataset
+                          {text.exportDataset}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => onDeleteDataset(dataset)}
                         >
-                          Delete dataset
+                          {text.deleteDataset}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -341,6 +640,8 @@ const ProjectCard = ({
 };
 
 export default function EditorOverviewPage() {
+  const { locale } = useI18n();
+  const text = byLocale(locale, localizedOverviewText);
   const { snapshot, refresh, deletePackage, getResourcePayloadsByPackageKeys, clearAllData } = useImporter();
   const [filter, setFilter] = useState("");
   const [viewMode, setViewMode] = useState<"projects" | "datasets">("projects");
@@ -365,8 +666,8 @@ export default function EditorOverviewPage() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.title = "Projects";
-  }, []);
+    document.title = text.pageBrowserTitle;
+  }, [text.pageBrowserTitle]);
 
   useEffect(() => {
     setDatasets(loadDatasets());
@@ -552,14 +853,16 @@ export default function EditorOverviewPage() {
   const deleteReasonFor = (projectKey: string) => {
     const dependents = dependentsByProject.get(projectKey);
     if (!dependents || dependents.size === 0) return undefined;
-    return `Cannot delete while used by ${Array.from(dependents).sort().join(", ")}.`;
+    return formatText(text.cannotDeleteUsedBy, {
+      projects: Array.from(dependents).sort().join(", "),
+    });
   };
 
   const openDatasetDialog = (project: PackageRecord) => {
     const defaultName = project.manifest.title ?? project.manifest.name ?? project.id;
     setSelectedProject(project);
     setSelectedProjectKey(project.key);
-    setDatasetName(`${defaultName} Dataset`);
+    setDatasetName(`${defaultName} ${text.datasetSuffix}`);
     setImportDatasetFile(null);
     setCreateDialogOpen(true);
   };
@@ -568,7 +871,7 @@ export default function EditorOverviewPage() {
     const defaultName = project.manifest.title ?? project.manifest.name ?? project.id;
     setSelectedProject(project);
     setSelectedProjectKey(project.key);
-    setDatasetName(`${defaultName} Dataset`);
+    setDatasetName(`${defaultName} ${text.datasetSuffix}`);
     setImportDatasetFile(null);
     setImportDialogOpen(true);
   };
@@ -603,18 +906,18 @@ export default function EditorOverviewPage() {
     setSelectedProjectKey(projectKey);
     if (project && !datasetName.trim()) {
       const defaultName = project.manifest.title ?? project.manifest.name ?? project.id;
-      setDatasetName(`${defaultName} Dataset`);
+      setDatasetName(`${defaultName} ${text.datasetSuffix}`);
     }
   };
 
   const handleCreateDataset = () => {
     if (!selectedProject) {
-      toast.error("Select a project for this dataset.");
+      toast.error(text.selectProjectForDataset);
       return;
     }
     const name = datasetName.trim();
     if (!name) {
-      toast.error("Dataset name is required.");
+      toast.error(text.datasetNameRequired);
       return;
     }
     const dataset: DatasetRecord = {
@@ -627,16 +930,16 @@ export default function EditorOverviewPage() {
     saveDatasetResources(dataset.id, []);
     setDatasets(next);
     setCreateDialogOpen(false);
-    toast.success("Dataset created.");
+    toast.success(text.datasetCreated);
   };
 
   const handleImportDataset = async () => {
     if (!selectedProject) {
-      toast.error("Select a project for this dataset.");
+      toast.error(text.selectProjectForDataset);
       return;
     }
     if (!importDatasetFile) {
-      toast.error("Choose a dataset file to import.");
+      toast.error(text.chooseDatasetFile);
       return;
     }
     try {
@@ -645,18 +948,18 @@ export default function EditorOverviewPage() {
         const isZip =
           lower.endsWith(".zip") || file.type === "application/zip" || file.type === "application/x-zip-compressed";
         if (!isZip) {
-          const text = await file.text();
-          return JSON.parse(text);
+          const raw = await file.text();
+          return JSON.parse(raw);
         }
         const zip = await JSZip.loadAsync(file);
         const jsonEntry = Object.values(zip.files).find(
           (entry) => !entry.dir && entry.name.toLowerCase().endsWith(".json")
         );
         if (!jsonEntry) {
-          throw new Error("ZIP does not contain a JSON dataset file.");
+          throw new Error(text.zipNoJson);
         }
-        const text = await jsonEntry.async("text");
-        return JSON.parse(text);
+        const raw = await jsonEntry.async("text");
+        return JSON.parse(raw);
       };
 
       const parsed = (await parseImportFile(importDatasetFile)) as
@@ -696,7 +999,7 @@ export default function EditorOverviewPage() {
 
       const name = (importedName ?? datasetName).trim();
       if (!name) {
-        toast.error("Dataset name is missing in the import file.");
+        toast.error(text.datasetNameMissingImport);
         return;
       }
 
@@ -712,29 +1015,33 @@ export default function EditorOverviewPage() {
       setDatasets(next);
       setImportDialogOpen(false);
       setImportDatasetFile(null);
-      toast.success("Dataset imported.");
+      toast.success(text.datasetImported);
     } catch (error) {
-      toast.error("Failed to import dataset file.");
+      toast.error(text.datasetImportFailed);
       console.error(error);
     }
   };
 
   const handleDeleteDataset = (dataset: DatasetRecord) => {
-    const ok = window.confirm(`Delete dataset \"${dataset.name}\"? This cannot be undone.`);
+    const ok = window.confirm(
+      formatText(text.confirmDeleteDataset, { name: dataset.name })
+    );
     if (!ok) return;
     clearDatasetResources(dataset.id);
     const next = removeDataset(dataset.id);
     setDatasets(next);
-    toast.success("Dataset deleted.");
+    toast.success(text.datasetDeleted);
   };
 
   const handleDeleteProject = async (project: PackageRecord) => {
     if (!canDeleteProject(project.key)) {
-      toast.error("This project is required by other projects.");
+      toast.error(text.projectRequiredByOthers);
       return;
     }
     const ok = window.confirm(
-      `Delete project \"${project.id}@${project.version}\"? This removes stored resources.`
+      formatText(text.confirmDeleteProject, {
+        project: `${project.id}@${project.version}`,
+      })
     );
     if (!ok) return;
     await deletePackage(project.key);
@@ -746,7 +1053,7 @@ export default function EditorOverviewPage() {
     }
     const next = removeDatasetsForProject(project.key);
     setDatasets(next);
-    toast.success("Project deleted.");
+    toast.success(text.projectDeleted);
   };
 
   const buildSearchsetBundle = (entries: unknown[]) => ({
@@ -793,7 +1100,7 @@ export default function EditorOverviewPage() {
       const blob = await zip.generateAsync({ type: "blob" });
       downloadBlob(zipName, blob);
     }
-    toast.success("Dataset exported.");
+    toast.success(text.datasetExported);
   };
 
   const handleExportDataset = (dataset: DatasetRecord) => {
@@ -815,7 +1122,7 @@ export default function EditorOverviewPage() {
       .filter((record): record is PackageRecord => Boolean(record));
 
     if (packageRecords.length === 0) {
-      toast.error("No packages available to export.");
+      toast.error(text.noPackagesToExport);
       return null;
     }
 
@@ -875,7 +1182,7 @@ export default function EditorOverviewPage() {
       toSafeFilename(`${project.id}-${project.version}-compose.json`) ||
       "compose-project.json";
     downloadJson(filename, payload);
-    toast.success("Project exported.");
+    toast.success(text.projectExported);
   };
 
   const exportProjectAsZip = async (project: PackageRecord, includeDatasets: boolean) => {
@@ -924,7 +1231,7 @@ export default function EditorOverviewPage() {
     const filename =
       toSafeFilename(`${project.id}-${project.version}-compose.zip`) || "compose-project.zip";
     downloadBlob(filename, blob);
-    toast.success("Project exported.");
+    toast.success(text.projectExported);
   };
 
   const handleExportProjectConfirm = async () => {
@@ -943,7 +1250,7 @@ export default function EditorOverviewPage() {
     if (exportScope === "dataset") {
       const dataset = datasets.find((entry) => entry.id === exportDatasetId);
       if (!dataset) {
-        toast.error("No dataset selected.");
+        toast.error(text.noDatasetSelected);
         return;
       }
       await exportDatasetWithMode(dataset, exportDatasetMode);
@@ -956,9 +1263,7 @@ export default function EditorOverviewPage() {
   };
 
   const handleDeleteAllData = async () => {
-    const ok = window.confirm(
-      "Delete all locally stored data? This removes imported projects, resources, and datasets."
-    );
+    const ok = window.confirm(text.confirmDeleteAllData);
     if (!ok) return;
     try {
       await clearAllData();
@@ -967,10 +1272,10 @@ export default function EditorOverviewPage() {
       setDatasets([]);
       setSelectedProject(null);
       setSelectedProjectKey(null);
-      toast.success("Local data cleared.");
+      toast.success(text.localDataCleared);
     } catch (error) {
       console.error("Failed to clear local data", error);
-      toast.error("Failed to clear local data. Please try again.");
+      toast.error(text.failedClearLocalData);
     }
   };
 
@@ -980,36 +1285,38 @@ export default function EditorOverviewPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-              Editor
+              {text.editorEyebrow}
             </p>
-            <h1 className="text-3xl font-semibold text-foreground">Projects Overview</h1>
+            <h1 className="text-3xl font-semibold text-foreground">{text.pageTitle}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" onClick={() => void refresh()}>
-              Refresh
+              {text.refresh}
             </Button>
+            <LanguageSwitcher />
           </div>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">
-          Review imported target packages, inspect dependencies, and start datasets. Open a
-          dataset to compose resources with profile-driven forms.
+          {text.pageDescription}
         </p>
       </header>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-foreground">
-            {viewMode === "projects" ? "Project Overview" : "Dataset Overview"}
+            {viewMode === "projects"
+              ? text.projectsOverviewTitle
+              : text.datasetsOverviewTitle}
           </h2>
           <p className="text-sm text-muted-foreground">
             {viewMode === "projects"
-              ? "Review imported target projects and their dependencies."
-              : "Manage datasets and see which project they belong to."}
+              ? text.projectsOverviewDescription
+              : text.datasetsOverviewDescription}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild size="sm" variant="outline">
-            <Link href="/importer">Import Project</Link>
+            <Link href="/importer">{text.importProject}</Link>
           </Button>
           <Button
             size="sm"
@@ -1017,12 +1324,12 @@ export default function EditorOverviewPage() {
             disabled={projectOptions.length === 0}
             onClick={openDatasetDialogFromList}
           >
-            Create dataset
+            {text.createDataset}
           </Button>
           <Button
             size="icon-sm"
             variant="outline"
-            aria-label="Settings"
+            aria-label={text.settingsAria}
             onClick={() => setSettingsDialogOpen(true)}
           >
             <Settings className="size-4" />
@@ -1035,7 +1342,7 @@ export default function EditorOverviewPage() {
           id="project-filter"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
-          placeholder="Filter"
+          placeholder={text.filterPlaceholder}
           className="h-8 max-w-xs"
         />
         <div className="flex items-center gap-2">
@@ -1044,7 +1351,7 @@ export default function EditorOverviewPage() {
             size="icon-sm"
             variant={viewMode === "projects" ? "secondary" : "outline"}
             onClick={() => setViewMode("projects")}
-            aria-label="Project view"
+            aria-label={text.projectViewAria}
           >
             <LayoutGrid className="size-4" />
           </Button>
@@ -1052,7 +1359,7 @@ export default function EditorOverviewPage() {
             size="icon-sm"
             variant={viewMode === "datasets" ? "secondary" : "outline"}
             onClick={() => setViewMode("datasets")}
-            aria-label="Dataset view"
+            aria-label={text.datasetViewAria}
           >
             <Database className="size-4" />
           </Button>
@@ -1065,14 +1372,14 @@ export default function EditorOverviewPage() {
             {filteredTargets.length === 0 ? (
               <Card className="border-dashed border-foreground/20">
                 <CardHeader>
-                  <CardTitle>No targets yet</CardTitle>
+                  <CardTitle>{text.noTargetsTitle}</CardTitle>
                   <CardDescription>
-                    Import a target package to start building datasets and dependencies.
+                    {text.noTargetsDescription}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button asChild>
-                    <Link href="/importer">Go to Importer</Link>
+                    <Link href="/importer">{text.goToImporter}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -1084,6 +1391,7 @@ export default function EditorOverviewPage() {
                       key={target.key}
                       kind="Target"
                       project={target.record}
+                      text={text}
                       dependencyCount={dependenciesByTarget.get(target.key)?.size ?? 0}
                       datasets={datasetsByProject.get(target.key) ?? []}
                       onCreateDataset={openDatasetDialog}
@@ -1098,14 +1406,16 @@ export default function EditorOverviewPage() {
                   ) : (
                     <Card key={target.key} className="border-destructive/40">
                       <CardHeader>
-                        <CardTitle className="text-lg">Missing target package</CardTitle>
+                        <CardTitle className="text-lg">{text.missingTargetTitle}</CardTitle>
                         <CardDescription>
-                          {target.key} is in history but no longer available in storage.
+                          {formatText(text.missingTargetDescription, {
+                            targetKey: target.key,
+                          })}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <Button asChild variant="outline">
-                          <Link href="/importer">Re-import in Importer</Link>
+                          <Link href="/importer">{text.reimportInImporter}</Link>
                         </Button>
                       </CardContent>
                     </Card>
@@ -1118,9 +1428,11 @@ export default function EditorOverviewPage() {
           <section className="grid gap-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-foreground">Dependency Projects</h2>
+                <h2 className="text-xl font-semibold text-foreground">
+                  {text.dependencyProjectsTitle}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Packages pulled in to satisfy target dependencies.
+                  {text.dependencyProjectsDescription}
                 </p>
               </div>
             </div>
@@ -1128,9 +1440,9 @@ export default function EditorOverviewPage() {
             {filteredDependencies.length === 0 ? (
               <Card className="border-dashed border-foreground/20">
                 <CardHeader>
-                  <CardTitle>No dependencies to show</CardTitle>
+                  <CardTitle>{text.noDependenciesTitle}</CardTitle>
                   <CardDescription>
-                    Import a target with dependencies or clear the filter to see more.
+                    {text.noDependenciesDescription}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -1141,6 +1453,7 @@ export default function EditorOverviewPage() {
                     key={project.key}
                     kind="Dependency"
                     project={project}
+                    text={text}
                     owners={Array.from(dependencyOwners.get(project.key) ?? []).sort()}
                     datasets={datasetsByProject.get(project.key) ?? []}
                     onCreateDataset={openDatasetDialog}
@@ -1162,14 +1475,14 @@ export default function EditorOverviewPage() {
           {filteredDatasets.length === 0 ? (
             <Card className="border-dashed border-foreground/20">
               <CardHeader>
-                <CardTitle>No datasets to show</CardTitle>
+                <CardTitle>{text.noDatasetsTitle}</CardTitle>
                 <CardDescription>
-                  Create or import datasets from a project card to populate this view.
+                  {text.noDatasetsDescription}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 <Button asChild size="sm" variant="outline">
-                  <Link href="/importer">Import Project</Link>
+                  <Link href="/importer">{text.importProject}</Link>
                 </Button>
                 <Button
                   size="sm"
@@ -1177,7 +1490,7 @@ export default function EditorOverviewPage() {
                   disabled={projectOptions.length === 0}
                   onClick={openDatasetDialogFromList}
                 >
-                  Create dataset
+                  {text.createDataset}
                 </Button>
               </CardContent>
             </Card>
@@ -1195,20 +1508,20 @@ export default function EditorOverviewPage() {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="icon-sm" variant="ghost" aria-label="Dataset actions">
+                            <Button size="icon-sm" variant="ghost" aria-label={text.datasetActionsAria}>
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleExportDataset(dataset)}>
-                              Export dataset
+                              {text.exportDataset}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"
                               onClick={() => handleDeleteDataset(dataset)}
                             >
-                              Delete dataset
+                              {text.deleteDataset}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1216,18 +1529,20 @@ export default function EditorOverviewPage() {
                     </CardHeader>
                     <CardContent className="grid gap-3">
                       <div className="text-xs text-muted-foreground">
-                        <div>Created: {formatTimestamp(dataset.createdAt)}</div>
                         <div>
-                          Project:{" "}
+                          {text.createdPrefix}: {formatTimestamp(dataset.createdAt)}
+                        </div>
+                        <div>
+                          {text.projectPrefix}{" "}
                           {project?.manifest.title ??
                             project?.manifest.name ??
                             project?.id ??
-                            "Unknown"}
+                            text.unknownProject}
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Button asChild size="sm" variant="secondary">
-                          <Link href={`/${dataset.id}`}>Open</Link>
+                          <Link href={`/${dataset.id}`}>{text.open}</Link>
                         </Button>
                         {project ? (
                           <Button
@@ -1235,7 +1550,7 @@ export default function EditorOverviewPage() {
                             variant="outline"
                             onClick={() => openExportDialog(project)}
                           >
-                            Export project
+                            {text.exportProjectButton}
                           </Button>
                         ) : null}
                       </div>
@@ -1251,22 +1566,23 @@ export default function EditorOverviewPage() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create dataset</DialogTitle>
+            <DialogTitle>{text.createDatasetDialogTitle}</DialogTitle>
             <DialogDescription>
-              Create a dataset shell for {selectedProject?.id ?? "this project"} and start
-              composing resources.
+              {formatText(text.createDatasetDialogDescription, {
+                project: selectedProject?.id ?? text.thisProject,
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-2">
-              <Label htmlFor="dataset-project">Project</Label>
+              <Label htmlFor="dataset-project">{text.projectLabel}</Label>
               <select
                 id="dataset-project"
                 value={selectedProjectKey ?? ""}
                 onChange={(event) => handleProjectSelection(event.target.value)}
                 className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
               >
-                <option value="">Select project</option>
+                <option value="">{text.selectProject}</option>
                 {projectOptions.map((project) => (
                   <option key={project.key} value={project.key}>
                     {project.id}@{project.version}
@@ -1274,26 +1590,26 @@ export default function EditorOverviewPage() {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Choose the project this dataset belongs to.
+                {text.chooseProjectHint}
               </p>
             </div>
-            <Label htmlFor="dataset-name">Dataset name</Label>
+            <Label htmlFor="dataset-name">{text.datasetNameLabel}</Label>
             <Input
               id="dataset-name"
               value={datasetName}
               onChange={(event) => setDatasetName(event.target.value)}
-              placeholder="Project dataset"
+              placeholder={text.datasetNamePlaceholder}
             />
             <p className="text-xs text-muted-foreground">
-              Use this when you want to create a brand new dataset.
+              {text.createDatasetHint}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-              Cancel
+              {text.cancel}
             </Button>
             <Button onClick={handleCreateDataset}>
-              Create dataset
+              {text.createDatasetConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1302,21 +1618,23 @@ export default function EditorOverviewPage() {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Import dataset</DialogTitle>
+            <DialogTitle>{text.importDatasetDialogTitle}</DialogTitle>
             <DialogDescription>
-              Import a dataset JSON for {selectedProject?.id ?? "this project"}.
+              {formatText(text.importDatasetDialogDescription, {
+                project: selectedProject?.id ?? text.thisProject,
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-2">
-              <Label htmlFor="dataset-import-project">Project</Label>
+              <Label htmlFor="dataset-import-project">{text.projectLabel}</Label>
               <select
                 id="dataset-import-project"
                 value={selectedProjectKey ?? ""}
                 onChange={(event) => handleProjectSelection(event.target.value)}
                 className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
               >
-                <option value="">Select project</option>
+                <option value="">{text.selectProject}</option>
                 {projectOptions.map((project) => (
                   <option key={project.key} value={project.key}>
                     {project.id}@{project.version}
@@ -1324,28 +1642,28 @@ export default function EditorOverviewPage() {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Choose the project this dataset belongs to.
+                {text.chooseProjectHint}
               </p>
             </div>
             <div className="grid gap-2">
-              <Label>Dataset file (.json/.zip)</Label>
+              <Label>{text.datasetFileLabel}</Label>
               <FileDropzone
-                label="Upload dataset file"
-                helperText="You can drag files here or paste JSON from your clipboard."
+                label={text.uploadDatasetFileLabel}
+                helperText={text.uploadDatasetHelper}
                 accept=".json,.zip,application/json,application/zip,application/x-zip-compressed"
-                hint="Drag & drop .json or .zip here"
-                chooseButtonLabel="Choose file"
+                hint={text.uploadDatasetHint}
+                chooseButtonLabel={text.chooseFile}
                 multiple={false}
                 enableClipboard
-                clipboardButtonLabel="Paste JSON"
-                clipboardHint="Use the button or focus this box and press Ctrl/Cmd+V."
-                clipboardFilename="dataset-from-clipboard.json"
+                clipboardButtonLabel={text.pasteJson}
+                clipboardHint={text.clipboardHint}
+                clipboardFilename={text.clipboardFilename}
                 onFiles={(files) => setImportDatasetFile(files[0] ?? null)}
               />
               {importDatasetFile ? (
                 <div className="flex items-center justify-between rounded-md border border-foreground/10 bg-muted/20 px-3 py-2 text-xs">
                   <span className="truncate text-foreground" title={importDatasetFile.name}>
-                    Selected: {importDatasetFile.name}
+                    {text.selectedPrefix} {importDatasetFile.name}
                   </span>
                   <Button
                     type="button"
@@ -1353,33 +1671,33 @@ export default function EditorOverviewPage() {
                     variant="ghost"
                     onClick={() => setImportDatasetFile(null)}
                   >
-                    Clear
+                    {text.clear}
                   </Button>
                 </div>
               ) : null}
               <p className="text-xs text-muted-foreground">
-                Supports JSON/ZIP dataset exports, resource lists, or FHIR searchset bundles.
+                {text.datasetFileSupportHint}
               </p>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="dataset-import-name">Fallback name (optional)</Label>
+              <Label htmlFor="dataset-import-name">{text.fallbackNameLabel}</Label>
               <Input
                 id="dataset-import-name"
                 value={datasetName}
                 onChange={(event) => setDatasetName(event.target.value)}
-                placeholder="Project dataset"
+                placeholder={text.datasetNamePlaceholder}
               />
               <p className="text-xs text-muted-foreground">
-                Used only if the import file does not include a name.
+                {text.fallbackNameHint}
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              Cancel
+              {text.cancel}
             </Button>
             <Button variant="secondary" onClick={handleImportDataset}>
-              Import dataset
+              {text.importDatasetConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1393,21 +1711,23 @@ export default function EditorOverviewPage() {
             setExportTarget(null);
           }
         }}
-        title="Export project"
-        description={`Export ${exportTarget?.id ?? "this project"} or one of its datasets.`}
+        title={text.exportProjectDialogTitle}
+        description={formatText(text.exportProjectDialogDescription, {
+          project: exportTarget?.id ?? text.thisProject,
+        })}
         scope={exportScope}
         scopeOptions={[
           {
             value: "project",
-            label: "Project + dependencies",
+            label: text.scopeProjectDependencies,
           },
           {
             value: "dataset",
-            label: "Dataset only",
+            label: text.scopeDatasetOnly,
             disabled: exportDatasetOptions.length === 0,
             helper:
               exportDatasetOptions.length === 0
-                ? "No datasets available for this project."
+                ? text.scopeNoDatasetHelper
                 : undefined,
           },
         ]}
@@ -1421,7 +1741,11 @@ export default function EditorOverviewPage() {
         onDatasetChange={setExportDatasetId}
         includeDatasets={exportIncludeDatasets}
         onIncludeDatasetsChange={setExportIncludeDatasets}
-        confirmLabel={exportScope === "dataset" ? "Export dataset" : "Export project"}
+        confirmLabel={
+          exportScope === "dataset"
+            ? text.exportDatasetConfirm
+            : text.exportProjectConfirm
+        }
         confirmDisabled={
           !exportTarget || (exportScope === "dataset" && !exportDatasetId)
         }
@@ -1431,21 +1755,20 @@ export default function EditorOverviewPage() {
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
+            <DialogTitle>{text.settingsTitle}</DialogTitle>
             <DialogDescription>
-              Manage locally stored data for this browser.
+              {text.settingsDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            Deleting data removes imported packages, dependency metadata, cached resources, and
-            all datasets saved in this browser.
+            {text.settingsDeleteInfo}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>
-              Close
+              {text.close}
             </Button>
             <Button variant="destructive" onClick={handleDeleteAllData}>
-              Delete all local data
+              {text.deleteAllLocalData}
             </Button>
           </DialogFooter>
         </DialogContent>
