@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ type ResourceDetailPanelProps = {
   fields: FieldDefinition[];
   registry: FhirRegistry | null;
   datasetResources: DatasetResource[];
+  onSelectResource: (resourceId: string) => void;
   onUpdateResource: (resource: DatasetResource) => void;
   onRemoveResource: (resourceId: string) => void;
 };
@@ -77,6 +78,7 @@ export const ResourceDetailPanel = ({
   fields,
   registry,
   datasetResources,
+  onSelectResource,
   onUpdateResource,
   onRemoveResource,
 }: ResourceDetailPanelProps) => {
@@ -300,6 +302,7 @@ export const ResourceDetailPanel = ({
                     validationIssues={validationIssues}
                     onChange={handleUpdate}
                     onRemove={() => handleFieldRemove(group.root)}
+                    onSelectResource={onSelectResource}
                   />
                 ) : (
                   <ComplexFieldGroup
@@ -311,6 +314,7 @@ export const ResourceDetailPanel = ({
                     referenceIndex={referenceIndex}
                     validationIssues={validationIssues}
                     onChange={handleUpdate}
+                    onSelectResource={onSelectResource}
                   />
                 )
               )
@@ -455,6 +459,7 @@ type FieldRowProps = {
   issuePath?: string;
   onChange: (nextContent: Record<string, unknown>) => void;
   onRemove: () => void;
+  onSelectResource: (resourceId: string) => void;
 };
 
 const FieldRow = ({
@@ -467,6 +472,7 @@ const FieldRow = ({
   issuePath,
   onChange,
   onRemove,
+  onSelectResource,
 }: FieldRowProps) => {
   const kind = field.path.endsWith(".identifier")
     ? "Identifier"
@@ -602,6 +608,8 @@ const FieldRow = ({
             onChange={(nextValue) => updateItem(index, nextValue)}
             onRemove={canRemoveItem ? () => removeItem(index) : undefined}
             brokenReference={brokenReferences[index]}
+            allDatasetResources={datasetResources}
+            onOpenResource={onSelectResource}
           />
         ))}
         {effectiveRepeating ? (
@@ -628,6 +636,7 @@ type ComplexFieldGroupProps = {
   referenceIndex: Set<string>;
   validationIssues: ValidationIssue[];
   onChange: (nextContent: Record<string, unknown>) => void;
+  onSelectResource: (resourceId: string) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -641,6 +650,7 @@ const ComplexFieldGroup = ({
   referenceIndex,
   validationIssues,
   onChange,
+  onSelectResource,
 }: ComplexFieldGroupProps) => {
   const rootValue = getFieldValue(content, group.root);
   const isRepeating = isRepeatingField(group.root) || Array.isArray(rootValue);
@@ -775,6 +785,8 @@ const ComplexFieldGroup = ({
                       onChange={(nextValue) =>
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
+                      allDatasetResources={datasetResources}
+                      onOpenResource={onSelectResource}
                     />
                   ) : rootKind === "Reference" ? (
                     <FieldInput
@@ -786,6 +798,8 @@ const ComplexFieldGroup = ({
                       onChange={(nextValue) =>
                         handleItemChange(isRecord(nextValue) ? nextValue : {})
                       }
+                      allDatasetResources={datasetResources}
+                      onOpenResource={onSelectResource}
                     />
                   ) : isCodeableRoot ? (
                     <FieldInput
@@ -816,6 +830,7 @@ const ComplexFieldGroup = ({
                           }
                           onChange={handleItemChange}
                           onRemove={() => handleItemChange(removeFieldValue(itemContent, field))}
+                          onSelectResource={onSelectResource}
                         />
                       ))}
                 </div>
@@ -851,6 +866,8 @@ const ComplexFieldGroup = ({
             onChange={(nextValue) =>
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
+            allDatasetResources={datasetResources}
+            onOpenResource={onSelectResource}
           />
         ) : rootKind === "Reference" ? (
           <FieldInput
@@ -862,6 +879,8 @@ const ComplexFieldGroup = ({
             onChange={(nextValue) =>
               handleObjectChange(isRecord(nextValue) ? nextValue : {})
             }
+            allDatasetResources={datasetResources}
+            onOpenResource={onSelectResource}
           />
         ) : isCodeableRoot ? (
           <FieldInput
@@ -887,6 +906,7 @@ const ComplexFieldGroup = ({
                 validationIssues={validationIssues}
                 onChange={handleObjectChange}
                 onRemove={() => handleObjectChange(removeFieldValue(objectValue, field))}
+                onSelectResource={onSelectResource}
               />
             ))}
       </div>
@@ -1058,6 +1078,8 @@ type FieldInputProps = {
   onChange: (value: unknown) => void;
   onRemove?: () => void;
   brokenReference?: string | null;
+  allDatasetResources?: DatasetResource[];
+  onOpenResource?: (resourceId: string) => void;
 };
 
 const IDENTIFIER_USE_OPTIONS = ["usual", "official", "temp", "secondary", "old"];
@@ -1231,6 +1253,8 @@ const FieldInput = ({
   onChange,
   onRemove,
   brokenReference,
+  allDatasetResources = [],
+  onOpenResource,
 }: FieldInputProps) => {
   const [includeReferenceDisplay, setIncludeReferenceDisplay] = useState(false);
 
@@ -1264,6 +1288,16 @@ const FieldInput = ({
         : typeof currentValue === "string"
         ? currentValue
         : "";
+    const resolvedReferenceKey = parseLocalReference(currentReference)?.key;
+    const existingReferenceTarget = resolvedReferenceKey
+      ? allDatasetResources.find((entry) => {
+          const contentId =
+            typeof entry.content.id === "string" && entry.content.id.trim().length > 0
+              ? entry.content.id.trim()
+              : entry.id;
+          return `${entry.resourceType}/${contentId}` === resolvedReferenceKey;
+        })
+      : null;
     const normalizedReferenceKey = parseLocalReference(currentReference)?.key ?? "";
     const referenceSelectOptions = referenceOptions.map((entry) => {
       const name =
@@ -1327,13 +1361,27 @@ const FieldInput = ({
             onChange({ reference });
           }}
         />
-        <Input
-          value={currentReference}
-          onChange={(event) =>
-            onChange({ reference: event.target.value })
-          }
-          placeholder="ResourceType/id"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={currentReference}
+            onChange={(event) =>
+              onChange({ reference: event.target.value })
+            }
+            placeholder="ResourceType/id"
+          />
+          {existingReferenceTarget && onOpenResource ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Open referenced resource"
+              title="Open referenced resource"
+              onClick={() => onOpenResource(existingReferenceTarget.id)}
+            >
+              <ArrowRight className="size-4" />
+            </Button>
+          ) : null}
+        </div>
         {brokenReference ? (
           <div className="inline-flex items-center gap-1 text-xs text-amber-700">
             <AlertTriangle className="size-3" />
