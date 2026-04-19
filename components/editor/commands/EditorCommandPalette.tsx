@@ -54,6 +54,12 @@ export const EditorCommandPalette = ({
   commands,
 }: EditorCommandPaletteProps) => {
   const { locale } = useI18n();
+  const enText = {
+    title: "Editor Commands",
+    description: "Search and run a command.",
+    inputPlaceholder: "Type a command or search...",
+    noResults: "No results found.",
+  };
   const text = byLocale(locale, {
     de: {
       title: "Editor-Commands",
@@ -61,11 +67,27 @@ export const EditorCommandPalette = ({
       inputPlaceholder: "Command tippen oder suchen...",
       noResults: "Keine Treffer gefunden.",
     },
-    en: {
-      title: "Editor Commands",
-      description: "Search and run a command.",
-      inputPlaceholder: "Type a command or search...",
-      noResults: "No results found.",
+    en: enText,
+    fr: {
+      ...enText,
+      title: "Commandes de l'editeur",
+      description: "Rechercher et executer une commande.",
+      inputPlaceholder: "Tapez une commande ou recherchez...",
+      noResults: "Aucun resultat.",
+    },
+    es: {
+      ...enText,
+      title: "Comandos del editor",
+      description: "Busca y ejecuta un comando.",
+      inputPlaceholder: "Escribe un comando o busca...",
+      noResults: "No se encontraron resultados.",
+    },
+    it: {
+      ...enText,
+      title: "Comandi dell'editor",
+      description: "Cerca ed esegui un comando.",
+      inputPlaceholder: "Digita un comando o cerca...",
+      noResults: "Nessun risultato trovato.",
     },
   });
   const groupedCommands = useMemo(() => groupCommands(commands), [commands]);

@@ -54,6 +54,18 @@ function CommandDialog({
       title: "Command Palette",
       description: "Search for a command to run...",
     },
+    fr: {
+      title: "Palette de commandes",
+      description: "Rechercher une commande à exécuter...",
+    },
+    es: {
+      title: "Paleta de comandos",
+      description: "Busca un comando para ejecutar...",
+    },
+    it: {
+      title: "Palette comandi",
+      description: "Cerca un comando da eseguire...",
+    },
   })
   const effectiveTitle = title ?? localized.title
   const effectiveDescription = description ?? localized.description

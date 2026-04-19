@@ -31,6 +31,20 @@ export const ResourceJsonPanel = ({
 }: ResourceJsonPanelProps) => {
   const { locale } = useI18n();
   const [draft, setDraft] = useState("");
+  const enText = {
+    jsonMustBeObject: "JSON must be an object.",
+    invalidJson: "Invalid JSON.",
+    title: "Resource JSON",
+    subtitle: "Edit JSON and sync with the form",
+    apply: "Apply",
+    validation: "Validation",
+    jsonParsingError: "JSON parsing error",
+    noValidationIssues: "No validation issues found.",
+    emptyState: "Select a resource to inspect the JSON payload.",
+    issueSummary: "{errors} error{errorsSuffix}, {warnings} warning{warningsSuffix}",
+    errorsSuffix: "s",
+    warningsSuffix: "s",
+  };
   const text = byLocale(locale, {
     de: {
       jsonMustBeObject: "JSON muss ein Objekt sein.",
@@ -46,19 +60,36 @@ export const ResourceJsonPanel = ({
       errorsSuffix: "",
       warningsSuffix: "en",
     },
-    en: {
-      jsonMustBeObject: "JSON must be an object.",
-      invalidJson: "Invalid JSON.",
-      title: "Resource JSON",
-      subtitle: "Edit JSON and sync with the form",
-      apply: "Apply",
+    en: enText,
+    fr: {
+      ...enText,
+      title: "JSON de la ressource",
+      subtitle: "Modifier le JSON et synchroniser avec le formulaire",
+      apply: "Appliquer",
       validation: "Validation",
-      jsonParsingError: "JSON parsing error",
-      noValidationIssues: "No validation issues found.",
-      emptyState: "Select a resource to inspect the JSON payload.",
-      issueSummary: "{errors} error{errorsSuffix}, {warnings} warning{warningsSuffix}",
-      errorsSuffix: "s",
-      warningsSuffix: "s",
+      jsonParsingError: "Erreur d'analyse JSON",
+      noValidationIssues: "Aucun problème de validation trouvé.",
+      emptyState: "Sélectionnez une ressource pour inspecter le JSON.",
+    },
+    es: {
+      ...enText,
+      title: "JSON del recurso",
+      subtitle: "Editar JSON y sincronizar con el formulario",
+      apply: "Aplicar",
+      validation: "Validación",
+      jsonParsingError: "Error de análisis JSON",
+      noValidationIssues: "No se encontraron problemas de validación.",
+      emptyState: "Selecciona un recurso para inspeccionar el JSON.",
+    },
+    it: {
+      ...enText,
+      title: "JSON della risorsa",
+      subtitle: "Modifica il JSON e sincronizza con il modulo",
+      apply: "Applica",
+      validation: "Validazione",
+      jsonParsingError: "Errore di parsing JSON",
+      noValidationIssues: "Nessun problema di validazione trovato.",
+      emptyState: "Seleziona una risorsa per ispezionare il JSON.",
     },
   });
 

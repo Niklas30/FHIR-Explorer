@@ -24,6 +24,21 @@ export const NewResourceDialog = ({
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [resourceId, setResourceId] = useState<string>("");
   const [query, setQuery] = useState("");
+  const enText = {
+    title: "New resource",
+    description: "Pick a profile and start composing a resource instance.",
+    search: "Search",
+    searchProfiles: "Search profiles",
+    noMatchingProfiles: "No matching profiles.",
+    profileFallback: "Profile",
+    matchingProfiles: "Matching profiles",
+    noProfilesAvailable: "No profiles available",
+    resourceIdLabel: "FHIR ID (optional)",
+    resourceIdPlaceholder: "endpoint-001",
+    resourceIdHint: "Use an ID if the resource should be referenced by others.",
+    cancel: "Cancel",
+    createResource: "Create resource",
+  };
   const text = byLocale(locale, {
     de: {
       title: "Neue Ressource",
@@ -40,20 +55,47 @@ export const NewResourceDialog = ({
       cancel: "Abbrechen",
       createResource: "Ressource erstellen",
     },
-    en: {
-      title: "New resource",
-      description: "Pick a profile and start composing a resource instance.",
-      search: "Search",
-      searchProfiles: "Search profiles",
-      noMatchingProfiles: "No matching profiles.",
-      profileFallback: "Profile",
-      matchingProfiles: "Matching profiles",
-      noProfilesAvailable: "No profiles available",
-      resourceIdLabel: "FHIR ID (optional)",
-      resourceIdPlaceholder: "endpoint-001",
-      resourceIdHint: "Use an ID if the resource should be referenced by others.",
-      cancel: "Cancel",
-      createResource: "Create resource",
+    en: enText,
+    fr: {
+      ...enText,
+      title: "Nouvelle ressource",
+      description: "Choisissez un profil et commencez une instance de ressource.",
+      search: "Rechercher",
+      searchProfiles: "Rechercher des profils",
+      noMatchingProfiles: "Aucun profil correspondant.",
+      matchingProfiles: "Profils correspondants",
+      noProfilesAvailable: "Aucun profil disponible",
+      resourceIdHint:
+        "Utilisez un ID si la ressource doit etre referencee par d'autres.",
+      cancel: "Annuler",
+      createResource: "Creer la ressource",
+    },
+    es: {
+      ...enText,
+      title: "Nuevo recurso",
+      description: "Elige un perfil y comienza una instancia de recurso.",
+      search: "Buscar",
+      searchProfiles: "Buscar perfiles",
+      noMatchingProfiles: "No hay perfiles coincidentes.",
+      matchingProfiles: "Perfiles coincidentes",
+      noProfilesAvailable: "No hay perfiles disponibles",
+      resourceIdHint: "Usa un ID si otros recursos deben referenciar este recurso.",
+      cancel: "Cancelar",
+      createResource: "Crear recurso",
+    },
+    it: {
+      ...enText,
+      title: "Nuova risorsa",
+      description: "Scegli un profilo e inizia a comporre una risorsa.",
+      search: "Cerca",
+      searchProfiles: "Cerca profili",
+      noMatchingProfiles: "Nessun profilo corrispondente.",
+      matchingProfiles: "Profili corrispondenti",
+      noProfilesAvailable: "Nessun profilo disponibile",
+      resourceIdHint:
+        "Usa un ID se la risorsa deve essere referenziata da altre risorse.",
+      cancel: "Annulla",
+      createResource: "Crea risorsa",
     },
   });
 

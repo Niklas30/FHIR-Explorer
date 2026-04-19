@@ -67,6 +67,23 @@ export const ExportDialog = ({
   const showIncludeDatasets = activeScope === "project" && typeof includeDatasets === "boolean";
   const showDatasetSelect =
     activeScope === "dataset" && datasetOptions && onDatasetChange !== undefined;
+  const enText = {
+    exportScope: "Export scope",
+    exportFormat: "Export format",
+    singleJson: "Single JSON",
+    zipArchive: "ZIP archive",
+    formatHint: "JSON exports everything in one file. ZIP splits data into files with a manifest.",
+    dataset: "Dataset",
+    noDatasetsAvailable: "No datasets available.",
+    datasetPayload: "Dataset payload",
+    datasetPackage: "Dataset package",
+    resourcesList: "Resources list",
+    fhirSearchset: "FHIR searchset",
+    payloadHint:
+      "Resources list exports raw resource JSON. Searchset exports a FHIR Bundle with type",
+    includeDatasets: "Include datasets",
+    cancel: "Cancel",
+  };
   const text = byLocale(locale, {
     de: {
       exportScope: "Export-Umfang",
@@ -86,22 +103,42 @@ export const ExportDialog = ({
       includeDatasets: "Datasets einschließen",
       cancel: "Abbrechen",
     },
-    en: {
-      exportScope: "Export scope",
-      exportFormat: "Export format",
-      singleJson: "Single JSON",
-      zipArchive: "ZIP archive",
-      formatHint: "JSON exports everything in one file. ZIP splits data into files with a manifest.",
-      dataset: "Dataset",
-      noDatasetsAvailable: "No datasets available.",
-      datasetPayload: "Dataset payload",
-      datasetPackage: "Dataset package",
-      resourcesList: "Resources list",
-      fhirSearchset: "FHIR searchset",
-      payloadHint:
-        "Resources list exports raw resource JSON. Searchset exports a FHIR Bundle with type",
-      includeDatasets: "Include datasets",
-      cancel: "Cancel",
+    en: enText,
+    fr: {
+      ...enText,
+      exportScope: "Portee de l'export",
+      exportFormat: "Format d'export",
+      singleJson: "JSON unique",
+      zipArchive: "Archive ZIP",
+      datasetPayload: "Contenu du dataset",
+      datasetPackage: "Paquet dataset",
+      resourcesList: "Liste des ressources",
+      includeDatasets: "Inclure les datasets",
+      cancel: "Annuler",
+    },
+    es: {
+      ...enText,
+      exportScope: "Alcance de exportacion",
+      exportFormat: "Formato de exportacion",
+      singleJson: "JSON unico",
+      zipArchive: "Archivo ZIP",
+      datasetPayload: "Contenido del dataset",
+      datasetPackage: "Paquete de dataset",
+      resourcesList: "Lista de recursos",
+      includeDatasets: "Incluir datasets",
+      cancel: "Cancelar",
+    },
+    it: {
+      ...enText,
+      exportScope: "Ambito export",
+      exportFormat: "Formato export",
+      singleJson: "JSON singolo",
+      zipArchive: "Archivio ZIP",
+      datasetPayload: "Contenuto dataset",
+      datasetPackage: "Pacchetto dataset",
+      resourcesList: "Elenco risorse",
+      includeDatasets: "Includi dataset",
+      cancel: "Annulla",
     },
   });
 

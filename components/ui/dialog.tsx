@@ -58,7 +58,13 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const { locale } = useI18n()
-  const closeLabel = byLocale(locale, { de: "Schließen", en: "Close" })
+  const closeLabel = byLocale(locale, {
+    de: "Schließen",
+    en: "Close",
+    fr: "Fermer",
+    es: "Cerrar",
+    it: "Chiudi",
+  })
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -104,7 +110,13 @@ function DialogFooter({
   showCloseButton?: boolean
 }) {
   const { locale } = useI18n()
-  const closeLabel = byLocale(locale, { de: "Schließen", en: "Close" })
+  const closeLabel = byLocale(locale, {
+    de: "Schließen",
+    en: "Close",
+    fr: "Fermer",
+    es: "Cerrar",
+    it: "Chiudi",
+  })
   return (
     <div
       data-slot="dialog-footer"
