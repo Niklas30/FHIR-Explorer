@@ -63,6 +63,15 @@ const formatOptionLabel = (system?: string, code?: string, display?: string) => 
   return label;
 };
 
+const normalizeTimeWithSeconds = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^\\d{2}:\\d{2}$/.test(trimmed)) {
+    return `${trimmed}:00`;
+  }
+  return trimmed;
+};
+
 const parseMaxCardinality = (max?: string) => {
   if (!max || max === "*") return null;
   const parsed = Number(max);
@@ -1817,11 +1826,13 @@ const FieldInput = ({
   }
 
   if (kind === "time") {
+    const current = typeof value === "string" ? value : "";
     return (
       <Input
         type="time"
-        value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value)}
+        step="1"
+        value={normalizeTimeWithSeconds(current)}
+        onChange={(event) => onChange(normalizeTimeWithSeconds(event.target.value))}
       />
     );
   }
