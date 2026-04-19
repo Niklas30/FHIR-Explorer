@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useImporter } from "@/components/importer/useImporter";
@@ -1327,13 +1328,35 @@ export default function EditorOverviewPage() {
               </p>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="dataset-import">Dataset file (.json)</Label>
-              <Input
-                id="dataset-import"
-                type="file"
-                accept=".json,.zip,application/json,application/zip"
-                onChange={(event) => setImportDatasetFile(event.target.files?.[0] ?? null)}
+              <Label>Dataset file (.json/.zip)</Label>
+              <FileDropzone
+                label="Upload dataset file"
+                helperText="You can drag files here or paste JSON from your clipboard."
+                accept=".json,.zip,application/json,application/zip,application/x-zip-compressed"
+                hint="Drag & drop .json or .zip here"
+                chooseButtonLabel="Choose file"
+                multiple={false}
+                enableClipboard
+                clipboardButtonLabel="Paste JSON"
+                clipboardHint="Use the button or focus this box and press Ctrl/Cmd+V."
+                clipboardFilename="dataset-from-clipboard.json"
+                onFiles={(files) => setImportDatasetFile(files[0] ?? null)}
               />
+              {importDatasetFile ? (
+                <div className="flex items-center justify-between rounded-md border border-foreground/10 bg-muted/20 px-3 py-2 text-xs">
+                  <span className="truncate text-foreground" title={importDatasetFile.name}>
+                    Selected: {importDatasetFile.name}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setImportDatasetFile(null)}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Supports JSON/ZIP dataset exports, resource lists, or FHIR searchset bundles.
               </p>

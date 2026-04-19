@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileDropzone } from "@/components/importer/FileDropzone";
+import { FileDropzone } from "@/components/ui/file-dropzone";
 import { useImporter } from "@/components/importer/useImporter";
 import type { DependencyRequirement } from "@/lib/fhir-importer/types";
 import {
