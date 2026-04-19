@@ -32,6 +32,9 @@ const SUPPORTED_LOCALES: Array<{
 }> = [
   { value: "de", nativeName: "Deutsch", englishName: "German" },
   { value: "en", nativeName: "English", englishName: "English" },
+  { value: "fr", nativeName: "Français", englishName: "French" },
+  { value: "es", nativeName: "Español", englishName: "Spanish" },
+  { value: "it", nativeName: "Italiano", englishName: "Italian" },
 ];
 
 const useLanguageUi = () => {
@@ -43,8 +46,6 @@ const useLanguageUi = () => {
       chooseLanguage: "Sprache auswählen",
       system: "System",
       systemHint: "Folgt der Browser-Sprache",
-      german: "Deutsch",
-      english: "Englisch",
       autoShort: "Auto",
     },
     en: {
@@ -53,8 +54,30 @@ const useLanguageUi = () => {
       chooseLanguage: "Choose language",
       system: "System",
       systemHint: "Follows browser language",
-      german: "German",
-      english: "English",
+      autoShort: "Auto",
+    },
+    fr: {
+      language: "Langue",
+      languageAria: "Choisir la langue",
+      chooseLanguage: "Choisir la langue",
+      system: "Système",
+      systemHint: "Suit la langue du navigateur",
+      autoShort: "Auto",
+    },
+    es: {
+      language: "Idioma",
+      languageAria: "Seleccionar idioma",
+      chooseLanguage: "Seleccionar idioma",
+      system: "Sistema",
+      systemHint: "Sigue el idioma del navegador",
+      autoShort: "Auto",
+    },
+    it: {
+      language: "Lingua",
+      languageAria: "Seleziona lingua",
+      chooseLanguage: "Seleziona lingua",
+      system: "Sistema",
+      systemHint: "Segue la lingua del browser",
       autoShort: "Auto",
     },
   });
@@ -65,7 +88,7 @@ const useLanguageUi = () => {
       : localeMode.toUpperCase();
 
   const labelForLocale = (entry: (typeof SUPPORTED_LOCALES)[number]) => {
-    if (locale === "de") {
+    if (locale === "de" || locale === "fr" || locale === "es" || locale === "it") {
       return entry.nativeName;
     }
     return entry.englishName;

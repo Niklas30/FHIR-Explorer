@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { FloatingLanguageSwitcher } from "@/components/i18n/FloatingLanguageSwitcher";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className="antialiased">
         <I18nProvider>
           {children}
+          <FloatingLanguageSwitcher />
           <Toaster />
         </I18nProvider>
       </body>
