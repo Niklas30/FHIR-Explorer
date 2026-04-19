@@ -19,9 +19,10 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useImporter } from "@/components/importer/useImporter";
+import { DependencyTreeDialog } from "@/components/editor/DependencyTreeDialog";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
-import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
+import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
 import {
   getCurrentTargetKey,
   isProjectSelectableForDatasets,
@@ -50,7 +51,7 @@ import {
 } from "@/lib/datasets/content";
 import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
-import { Database, LayoutGrid, MoreHorizontal, Plus, Settings, Upload } from "lucide-react";
+import { Database, GitBranch, LayoutGrid, MoreHorizontal, Plus, Settings, Upload } from "lucide-react";
 import JSZip from "jszip";
 
 type ProjectEntry = {
@@ -58,10 +59,12 @@ type ProjectEntry = {
   record?: PackageRecord;
 };
 
-type DependencyGraph = {
-  byKey: Map<string, PackageRecord>;
-  adjacency: Map<string, string[]>;
+type ImportHistoryEntry = {
+  targetKey: string;
 };
+
+const EMPTY_PACKAGES: PackageRecord[] = [];
+const EMPTY_IMPORT_HISTORY: ImportHistoryEntry[] = [];
 
 const createDatasetId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -70,69 +73,6 @@ const createDatasetId = () => {
   return `dataset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
-const buildDependencyGraph = (packages: PackageRecord[]): DependencyGraph => {
-  const byKey = new Map<string, PackageRecord>();
-  const byId = new Map<string, PackageRecord[]>();
-
-  for (const pkg of packages) {
-    byKey.set(pkg.key, pkg);
-    const list = byId.get(pkg.id) ?? [];
-    list.push(pkg);
-    byId.set(pkg.id, list);
-  }
-
-  const adjacency = new Map<string, string[]>();
-
-  for (const pkg of packages) {
-    const deps = pkg.manifest.dependencies ?? {};
-    const edges: string[] = [];
-
-    for (const [depId, spec] of Object.entries(deps)) {
-      const normalized = spec.trim();
-      if (!normalized) continue;
-
-      if (isExactVersion(normalized)) {
-        const depKey = buildPackageKey(depId, normalized);
-        if (byKey.has(depKey)) {
-          edges.push(depKey);
-        }
-      } else {
-        const candidates = byId.get(depId) ?? [];
-        for (const candidate of candidates) {
-          edges.push(candidate.key);
-        }
-      }
-    }
-
-    adjacency.set(pkg.key, edges);
-  }
-
-  return { byKey, adjacency };
-};
-
-const collectDependencies = (targetKey: string, graph: DependencyGraph): Set<string> => {
-  const { adjacency } = graph;
-  const visited = new Set<string>();
-  const dependencies = new Set<string>();
-  const queue = [targetKey];
-
-  while (queue.length > 0) {
-    const key = queue.shift();
-    if (!key || visited.has(key)) continue;
-    visited.add(key);
-
-    const edges = adjacency.get(key) ?? [];
-    for (const depKey of edges) {
-      if (!visited.has(depKey)) {
-        dependencies.add(depKey);
-        queue.push(depKey);
-      }
-    }
-  }
-
-  dependencies.delete(targetKey);
-  return dependencies;
-};
 
 const matchesFilter = (
   filter: string,
@@ -195,6 +135,7 @@ const overviewText = {
     resourcesCount: "{count} Ressourcen",
     projectActionsAria: "Projektaktionen",
     projectActions: "Projektaktionen",
+    showDependencyTree: "Abhängigkeitsbaum anzeigen",
     exportProject: "Projekt exportieren...",
     deleteProject: "Projekt löschen",
     addedPrefix: "Hinzugefügt:",
@@ -337,6 +278,7 @@ const overviewText = {
     resourcesCount: "{count} resources",
     projectActionsAria: "Project actions",
     projectActions: "Project actions",
+    showDependencyTree: "Show dependency tree",
     exportProject: "Export project...",
     deleteProject: "Delete project",
     addedPrefix: "Added:",
@@ -583,6 +525,7 @@ type ProjectCardProps = {
   text: OverviewText;
   onCreateDataset: (project: PackageRecord) => void;
   onImportDataset: (project: PackageRecord) => void;
+  onOpenDependencyTree: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onDeleteProject: (project: PackageRecord) => void;
@@ -602,6 +545,7 @@ const ProjectCard = ({
   text,
   onCreateDataset,
   onImportDataset,
+  onOpenDependencyTree,
   onOpenExportDialog,
   onExportDataset,
   onDeleteProject,
@@ -641,6 +585,10 @@ const ProjectCard = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{text.projectActions}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onOpenDependencyTree(project)}>
+                  <GitBranch className="mr-2 size-4" />
+                  {text.showDependencyTree}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onOpenExportDialog(project)}>
                   {text.exportProject}
                 </DropdownMenuItem>
@@ -777,6 +725,7 @@ export default function EditorOverviewPage() {
   const [selectedProject, setSelectedProject] = useState<PackageRecord | null>(null);
   const [selectedProjectKey, setSelectedProjectKey] = useState<string | null>(null);
   const [exportTarget, setExportTarget] = useState<PackageRecord | null>(null);
+  const [dependencyTreeRootKey, setDependencyTreeRootKey] = useState<string | null>(null);
   const [datasetName, setDatasetName] = useState("");
   const [importDatasetFile, setImportDatasetFile] = useState<File | null>(null);
   const [exportIncludeDatasets, setExportIncludeDatasets] = useState(true);
@@ -811,9 +760,9 @@ export default function EditorOverviewPage() {
     window.localStorage.setItem("health-compose-overview-viewmode", viewMode);
   }, [viewMode, viewModeLoaded]);
 
-  const packages = snapshot?.packages ?? [];
+  const packages = snapshot?.packages ?? EMPTY_PACKAGES;
   const dependencyState = snapshot?.dependencyState;
-  const importHistory = snapshot?.state.importHistory ?? [];
+  const importHistory = snapshot?.state.importHistory ?? EMPTY_IMPORT_HISTORY;
   const currentTarget = snapshot?.state.currentTarget;
   const targetStatus = useMemo(
     () => ({
@@ -867,7 +816,7 @@ export default function EditorOverviewPage() {
     }
 
     return keys;
-  }, [currentTarget, importHistory]);
+  }, [importHistory]);
 
   const targets = useMemo<ProjectEntry[]>(
     () => targetKeys.map((key) => ({ key, record: graph.byKey.get(key) })),
@@ -1026,6 +975,10 @@ export default function EditorOverviewPage() {
     const firstDataset = datasets.find((entry) => entry.projectKey === project.key);
     setExportDatasetId(firstDataset?.id ?? null);
     setExportDialogOpen(true);
+  };
+
+  const openDependencyTree = (project: PackageRecord) => {
+    setDependencyTreeRootKey(project.key);
   };
 
   const handleProjectSelection = (projectKey: string) => {
@@ -1536,6 +1489,7 @@ export default function EditorOverviewPage() {
                       datasets={datasetsByProject.get(target.key) ?? []}
                       onCreateDataset={openDatasetDialog}
                       onImportDataset={openImportDialog}
+                      onOpenDependencyTree={openDependencyTree}
                       onOpenExportDialog={openExportDialog}
                       onExportDataset={handleExportDataset}
                       onDeleteDataset={handleDeleteDataset}
@@ -1606,6 +1560,7 @@ export default function EditorOverviewPage() {
                     datasets={datasetsByProject.get(project.key) ?? []}
                     onCreateDataset={openDatasetDialog}
                     onImportDataset={openImportDialog}
+                    onOpenDependencyTree={openDependencyTree}
                     onOpenExportDialog={openExportDialog}
                     onExportDataset={handleExportDataset}
                     onDeleteDataset={handleDeleteDataset}
@@ -1904,6 +1859,17 @@ export default function EditorOverviewPage() {
           !exportTarget || (exportScope === "dataset" && !exportDatasetId)
         }
         onConfirm={handleExportConfirm}
+      />
+
+      <DependencyTreeDialog
+        open={Boolean(dependencyTreeRootKey)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDependencyTreeRootKey(null);
+          }
+        }}
+        graph={graph}
+        rootProjectKey={dependencyTreeRootKey}
       />
 
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>

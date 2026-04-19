@@ -9,6 +9,7 @@ import { EditorCommandPalette } from "@/components/editor/commands/EditorCommand
 import { createEditorCommands } from "@/components/editor/commands/create-editor-commands";
 import { useEditorCommandShortcuts } from "@/components/editor/commands/use-editor-command-shortcuts";
 import { DatasetDiagramDialog } from "@/components/editor/DatasetDiagramDialog";
+import { DependencyTreeDialog } from "@/components/editor/DependencyTreeDialog";
 import { EditorHeader } from "@/components/editor/EditorHeader";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { NewResourceDialog } from "@/components/editor/NewResourceDialog";
@@ -59,19 +60,14 @@ import type {
   ComposeProjectArchiveManifest,
   ComposeProjectExport,
 } from "@/lib/fhir-importer/compose";
+import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
-import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
 import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
 import JSZip from "jszip";
 
 type DatasetEditorProps = {
   datasetId: string;
-};
-
-type DependencyGraph = {
-  byKey: Map<string, PackageRecord>;
-  adjacency: Map<string, string[]>;
 };
 
 type ResourceNavigationState = {
@@ -104,70 +100,6 @@ const toSafeFilename = (value: string) =>
     .replace(/-+/g, "-")
     .replace(/^-+/, "")
     .replace(/-+$/, "");
-
-const buildDependencyGraph = (packages: PackageRecord[]): DependencyGraph => {
-  const byKey = new Map<string, PackageRecord>();
-  const byId = new Map<string, PackageRecord[]>();
-
-  for (const pkg of packages) {
-    byKey.set(pkg.key, pkg);
-    const list = byId.get(pkg.id) ?? [];
-    list.push(pkg);
-    byId.set(pkg.id, list);
-  }
-
-  const adjacency = new Map<string, string[]>();
-
-  for (const pkg of packages) {
-    const deps = pkg.manifest.dependencies ?? {};
-    const edges: string[] = [];
-
-    for (const [depId, spec] of Object.entries(deps)) {
-      const normalized = spec.trim();
-      if (!normalized) continue;
-
-      if (isExactVersion(normalized)) {
-        const depKey = buildPackageKey(depId, normalized);
-        if (byKey.has(depKey)) {
-          edges.push(depKey);
-        }
-      } else {
-        const candidates = byId.get(depId) ?? [];
-        for (const candidate of candidates) {
-          edges.push(candidate.key);
-        }
-      }
-    }
-
-    adjacency.set(pkg.key, edges);
-  }
-
-  return { byKey, adjacency };
-};
-
-const collectDependencies = (targetKey: string, graph: DependencyGraph): Set<string> => {
-  const { adjacency } = graph;
-  const visited = new Set<string>();
-  const dependencies = new Set<string>();
-  const queue = [targetKey];
-
-  while (queue.length > 0) {
-    const key = queue.shift();
-    if (!key || visited.has(key)) continue;
-    visited.add(key);
-
-    const edges = adjacency.get(key) ?? [];
-    for (const depKey of edges) {
-      if (!visited.has(depKey)) {
-        dependencies.add(depKey);
-        queue.push(depKey);
-      }
-    }
-  }
-
-  dependencies.delete(targetKey);
-  return dependencies;
-};
 
 const pruneResourceNavigation = (
   state: ResourceNavigationState,
@@ -230,6 +162,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [isDiagramOpen, setDiagramOpen] = useState(false);
   const [isExportDialogOpen, setExportDialogOpen] = useState(false);
   const [isDatasetInfoOpen, setDatasetInfoOpen] = useState(false);
+  const [dependencyTreeRootKey, setDependencyTreeRootKey] = useState<string | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [datasetNameDraft, setDatasetNameDraft] = useState("");
   const [datasetProjectKeyDraft, setDatasetProjectKeyDraft] = useState("");
@@ -247,6 +180,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
 
   const { snapshot, getResourcePayloadsByPackageKeys } = useImporter();
   const packages = snapshot?.packages ?? [];
+  const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
   const projectSuggestions = useMemo(() => {
     return [...packages]
       .sort((a, b) => {
@@ -287,6 +221,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     customProjectKey: "Custom project key…",
     projectKeyPlaceholder: "package-id@version",
     projectKeyHint: "Select an imported project or enter a custom project key.",
+    showDependencyTree: "Show dependency tree",
     datasetIdLabel: "Dataset ID",
     datasetIdReadonlyHint:
       "Dataset ID is read-only because it is used as the storage key.",
@@ -339,6 +274,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       projectKeyPlaceholder: "package-id@version",
       projectKeyHint:
         "Wähle ein importiertes Projekt oder gib einen eigenen Projekt-Key ein.",
+      showDependencyTree: "Abhängigkeitsbaum anzeigen",
       datasetIdLabel: "Dataset-ID",
       datasetIdReadonlyHint:
         "Die Dataset-ID ist schreibgeschützt, da sie als Storage-Key verwendet wird.",
@@ -535,7 +471,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     if (!dataset || packages.length === 0) return;
     setRegistryLoaded(false);
     setInitializationError(null);
-    const graph = buildDependencyGraph(packages);
     const dependencyKeys = collectDependencies(dataset.projectKey, graph);
     const projectKeys = new Set<string>([dataset.projectKey, ...dependencyKeys]);
 
@@ -561,7 +496,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     return () => {
       active = false;
     };
-  }, [dataset, packages, getResourcePayloadsByPackageKeys, text.errorLoadingResources]);
+  }, [dataset, packages.length, graph, getResourcePayloadsByPackageKeys, text.errorLoadingResources]);
 
   useEffect(() => {
     if (!datasetLoaded) return;
@@ -662,6 +597,15 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     setDatasetNameDraft(dataset.name);
     setDatasetProjectKeyDraft(dataset.projectKey);
     setDatasetInfoOpen(true);
+  };
+
+  const handleOpenDependencyTree = () => {
+    const key = datasetProjectKeyDraft.trim();
+    if (!key) {
+      toast.error(text.projectKeyRequired);
+      return;
+    }
+    setDependencyTreeRootKey(key);
   };
 
   const handleFocusFormSearch = () => {
@@ -820,7 +764,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     exportPackages: ComposePackageExport[];
     exportDatasets: ComposeDatasetExport[];
   } | null> => {
-    const graph = buildDependencyGraph(packages);
     const dependencyKeys = collectDependencies(project.key, graph);
     const projectKeys = new Set<string>([project.key, ...dependencyKeys]);
     const packageRecords = Array.from(projectKeys)
@@ -1221,6 +1164,16 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground">{text.projectKeyHint}</p>
+                <div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleOpenDependencyTree}
+                  >
+                    {text.showDependencyTree}
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="dataset-info-id">{text.datasetIdLabel}</Label>
@@ -1274,6 +1227,16 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               : text.exportConfirmProject
           }
           onConfirm={handleExportConfirm}
+        />
+        <DependencyTreeDialog
+          open={Boolean(dependencyTreeRootKey)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDependencyTreeRootKey(null);
+            }
+          }}
+          graph={graph}
+          rootProjectKey={dependencyTreeRootKey}
         />
         <DatasetDiagramDialog
           open={isDiagramOpen}
