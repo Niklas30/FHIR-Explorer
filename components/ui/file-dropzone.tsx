@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { byLocale } from "@/lib/i18n/select";
 
 const defaultAccept = ".tgz,application/gzip,application/x-gzip";
-const defaultHint = "Drag & drop here, or click to choose a file.";
 
 type FileDropzoneProps = {
   label?: string;
