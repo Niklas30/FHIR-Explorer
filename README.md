@@ -27,6 +27,33 @@ To learn more about Next.js, take a look at the following resources:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
+## Testing
+
+Run the full unit test suite:
+
+```bash
+npm test
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+Current FHIR unit tests live in `tests/` and cover:
+
+- Profile/field construction and cardinality shape behavior
+- ValueSet/CodeSystem dependency resolution
+- Local reference parsing and broken-reference detection
+- Validation behavior for cardinality, required fields, and references
+- Simulated UI action flows (add/remove fields, add/remove array items, group entry edits)
+
+Fixture lifecycle:
+
+- Required FHIR fixture files are prepared automatically at test start in a temporary directory.
+- Temporary fixture files are deleted automatically after the test run.
+
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
