@@ -738,6 +738,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                 fields={fields}
                 registry={registryState}
                 datasetResources={resources}
+                onSelectResource={handleSelectResource}
                 onUpdateResource={handleUpdateResource}
                 onRemoveResource={handleRemoveResource}
               />
