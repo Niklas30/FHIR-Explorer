@@ -54,6 +54,11 @@ type DependencyGraph = {
   adjacency: Map<string, string[]>;
 };
 
+type ResourceNavigationState = {
+  history: string[];
+  index: number;
+};
+
 const downloadBlob = (filename: string, blob: Blob) => {
   if (typeof window === "undefined") return;
   const url = URL.createObjectURL(blob);
@@ -144,6 +149,47 @@ const collectDependencies = (targetKey: string, graph: DependencyGraph): Set<str
   return dependencies;
 };
 
+const pruneResourceNavigation = (
+  state: ResourceNavigationState,
+  validIds: Set<string>
+): ResourceNavigationState => {
+  const nextHistory = state.history.filter((id) => validIds.has(id));
+  if (nextHistory.length === 0) {
+    if (state.history.length === 0 && state.index === -1) return state;
+    return { history: [], index: -1 };
+  }
+
+  const currentId = state.index >= 0 ? state.history[state.index] : null;
+  let nextIndex = currentId ? nextHistory.indexOf(currentId) : -1;
+  if (nextIndex < 0) {
+    nextIndex = Math.min(state.index, nextHistory.length - 1);
+  }
+  if (nextIndex < 0) {
+    nextIndex = 0;
+  }
+
+  if (nextHistory.length === state.history.length && nextIndex === state.index) {
+    return state;
+  }
+  return { history: nextHistory, index: nextIndex };
+};
+
+const pushResourceNavigationEntry = (
+  state: ResourceNavigationState,
+  resourceId: string
+): ResourceNavigationState => {
+  const currentId = state.index >= 0 ? state.history[state.index] : null;
+  if (currentId === resourceId) return state;
+
+  const boundedIndex = Math.min(state.index, state.history.length - 1);
+  const base = boundedIndex >= 0 ? state.history.slice(0, boundedIndex + 1) : [];
+  const nextHistory = [...base, resourceId];
+  return {
+    history: nextHistory,
+    index: nextHistory.length - 1,
+  };
+};
+
 export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [dataset, setDataset] = useState<DatasetRecord | null>(null);
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
@@ -152,6 +198,10 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [initializationError, setInitializationError] = useState<Error | null>(null);
   const [resources, setResources] = useState<DatasetResource[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [resourceNavigation, setResourceNavigation] = useState<ResourceNavigationState>({
+    history: [],
+    index: -1,
+  });
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isDiagramOpen, setDiagramOpen] = useState(false);
@@ -244,10 +294,18 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   useEffect(() => {
     if (resources.length === 0) {
       setSelectedResourceId(null);
+      setResourceNavigation({ history: [], index: -1 });
       return;
     }
-    if (!selectedResourceId || !resources.some((entry) => entry.id === selectedResourceId)) {
-      setSelectedResourceId(resources[0].id);
+    const validIds = new Set(resources.map((entry) => entry.id));
+    setResourceNavigation((prev) => pruneResourceNavigation(prev, validIds));
+
+    if (!selectedResourceId || !validIds.has(selectedResourceId)) {
+      const fallbackId = resources[0].id;
+      setSelectedResourceId(fallbackId);
+      setResourceNavigation((prev) =>
+        pushResourceNavigationEntry(pruneResourceNavigation(prev, validIds), fallbackId)
+      );
     }
   }, [resources, selectedResourceId]);
 
@@ -320,18 +378,45 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     persistResources(nextResources);
   };
 
-  const handleSelectResource = (resourceId: string) => {
+  const handleSelectResource = (
+    resourceId: string,
+    options?: { recordHistory?: boolean }
+  ) => {
     const target = resources.find((entry) => entry.id === resourceId);
     if (!target) {
-      setSelectedResourceId(resourceId);
       return;
     }
+    const shouldRecordHistory = options?.recordHistory !== false;
     const now = Date.now();
     const nextResources = resources.map((entry) =>
       entry.id === resourceId ? { ...entry, lastSelectedAt: now } : entry
     );
     persistResources(nextResources);
     setSelectedResourceId(resourceId);
+    if (shouldRecordHistory) {
+      setResourceNavigation((prev) => pushResourceNavigationEntry(prev, resourceId));
+    }
+  };
+
+  const canNavigateBack = resourceNavigation.index > 0;
+  const canNavigateForward =
+    resourceNavigation.index >= 0 &&
+    resourceNavigation.index < resourceNavigation.history.length - 1;
+
+  const handleNavigateBack = () => {
+    if (!canNavigateBack) return;
+    const targetResourceId = resourceNavigation.history[resourceNavigation.index - 1];
+    if (!targetResourceId) return;
+    setResourceNavigation((prev) => ({ ...prev, index: prev.index - 1 }));
+    handleSelectResource(targetResourceId, { recordHistory: false });
+  };
+
+  const handleNavigateForward = () => {
+    if (!canNavigateForward) return;
+    const targetResourceId = resourceNavigation.history[resourceNavigation.index + 1];
+    if (!targetResourceId) return;
+    setResourceNavigation((prev) => ({ ...prev, index: prev.index + 1 }));
+    handleSelectResource(targetResourceId, { recordHistory: false });
   };
 
   const handleRemoveResource = (resourceId: string) => {
@@ -339,6 +424,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     if (!ok) return;
     const nextResources = removeDatasetResource(datasetId, resourceId);
     setResources(nextResources);
+    const validIds = new Set(nextResources.map((entry) => entry.id));
+    setResourceNavigation((prev) => pruneResourceNavigation(prev, validIds));
   };
 
   const handleExportResource = (resource: DatasetResource) => {
@@ -371,6 +458,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const nextResources = [duplicated, ...resources];
     persistResources(nextResources);
     setSelectedResourceId(duplicated.id);
+    setResourceNavigation((prev) => pushResourceNavigationEntry(prev, duplicated.id));
   };
 
   const datasetResourcesPayload = useMemo(
@@ -608,6 +696,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const nextResources = [nextResource, ...resources];
     persistResources(nextResources);
     setSelectedResourceId(nextResource.id);
+    setResourceNavigation((prev) => pushResourceNavigationEntry(prev, nextResource.id));
     setCreateDialogOpen(false);
   };
 
@@ -696,6 +785,10 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           zoomLabel={zoomLabel}
           onZoomIn={() => setZoomPercent((prev) => Math.min(140, prev + 5))}
           onZoomOut={() => setZoomPercent((prev) => Math.max(70, prev - 5))}
+          canNavigateBack={canNavigateBack}
+          canNavigateForward={canNavigateForward}
+          onNavigateBack={handleNavigateBack}
+          onNavigateForward={handleNavigateForward}
         />
 
         <div className="min-h-0 flex-1 overflow-hidden px-6 pb-6 pt-4">
