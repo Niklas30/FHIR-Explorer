@@ -22,6 +22,11 @@ import { useImporter } from "@/components/importer/useImporter";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
+import {
+  getCurrentTargetKey,
+  isProjectSelectableForDatasets,
+  isTargetImportInProgress,
+} from "@/lib/fhir-importer/target-status";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
@@ -201,6 +206,7 @@ const overviewText = {
       "Erstelle Datasets für dieses Projekt und öffne sie im Editor.",
     createDatasetAria: "Dataset erstellen",
     importDatasetAria: "Dataset importieren",
+    importInProgress: "Import läuft",
     noDatasetsYet: "Noch keine Datasets.",
     createdPrefix: "Erstellt",
     open: "Öffnen",
@@ -210,6 +216,8 @@ const overviewText = {
     selectProjectForDataset: "Wähle ein Projekt für dieses Dataset aus.",
     datasetNameRequired: "Dataset-Name ist erforderlich.",
     datasetCreated: "Dataset erstellt.",
+    datasetActionsBlockedUntilImportComplete:
+      "Dataset-Aktionen sind erst nach abgeschlossenem Import verfügbar.",
     chooseDatasetFile: "Wähle eine Dataset-Datei zum Importieren aus.",
     zipNoJson: "ZIP enthält keine JSON-Dataset-Datei.",
     datasetNameMissingImport: "Dataset-Name fehlt in der Importdatei.",
@@ -340,6 +348,7 @@ const overviewText = {
       "Create datasets for this project and open them in the editor.",
     createDatasetAria: "Create dataset",
     importDatasetAria: "Import dataset",
+    importInProgress: "Import in progress",
     noDatasetsYet: "No datasets yet.",
     createdPrefix: "Created",
     open: "Open",
@@ -349,6 +358,8 @@ const overviewText = {
     selectProjectForDataset: "Select a project for this dataset.",
     datasetNameRequired: "Dataset name is required.",
     datasetCreated: "Dataset created.",
+    datasetActionsBlockedUntilImportComplete:
+      "Dataset actions are available after the import is complete.",
     chooseDatasetFile: "Choose a dataset file to import.",
     zipNoJson: "ZIP does not contain a JSON dataset file.",
     datasetNameMissingImport: "Dataset name is missing in the import file.",
@@ -578,6 +589,8 @@ type ProjectCardProps = {
   onDeleteDataset: (dataset: DatasetRecord) => void;
   canDeleteProject: boolean;
   deleteReason?: string;
+  datasetActionsDisabled?: boolean;
+  datasetActionsDisabledReason?: string;
 };
 
 const ProjectCard = ({
@@ -595,6 +608,8 @@ const ProjectCard = ({
   onDeleteDataset,
   canDeleteProject,
   deleteReason,
+  datasetActionsDisabled = false,
+  datasetActionsDisabledReason,
 }: ProjectCardProps) => {
   const title = project.manifest.title ?? project.manifest.name ?? project.id;
   const description = project.manifest.description ?? text.noDescriptionProvided;
@@ -611,6 +626,9 @@ const ProjectCard = ({
             <Badge variant={kind === "Target" ? "secondary" : "outline"}>
               {kind === "Target" ? text.kindTarget : text.kindDependency}
             </Badge>
+            {datasetActionsDisabled ? (
+              <Badge variant="outline">{text.importInProgress}</Badge>
+            ) : null}
             <Badge variant="outline">
               {formatText(text.resourcesCount, { count: project.resourceCount })}
             </Badge>
@@ -675,6 +693,7 @@ const ProjectCard = ({
               <Button
                 size="icon-sm"
                 variant="secondary"
+                disabled={datasetActionsDisabled}
                 onClick={() => onCreateDataset(project)}
                 aria-label={text.createDatasetAria}
               >
@@ -683,6 +702,7 @@ const ProjectCard = ({
               <Button
                 size="icon-sm"
                 variant="outline"
+                disabled={datasetActionsDisabled}
                 onClick={() => onImportDataset(project)}
                 aria-label={text.importDatasetAria}
               >
@@ -690,6 +710,9 @@ const ProjectCard = ({
               </Button>
             </div>
           </div>
+          {datasetActionsDisabled && datasetActionsDisabledReason ? (
+            <p className="mt-2 text-xs text-muted-foreground">{datasetActionsDisabledReason}</p>
+          ) : null}
           <div className="mt-3 grid gap-2">
             {datasets.length === 0 ? (
               <p className="text-xs text-muted-foreground">{text.noDatasetsYet}</p>
@@ -789,8 +812,21 @@ export default function EditorOverviewPage() {
   }, [viewMode, viewModeLoaded]);
 
   const packages = snapshot?.packages ?? [];
+  const dependencyState = snapshot?.dependencyState;
   const importHistory = snapshot?.state.importHistory ?? [];
   const currentTarget = snapshot?.state.currentTarget;
+  const targetStatus = useMemo(
+    () => ({
+      packages,
+      state: { currentTarget },
+      dependencyState,
+    }),
+    [packages, currentTarget, dependencyState]
+  );
+  const currentTargetKey = getCurrentTargetKey(targetStatus.state);
+  const currentTargetImportInProgress = isTargetImportInProgress(targetStatus);
+  const isProjectDatasetSelectable = (projectKey: string) =>
+    isProjectSelectableForDatasets(projectKey, targetStatus);
 
   const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
   const exportDatasetOptions = useMemo(() => {
@@ -822,12 +858,6 @@ export default function EditorOverviewPage() {
   const targetKeys = useMemo(() => {
     const keys: string[] = [];
     const seen = new Set<string>();
-
-    if (currentTarget) {
-      const key = buildPackageKey(currentTarget.id, currentTarget.version);
-      keys.push(key);
-      seen.add(key);
-    }
 
     for (const entry of importHistory) {
       if (!seen.has(entry.targetKey)) {
@@ -907,6 +937,9 @@ export default function EditorOverviewPage() {
       return a.version.localeCompare(b.version);
     });
   }, [packages]);
+  const selectableProjectOptions = projectOptions.filter((project) =>
+    isProjectDatasetSelectable(project.key)
+  );
 
   const normalizedFilter = filter.trim().toLowerCase();
   const filteredTargets = targets.filter(
@@ -1015,6 +1048,10 @@ export default function EditorOverviewPage() {
       toast.error(text.selectProjectForDataset);
       return;
     }
+    if (!isProjectDatasetSelectable(selectedProject.key)) {
+      toast.error(text.datasetActionsBlockedUntilImportComplete);
+      return;
+    }
     const name = datasetName.trim();
     if (!name) {
       toast.error(text.datasetNameRequired);
@@ -1036,6 +1073,10 @@ export default function EditorOverviewPage() {
   const handleImportDataset = async () => {
     if (!selectedProject) {
       toast.error(text.selectProjectForDataset);
+      return;
+    }
+    if (!isProjectDatasetSelectable(selectedProject.key)) {
+      toast.error(text.datasetActionsBlockedUntilImportComplete);
       return;
     }
     if (!importDatasetFile) {
@@ -1420,7 +1461,7 @@ export default function EditorOverviewPage() {
           <Button
             size="sm"
             variant="secondary"
-            disabled={projectOptions.length === 0}
+            disabled={selectableProjectOptions.length === 0}
             onClick={openDatasetDialogFromList}
           >
             {text.createDataset}
@@ -1501,6 +1542,14 @@ export default function EditorOverviewPage() {
                       onDeleteProject={handleDeleteProject}
                       canDeleteProject={canDeleteProject(target.key)}
                       deleteReason={deleteReasonFor(target.key)}
+                      datasetActionsDisabled={
+                        target.key === currentTargetKey && currentTargetImportInProgress
+                      }
+                      datasetActionsDisabledReason={
+                        target.key === currentTargetKey && currentTargetImportInProgress
+                          ? text.datasetActionsBlockedUntilImportComplete
+                          : undefined
+                      }
                     />
                   ) : (
                     <Card key={target.key} className="border-destructive/40">
@@ -1563,6 +1612,12 @@ export default function EditorOverviewPage() {
                     onDeleteProject={handleDeleteProject}
                     canDeleteProject={canDeleteProject(project.key)}
                     deleteReason={deleteReasonFor(project.key)}
+                    datasetActionsDisabled={!isProjectDatasetSelectable(project.key)}
+                    datasetActionsDisabledReason={
+                      !isProjectDatasetSelectable(project.key)
+                        ? text.datasetActionsBlockedUntilImportComplete
+                        : undefined
+                    }
                   />
                 ))}
               </div>
@@ -1586,7 +1641,7 @@ export default function EditorOverviewPage() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={projectOptions.length === 0}
+                  disabled={selectableProjectOptions.length === 0}
                   onClick={openDatasetDialogFromList}
                 >
                   {text.createDataset}
@@ -1682,7 +1737,7 @@ export default function EditorOverviewPage() {
                 className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
               >
                 <option value="">{text.selectProject}</option>
-                {projectOptions.map((project) => (
+                {selectableProjectOptions.map((project) => (
                   <option key={project.key} value={project.key}>
                     {project.id}@{project.version}
                   </option>
@@ -1734,7 +1789,7 @@ export default function EditorOverviewPage() {
                 className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
               >
                 <option value="">{text.selectProject}</option>
-                {projectOptions.map((project) => (
+                {selectableProjectOptions.map((project) => (
                   <option key={project.key} value={project.key}>
                     {project.id}@{project.version}
                   </option>

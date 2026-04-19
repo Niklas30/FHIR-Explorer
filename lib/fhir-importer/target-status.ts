@@ -1,32 +1,36 @@
-import type { DependencyState, ImportState, PackageKey } from "./types";
+import type { DependencyState, ImportState, PackageRecord } from "./types";
 import { buildPackageKey } from "./utils";
 
-export const getCurrentTargetKey = (state: Pick<ImportState, "currentTarget">) => {
-  const currentTarget = state.currentTarget;
-  if (!currentTarget) return null;
-  return buildPackageKey(currentTarget.id, currentTarget.version);
-};
-
 type TargetStatusInput = {
-  packages: Array<{ key: PackageKey }>;
+  packages: Pick<PackageRecord, "key">[];
   state: Pick<ImportState, "currentTarget">;
-  dependencyState: Pick<DependencyState, "missing" | "conflicts">;
+  dependencyState?: Pick<DependencyState, "missing" | "conflicts">;
 };
 
-export const isTargetImportInProgress = (input: TargetStatusInput) => {
-  const targetKey = getCurrentTargetKey(input.state);
+export const getCurrentTargetKey = (
+  state: Pick<ImportState, "currentTarget">
+): string | null => {
+  if (!state.currentTarget) return null;
+  return buildPackageKey(state.currentTarget.id, state.currentTarget.version);
+};
+
+export const isTargetImportInProgress = ({
+  packages,
+  state,
+}: TargetStatusInput): boolean => {
+  const targetKey = getCurrentTargetKey(state);
   if (!targetKey) return false;
-  return !input.packages.some((pkg) => pkg.key === targetKey);
+
+  const isTargetImported = packages.some((pkg) => pkg.key === targetKey);
+  return !isTargetImported;
 };
 
 export const isProjectSelectableForDatasets = (
-  projectKey: PackageKey,
+  projectKey: string,
   input: TargetStatusInput
-) => {
+): boolean => {
   const targetKey = getCurrentTargetKey(input.state);
-  if (!targetKey) return true;
-  if (projectKey !== targetKey) return true;
+  if (!targetKey || projectKey !== targetKey) return true;
   if (isTargetImportInProgress(input)) return false;
-  return input.dependencyState.missing.length === 0 && input.dependencyState.conflicts.length === 0;
+  return (input.dependencyState?.missing.length ?? 0) === 0 && (input.dependencyState?.conflicts.length ?? 0) === 0;
 };
-
