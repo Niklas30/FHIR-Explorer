@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useImporter } from "@/components/importer/useImporter";
 import { DatasetDiagramDialog } from "@/components/editor/DatasetDiagramDialog";
@@ -32,6 +33,7 @@ import {
   resolveProfileForResource,
   type ProfileSummary,
 } from "@/lib/fhir-editor/profiles";
+import { isDevModeEnabled } from "@/lib/dev-mode";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
@@ -147,6 +149,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
   const [datasetLoaded, setDatasetLoaded] = useState(false);
   const [registryLoaded, setRegistryLoaded] = useState(false);
+  const [initializationError, setInitializationError] = useState<Error | null>(null);
   const [resources, setResources] = useState<DatasetResource[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
@@ -255,6 +258,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   useEffect(() => {
     if (!dataset || packages.length === 0) return;
     setRegistryLoaded(false);
+    setInitializationError(null);
     const graph = buildDependencyGraph(packages);
     const dependencyKeys = collectDependencies(dataset.projectKey, graph);
     const projectKeys = new Set<string>([dataset.projectKey, ...dependencyKeys]);
@@ -266,6 +270,15 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         const nextRegistry = buildRegistry(payloads);
         setRegistryState(nextRegistry);
         setProfiles(getProfileSummaries(nextRegistry));
+        setRegistryLoaded(true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        const normalizedError =
+          error instanceof Error ? error : new Error("Failed to load FHIR package resources.");
+        setRegistryState(null);
+        setProfiles([]);
+        setInitializationError(normalizedError);
         setRegistryLoaded(true);
       });
 
@@ -620,6 +633,38 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">Missing id: {datasetId}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (initializationError) {
+    const details = [`message: ${initializationError.message}`];
+    if (initializationError.stack) {
+      details.push("", initializationError.stack);
+    }
+
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
+        <Card className="border-foreground/10">
+          <CardHeader>
+            <CardTitle className="text-2xl">Editor konnte nicht geladen werden</CardTitle>
+            <CardDescription>
+              Beim Initialisieren der FHIR-Profile ist ein Fehler aufgetreten.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isDevModeEnabled() ? (
+              <pre className="max-h-[45dvh] overflow-auto rounded-md border border-foreground/10 bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+                {details.join("\n")}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Für technische Details kann Dev Mode über <Link href="/devmode" className="underline">/devmode</Link>{" "}
+                aktiviert werden.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
