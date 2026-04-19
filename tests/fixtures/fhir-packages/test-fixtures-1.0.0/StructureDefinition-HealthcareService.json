@@ -1,0 +1,91 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "HealthcareService",
+  "url": "https://example.org/fhir/StructureDefinition/HealthcareService",
+  "version": "1.0.0",
+  "name": "HealthcareService",
+  "title": "HealthcareService (Test Base)",
+  "status": "active",
+  "kind": "resource",
+  "abstract": false,
+  "type": "HealthcareService",
+  "snapshot": {
+    "element": [
+      {
+        "id": "HealthcareService",
+        "path": "HealthcareService",
+        "min": 0,
+        "max": "1"
+      },
+      {
+        "id": "HealthcareService.name",
+        "path": "HealthcareService.name",
+        "min": 0,
+        "max": "1",
+        "type": [{ "code": "string" }]
+      },
+      {
+        "id": "HealthcareService.telecom",
+        "path": "HealthcareService.telecom",
+        "min": 0,
+        "max": "*",
+        "type": [{ "code": "BackboneElement" }]
+      },
+      {
+        "id": "HealthcareService.endpoint",
+        "path": "HealthcareService.endpoint",
+        "min": 0,
+        "max": "*",
+        "type": [
+          {
+            "code": "Reference",
+            "targetProfile": ["https://example.org/fhir/StructureDefinition/Endpoint"]
+          }
+        ]
+      },
+      {
+        "id": "HealthcareService.specialty",
+        "path": "HealthcareService.specialty",
+        "min": 0,
+        "max": "*",
+        "type": [{ "code": "CodeableConcept" }],
+        "binding": {
+          "strength": "required",
+          "valueSet": "https://example.org/fhir/ValueSet/specialty"
+        }
+      },
+      {
+        "id": "HealthcareService.availableTime",
+        "path": "HealthcareService.availableTime",
+        "min": 0,
+        "max": "*",
+        "type": [{ "code": "BackboneElement" }]
+      },
+      {
+        "id": "HealthcareService.availableTime.daysOfWeek",
+        "path": "HealthcareService.availableTime.daysOfWeek",
+        "min": 0,
+        "max": "*",
+        "type": [{ "code": "code" }],
+        "binding": {
+          "strength": "required",
+          "valueSet": "https://example.org/fhir/ValueSet/days-of-week"
+        }
+      },
+      {
+        "id": "HealthcareService.notAvailable",
+        "path": "HealthcareService.notAvailable",
+        "min": 0,
+        "max": "*",
+        "type": [{ "code": "BackboneElement" }]
+      },
+      {
+        "id": "HealthcareService.notAvailable.description",
+        "path": "HealthcareService.notAvailable.description",
+        "min": 1,
+        "max": "1",
+        "type": [{ "code": "string" }]
+      }
+    ]
+  }
+}

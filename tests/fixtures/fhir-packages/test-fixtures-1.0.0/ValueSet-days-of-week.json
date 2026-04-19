@@ -1,0 +1,16 @@
+{
+  "resourceType": "ValueSet",
+  "id": "days-of-week",
+  "url": "https://example.org/fhir/ValueSet/days-of-week",
+  "version": "1.0.0",
+  "name": "DaysOfWeek",
+  "title": "Days of Week (Test)",
+  "status": "active",
+  "compose": {
+    "include": [
+      {
+        "system": "https://example.org/fhir/CodeSystem/days-of-week"
+      }
+    ]
+  }
+}

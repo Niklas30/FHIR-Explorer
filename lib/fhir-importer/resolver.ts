@@ -1,5 +1,5 @@
 import type { DependencyRequirement, DependencyState, ImportState, PackageRecord } from "./types";
-import { isExactVersion, unique } from "./utils";
+import { buildPackageKey, isExactVersion, unique } from "./utils";
 
 const normalizeSpec = (spec: string) => spec.trim();
 
@@ -7,6 +7,11 @@ export const resolveDependencies = (
   packages: PackageRecord[],
   state: ImportState
 ): DependencyState => {
+  if (!state.currentTarget) {
+    return { missing: [], resolved: [], conflicts: [] };
+  }
+
+  const packagesByKey = new Map(packages.map((pkg) => [pkg.key, pkg] as const));
   const requirements = new Map<
     string,
     {
@@ -23,10 +28,26 @@ export const resolveDependencies = (
       importedVersions.set(pkg.id, new Set());
     }
     importedVersions.get(pkg.id)!.add(pkg.version);
+  }
+
+  const visitedKeys = new Set<string>();
+  const queue: string[] = [
+    buildPackageKey(state.currentTarget.id, state.currentTarget.version),
+  ];
+
+  while (queue.length > 0) {
+    const pkgKey = queue.shift();
+    if (!pkgKey || visitedKeys.has(pkgKey)) continue;
+    visitedKeys.add(pkgKey);
+
+    const pkg = packagesByKey.get(pkgKey);
+    if (!pkg) continue;
 
     const deps = pkg.manifest.dependencies ?? {};
     for (const [depId, spec] of Object.entries(deps)) {
       const normalized = normalizeSpec(spec);
+      if (!normalized) continue;
+
       const entry = requirements.get(depId) ?? {
         ranges: [],
         exactVersions: new Set<string>(),
@@ -38,8 +59,31 @@ export const resolveDependencies = (
         entry.exactVersions.add(normalized);
       }
       entry.requestedBy.add(pkg.key);
-
       requirements.set(depId, entry);
+
+      const importedList = Array.from(importedVersions.get(depId) ?? []);
+
+      if (isExactVersion(normalized)) {
+        const depKey = buildPackageKey(depId, normalized);
+        if (importedList.includes(normalized) && packagesByKey.has(depKey)) {
+          queue.push(depKey);
+        }
+        continue;
+      }
+
+      const chosen = state.versionSelections[depId];
+      const selected =
+        chosen && importedList.includes(chosen)
+          ? chosen
+          : !chosen && importedList.length === 1
+            ? importedList[0]
+            : undefined;
+      if (!selected) continue;
+
+      const depKey = buildPackageKey(depId, selected);
+      if (packagesByKey.has(depKey)) {
+        queue.push(depKey);
+      }
     }
   }
 
@@ -67,15 +111,14 @@ export const resolveDependencies = (
       status = importedList.includes(exactVersion) ? "resolved" : "missing";
     } else {
       chosenVersion = state.versionSelections[depId];
-      if (importedList.length > 1) {
-        status = "conflict";
-        conflictReason = "Multiple versions imported for the same dependency.";
-      } else if (chosenVersion) {
+      if (chosenVersion) {
         status = importedList.includes(chosenVersion) ? "resolved" : "missing";
       } else if (importedList.length === 1) {
         // A range was satisfied by an uploaded package, use it as the chosen version.
         chosenVersion = importedList[0];
         status = "resolved";
+      } else {
+        status = "missing";
       }
     }
 

@@ -1,0 +1,19 @@
+{
+  "resourceType": "HealthcareService",
+  "id": "example",
+  "name": "Example Service",
+  "endpoint": [{ "reference": "Endpoint/existing" }],
+  "specialty": [
+    {
+      "coding": [
+        {
+          "system": "https://example.org/fhir/CodeSystem/specialty-local",
+          "code": "alpha",
+          "display": "Alpha"
+        }
+      ]
+    }
+  ],
+  "availableTime": [{ "daysOfWeek": ["sat"] }],
+  "notAvailable": [{ "description": "Closed" }]
+}
