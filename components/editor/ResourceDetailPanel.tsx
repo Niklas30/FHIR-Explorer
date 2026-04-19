@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AlertTriangle, ArrowRight, Check, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,6 +48,10 @@ type ResourceDetailPanelProps = {
   onRemoveResource: (resourceId: string) => void;
 };
 
+export type ResourceDetailPanelHandle = {
+  focusSearch: () => void;
+};
+
 const formatOptionLabel = (system?: string, code?: string, display?: string) => {
   const label = display || code || "Unknown";
   if (system) {
@@ -73,15 +85,21 @@ const getFieldValidationIssues = (
       issue.code !== "reference-broken" && isIssueForPath(issue.path, targetPath)
   );
 
-export const ResourceDetailPanel = ({
-  resource,
-  fields,
-  registry,
-  datasetResources,
-  onSelectResource,
-  onUpdateResource,
-  onRemoveResource,
-}: ResourceDetailPanelProps) => {
+export const ResourceDetailPanel = forwardRef<
+  ResourceDetailPanelHandle,
+  ResourceDetailPanelProps
+>(function ResourceDetailPanel(
+  {
+    resource,
+    fields,
+    registry,
+    datasetResources,
+    onSelectResource,
+    onUpdateResource,
+    onRemoveResource,
+  },
+  ref
+) {
   const requiredFields = fields.filter((field) => (field.min ?? 0) > 0);
   const optionalFields = fields.filter((field) => (field.min ?? 0) === 0);
   const [fieldQuery, setFieldQuery] = useState("");
@@ -89,6 +107,27 @@ export const ResourceDetailPanel = ({
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  const focusSearch = useCallback(() => {
+    setShowSearch(true);
+    if (typeof window === "undefined") {
+      searchInputRef.current?.focus();
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusSearch,
+    }),
+    [focusSearch]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -261,6 +300,7 @@ export const ResourceDetailPanel = ({
         {showSearch ? (
           <div className="mt-2">
             <Input
+              ref={searchInputRef}
               value={listQuery}
               onChange={(event) => setListQuery(event.target.value)}
               placeholder="Search fields"
@@ -447,7 +487,7 @@ export const ResourceDetailPanel = ({
       </Dialog>
     </div>
   );
-};
+});
 
 type FieldRowProps = {
   field: FieldDefinition;
