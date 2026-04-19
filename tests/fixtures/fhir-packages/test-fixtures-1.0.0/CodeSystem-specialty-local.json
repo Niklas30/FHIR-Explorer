@@ -1,0 +1,15 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "specialty-local",
+  "url": "https://example.org/fhir/CodeSystem/specialty-local",
+  "version": "1.0.0",
+  "name": "SpecialtyLocal",
+  "title": "Local Specialty Codes (Test)",
+  "status": "active",
+  "content": "complete",
+  "valueSet": "https://example.org/fhir/ValueSet/specialty-local",
+  "concept": [
+    { "code": "alpha", "display": "Alpha" },
+    { "code": "beta", "display": "Beta" }
+  ]
+}

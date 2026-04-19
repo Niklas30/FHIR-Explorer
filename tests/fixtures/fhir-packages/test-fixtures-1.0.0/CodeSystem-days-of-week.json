@@ -1,0 +1,20 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "days-of-week",
+  "url": "https://example.org/fhir/CodeSystem/days-of-week",
+  "version": "1.0.0",
+  "name": "DaysOfWeek",
+  "title": "Days of Week (Test)",
+  "status": "active",
+  "content": "complete",
+  "valueSet": "https://example.org/fhir/ValueSet/days-of-week",
+  "concept": [
+    { "code": "mon", "display": "Monday" },
+    { "code": "tue", "display": "Tuesday" },
+    { "code": "wed", "display": "Wednesday" },
+    { "code": "thu", "display": "Thursday" },
+    { "code": "fri", "display": "Friday" },
+    { "code": "sat", "display": "Saturday" },
+    { "code": "sun", "display": "Sunday" }
+  ]
+}

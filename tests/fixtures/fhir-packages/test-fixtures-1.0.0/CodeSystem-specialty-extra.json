@@ -1,0 +1,13 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "specialty-extra",
+  "url": "https://example.org/fhir/CodeSystem/specialty-extra",
+  "version": "1.0.0",
+  "name": "SpecialtyExtra",
+  "title": "Extra Specialty Codes (Test)",
+  "status": "active",
+  "content": "complete",
+  "concept": [
+    { "code": "gamma", "display": "Gamma" }
+  ]
+}

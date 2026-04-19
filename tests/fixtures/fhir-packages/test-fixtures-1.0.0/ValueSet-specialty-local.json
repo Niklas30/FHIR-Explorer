@@ -1,0 +1,16 @@
+{
+  "resourceType": "ValueSet",
+  "id": "specialty-local",
+  "url": "https://example.org/fhir/ValueSet/specialty-local",
+  "version": "1.0.0",
+  "name": "SpecialtyLocal",
+  "title": "Local Specialty Codes (Test)",
+  "status": "active",
+  "compose": {
+    "include": [
+      {
+        "system": "https://example.org/fhir/CodeSystem/specialty-local"
+      }
+    ]
+  }
+}

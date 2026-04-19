@@ -1,0 +1,22 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "HealthcareServiceDirectory",
+  "url": "https://example.org/fhir/StructureDefinition/HealthcareServiceDirectory",
+  "version": "1.0.0",
+  "name": "HealthcareServiceDirectory",
+  "title": "HealthcareService Directory (Test Profile)",
+  "status": "active",
+  "kind": "resource",
+  "abstract": false,
+  "type": "HealthcareService",
+  "baseDefinition": "https://example.org/fhir/StructureDefinition/HealthcareService",
+  "differential": {
+    "element": [
+      {
+        "id": "HealthcareService.availableTime.daysOfWeek",
+        "path": "HealthcareService.availableTime.daysOfWeek",
+        "max": "1"
+      }
+    ]
+  }
+}

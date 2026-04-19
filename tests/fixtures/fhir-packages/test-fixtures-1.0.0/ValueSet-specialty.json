@@ -1,0 +1,20 @@
+{
+  "resourceType": "ValueSet",
+  "id": "specialty",
+  "url": "https://example.org/fhir/ValueSet/specialty",
+  "version": "1.0.0",
+  "name": "Specialty",
+  "title": "Specialty Codes (Test)",
+  "status": "active",
+  "compose": {
+    "include": [
+      {
+        "valueSet": ["https://example.org/fhir/ValueSet/specialty-local"]
+      },
+      {
+        "system": "https://example.org/fhir/CodeSystem/specialty-extra",
+        "concept": [{ "code": "gamma", "display": "Gamma" }]
+      }
+    ]
+  }
+}
