@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useImporter } from "@/components/importer/useImporter";
@@ -28,33 +28,23 @@ import {
 import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DatasetRecord } from "@/lib/datasets/storage";
-import { loadDatasets, upsertDataset } from "@/lib/datasets/storage";
+import { upsertDataset } from "@/lib/datasets/storage";
 import {
   createDatasetResourceId,
-  loadDatasetResources,
   removeDatasetResource,
-  saveDatasetResources,
   type DatasetResource,
 } from "@/lib/datasets/content";
-import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
-import {
-  buildFieldDefinitions,
-  getProfileSummaries,
-  resolveProfileForResource,
-  type ProfileSummary,
-} from "@/lib/fhir-editor/profiles";
 import { isDevModeEnabled } from "@/lib/dev-mode";
-import type {
-  ComposeDatasetExport,
-  ComposePackageExport,
-  ComposeProjectArchiveManifest,
-  ComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
-import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
+import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
-import JSZip from "jszip";
+import { exportDatasetAction } from "@/components/overview/datasetActions";
+import { exportProject } from "@/components/overview/exportActions";
+import { datasetEditorText } from "@/components/editor/dataset-editor/text";
+import { useDatasetEditorViewSettings } from "@/components/editor/dataset-editor/useViewSettings";
+import { useDatasetEditorDatasetState } from "@/components/editor/dataset-editor/useDatasetState";
+import { useDatasetEditorRegistryState } from "@/components/editor/dataset-editor/useRegistryState";
 
 type DatasetEditorProps = {
   datasetId: string;
@@ -67,8 +57,9 @@ type ResourceNavigationState = {
   index: number;
 };
 
-const downloadBlob = (filename: string, blob: Blob) => {
+const downloadJson = (filename: string, payload: unknown) => {
   if (typeof window === "undefined") return;
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -77,45 +68,6 @@ const downloadBlob = (filename: string, blob: Blob) => {
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
-};
-
-const downloadJson = (filename: string, payload: unknown) => {
-  if (typeof window === "undefined") return;
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  downloadBlob(filename, blob);
-};
-
-const toSafeFilename = (value: string) =>
-  value
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+/, "")
-    .replace(/-+$/, "");
-
-const pruneResourceNavigation = (
-  state: ResourceNavigationState,
-  validIds: Set<string>
-): ResourceNavigationState => {
-  const nextHistory = state.history.filter((id) => validIds.has(id));
-  if (nextHistory.length === 0) {
-    if (state.history.length === 0 && state.index === -1) return state;
-    return { history: [], index: -1 };
-  }
-
-  const currentId = state.index >= 0 ? state.history[state.index] : null;
-  let nextIndex = currentId ? nextHistory.indexOf(currentId) : -1;
-  if (nextIndex < 0) {
-    nextIndex = Math.min(state.index, nextHistory.length - 1);
-  }
-  if (nextIndex < 0) {
-    nextIndex = 0;
-  }
-
-  if (nextHistory.length === state.history.length && nextIndex === state.index) {
-    return state;
-  }
-  return { history: nextHistory, index: nextIndex };
 };
 
 const pushResourceNavigationEntry = (
@@ -134,22 +86,86 @@ const pushResourceNavigationEntry = (
   };
 };
 
+const FullPageMessage = ({ children }: { children: ReactNode }) => {
+  return (
+    <div className="relative flex h-[100dvh] items-center justify-center bg-muted/20">
+      <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const DatasetNotFoundPanel = ({
+  datasetId,
+  text,
+}: {
+  datasetId: string;
+  text: { datasetNotFoundTitle: string; datasetNotFoundDescription: string; missingIdPrefix: string };
+}) => {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
+      <Card className="border-foreground/10">
+        <CardHeader>
+          <CardTitle className="text-2xl">{text.datasetNotFoundTitle}</CardTitle>
+          <CardDescription>{text.datasetNotFoundDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {text.missingIdPrefix} {datasetId}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const InitializationErrorPanel = ({
+  error,
+  text,
+}: {
+  error: Error;
+  text: {
+    editorInitErrorTitle: string;
+    editorInitErrorDescription: string;
+    devModeHintPrefix: string;
+    devModeHintSuffix: string;
+  };
+}) => {
+  const details = [`message: ${error.message}`, error.stack ? `\n${error.stack}` : ""].filter(Boolean);
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
+      <Card className="border-foreground/10">
+        <CardHeader>
+          <CardTitle className="text-2xl">{text.editorInitErrorTitle}</CardTitle>
+          <CardDescription>{text.editorInitErrorDescription}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isDevModeEnabled() ? (
+            <pre className="max-h-[45dvh] overflow-auto rounded-md border border-foreground/10 bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+              {details.join("\n")}
+            </pre>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {text.devModeHintPrefix}{" "}
+              <Link href="/devmode" className="underline">
+                /devmode
+              </Link>{" "}
+              {text.devModeHintSuffix}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const router = useRouter();
   const { locale } = useI18n();
   const resourceDetailRef = useRef<ResourceDetailPanelHandle | null>(null);
-  const [dataset, setDataset] = useState<DatasetRecord | null>(null);
-  const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
-  const [datasetLoaded, setDatasetLoaded] = useState(false);
-  const [registryLoaded, setRegistryLoaded] = useState(false);
-  const [initializationError, setInitializationError] = useState<Error | null>(null);
-  const [resources, setResources] = useState<DatasetResource[]>([]);
-  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
-  const [resourceNavigation, setResourceNavigation] = useState<ResourceNavigationState>({
-    history: [],
-    index: -1,
-  });
-  const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
+  const [focusSearchFn, setFocusSearchFn] = useState<(() => void) | null>(null);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isDiagramOpen, setDiagramOpen] = useState(false);
   const [isExportDialogOpen, setExportDialogOpen] = useState(false);
@@ -162,11 +178,16 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     "package" | "resources" | "searchset"
   >("package");
   const [exportIncludeDatasets, setExportIncludeDatasets] = useState(true);
-  const [zoomPercent, setZoomPercent] = useState(100);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [viewSettingsLoaded, setViewSettingsLoaded] = useState(false);
   const layoutStorageKey = "health-compose-editor-layout";
-  const [panelLayout, setPanelLayout] = useState<Layout | null>(null);
+  const {
+    viewSettingsLoaded,
+    zoomPercent,
+    setZoomPercent,
+    theme,
+    setTheme,
+    panelLayout,
+    persistPanelLayout,
+  } = useDatasetEditorViewSettings(layoutStorageKey);
 
   const { snapshot, getResourcePayloadsByPackageKeys } = useImporter();
   const packages = snapshot?.packages ?? EMPTY_PACKAGES;
@@ -183,374 +204,46 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         label: `${entry.id}@${entry.version}`,
       }));
   }, [packages]);
-  const enText = {
-    titleEditor: "Editor",
-    datasetNameRequired: "Dataset name is required.",
-    projectKeyRequired: "Project key is required.",
-    datasetInfoUpdated: "Dataset info updated.",
-    datasetExported: "Dataset exported.",
-    noPackagesToExport: "No packages available to export.",
-    projectExported: "Project exported.",
-    projectPackageNotFound: "Project package not found for this dataset.",
-    removeResourceConfirm: "Remove this resource from the dataset?",
-    datasetNotFoundTitle: "Dataset not found",
-    datasetNotFoundDescription:
-      "The dataset id could not be resolved. Return to the projects overview.",
-    missingIdPrefix: "Missing id:",
-    editorInitErrorTitle: "Editor could not be loaded",
-    editorInitErrorDescription:
-      "An error occurred while initializing FHIR profiles.",
-    devModeHintPrefix: "For technical details, enable Dev Mode via",
-    devModeHintSuffix: ".",
-    datasetInfoTitle: "Dataset Info",
-    datasetInfoDescription: "Review and edit metadata for this dataset.",
-    datasetNameLabel: "Name",
-    datasetNamePlaceholder: "Dataset name",
-    projectKeyLabel: "Project key",
-    noProjectsAvailable: "No imported projects available",
-    customProjectKey: "Custom project key…",
-    projectKeyPlaceholder: "package-id@version",
-    projectKeyHint: "Select an imported project or enter a custom project key.",
-    showDependencyTree: "Show dependency tree",
-    datasetIdLabel: "Dataset ID",
-    datasetIdReadonlyHint:
-      "Dataset ID is read-only because it is used as the storage key.",
-    createdPrefix: "Created:",
-    cancel: "Cancel",
-    save: "Save",
-    exportDialogTitle: "Export dataset",
-    exportDialogDescription:
-      "Export the current dataset or the full project with dependencies.",
-    exportScopeDataset: "Dataset only",
-    exportScopeProject: "Project + dependencies",
-    exportScopeProjectHelper:
-      "Project export is unavailable for datasets without a project key.",
-    exportConfirmDataset: "Export dataset",
-    exportConfirmProject: "Export project",
-    loadingEditorOverlay: "Loading editor…",
-    loadingFallback: "Loading editor…",
-    errorLoadingResources: "Failed to load FHIR package resources.",
-  };
-  const text = byLocale(locale, {
-    de: {
-      titleEditor: "Editor",
-      datasetNameRequired: "Dataset-Name ist erforderlich.",
-      projectKeyRequired: "Projekt-Key ist erforderlich.",
-      datasetInfoUpdated: "Dataset-Info wurde aktualisiert.",
-      datasetExported: "Dataset exportiert.",
-      noPackagesToExport: "Keine Pakete für den Export verfügbar.",
-      projectExported: "Projekt exportiert.",
-      projectPackageNotFound:
-        "Projektpaket für dieses Dataset wurde nicht gefunden.",
-      removeResourceConfirm:
-        "Diese Ressource wirklich aus dem Dataset entfernen?",
-      datasetNotFoundTitle: "Dataset nicht gefunden",
-      datasetNotFoundDescription:
-        "Die Dataset-ID konnte nicht aufgelöst werden. Gehe zurück zur Projektübersicht.",
-      missingIdPrefix: "Fehlende ID:",
-      editorInitErrorTitle: "Editor konnte nicht geladen werden",
-      editorInitErrorDescription:
-        "Beim Initialisieren der FHIR-Profile ist ein Fehler aufgetreten.",
-      devModeHintPrefix: "Für technische Details kann der Dev Mode über",
-      devModeHintSuffix: "aktiviert werden.",
-      datasetInfoTitle: "Dataset-Info",
-      datasetInfoDescription:
-        "Metadaten dieses Datasets anzeigen und bearbeiten.",
-      datasetNameLabel: "Name",
-      datasetNamePlaceholder: "Dataset-Name",
-      projectKeyLabel: "Projekt-Key",
-      noProjectsAvailable: "Keine importierten Projekte verfügbar",
-      customProjectKey: "Eigener Projekt-Key…",
-      projectKeyPlaceholder: "package-id@version",
-      projectKeyHint:
-        "Wähle ein importiertes Projekt oder gib einen eigenen Projekt-Key ein.",
-      showDependencyTree: "Abhängigkeitsbaum anzeigen",
-      datasetIdLabel: "Dataset-ID",
-      datasetIdReadonlyHint:
-        "Die Dataset-ID ist schreibgeschützt, da sie als Storage-Key verwendet wird.",
-      createdPrefix: "Erstellt:",
-      cancel: "Abbrechen",
-      save: "Speichern",
-      exportDialogTitle: "Dataset exportieren",
-      exportDialogDescription:
-        "Exportiere das aktuelle Dataset oder das vollständige Projekt inklusive Abhängigkeiten.",
-      exportScopeDataset: "Nur Dataset",
-      exportScopeProject: "Projekt + Abhängigkeiten",
-      exportScopeProjectHelper:
-        "Projekt-Export ist für Datasets ohne Projekt-Key nicht verfügbar.",
-      exportConfirmDataset: "Dataset exportieren",
-      exportConfirmProject: "Projekt exportieren",
-      loadingEditorOverlay: "Editor wird geladen…",
-      loadingFallback: "Editor wird geladen…",
-      errorLoadingResources: "FHIR-Paketressourcen konnten nicht geladen werden.",
-    },
-    en: enText,
-    fr: {
-      ...enText,
-      titleEditor: "Editeur",
-      datasetNameRequired: "Le nom du dataset est requis.",
-      projectKeyRequired: "La cle du projet est requise.",
-      datasetInfoUpdated: "Infos du dataset mises a jour.",
-      datasetExported: "Dataset exporte.",
-      projectExported: "Projet exporte.",
-      removeResourceConfirm: "Supprimer cette ressource du dataset ?",
-      datasetNotFoundTitle: "Dataset introuvable",
-      datasetInfoTitle: "Infos du dataset",
-      datasetNameLabel: "Nom",
-      projectKeyLabel: "Cle du projet",
-      cancel: "Annuler",
-      save: "Enregistrer",
-      exportDialogTitle: "Exporter le dataset",
-      exportScopeDataset: "Dataset seulement",
-      exportScopeProject: "Projet + dependances",
-      exportConfirmDataset: "Exporter le dataset",
-      exportConfirmProject: "Exporter le projet",
-      loadingEditorOverlay: "Chargement de l'editeur…",
-      loadingFallback: "Chargement de l'editeur…",
-    },
-    es: {
-      ...enText,
-      titleEditor: "Editor",
-      datasetNameRequired: "El nombre del dataset es obligatorio.",
-      projectKeyRequired: "La clave del proyecto es obligatoria.",
-      datasetInfoUpdated: "Informacion del dataset actualizada.",
-      datasetExported: "Dataset exportado.",
-      projectExported: "Proyecto exportado.",
-      removeResourceConfirm: "Eliminar este recurso del dataset?",
-      datasetNotFoundTitle: "Dataset no encontrado",
-      datasetInfoTitle: "Informacion del dataset",
-      datasetNameLabel: "Nombre",
-      projectKeyLabel: "Clave del proyecto",
-      cancel: "Cancelar",
-      save: "Guardar",
-      exportDialogTitle: "Exportar dataset",
-      exportScopeDataset: "Solo dataset",
-      exportScopeProject: "Proyecto + dependencias",
-      exportConfirmDataset: "Exportar dataset",
-      exportConfirmProject: "Exportar proyecto",
-      loadingEditorOverlay: "Cargando editor…",
-      loadingFallback: "Cargando editor…",
-    },
-    it: {
-      ...enText,
-      titleEditor: "Editor",
-      datasetNameRequired: "Il nome del dataset e obbligatorio.",
-      projectKeyRequired: "La chiave progetto e obbligatoria.",
-      datasetInfoUpdated: "Informazioni dataset aggiornate.",
-      datasetExported: "Dataset esportato.",
-      projectExported: "Progetto esportato.",
-      removeResourceConfirm: "Rimuovere questa risorsa dal dataset?",
-      datasetNotFoundTitle: "Dataset non trovato",
-      datasetInfoTitle: "Info dataset",
-      datasetNameLabel: "Nome",
-      projectKeyLabel: "Chiave progetto",
-      cancel: "Annulla",
-      save: "Salva",
-      exportDialogTitle: "Esporta dataset",
-      exportScopeDataset: "Solo dataset",
-      exportScopeProject: "Progetto + dipendenze",
-      exportConfirmDataset: "Esporta dataset",
-      exportConfirmProject: "Esporta progetto",
-      loadingEditorOverlay: "Caricamento editor…",
-      loadingFallback: "Caricamento editor…",
-    },
+  const text = byLocale(locale, datasetEditorText);
+  useEffect(() => {
+    setFocusSearchFn(() => () => resourceDetailRef.current?.focusSearch());
+  }, []);
+  const {
+    dataset,
+    setDataset,
+    datasets,
+    setDatasets,
+    datasetLoaded,
+    resources,
+    selectedResourceId,
+    setSelectedResourceId,
+    selectedResource,
+    setResourceNavigation,
+    persistResources,
+    handleUpdateResource,
+    handleSelectResource,
+    canNavigateBack,
+    canNavigateForward,
+    handleNavigateBack,
+    handleNavigateForward,
+  } = useDatasetEditorDatasetState({ datasetId, title: text.titleEditor });
+
+  const {
+    registryLoaded,
+    initializationError,
+    registryState,
+    profiles,
+    fields,
+    resolveStructureDefinition,
+  } = useDatasetEditorRegistryState({
+    dataset,
+    datasetLoaded,
+    packages,
+    graph,
+    selectedResource,
+    getResourcePayloadsByPackageKeys,
+    errorLoadingResourcesMessage: text.errorLoadingResources,
   });
-
-  const sortResources = (items: DatasetResource[]) => {
-    return [...items].sort((a, b) => {
-      const aSelected = a.lastSelectedAt ?? 0;
-      const bSelected = b.lastSelectedAt ?? 0;
-      if (aSelected !== bSelected) return bSelected - aSelected;
-      return b.createdAt - a.createdAt;
-    });
-  };
-  useEffect(() => {
-    const records = loadDatasets();
-    const match = records.find((entry) => entry.id === datasetId) ?? null;
-    setDataset(match);
-    setDatasets(records);
-    const loaded = loadDatasetResources(datasetId);
-    setResources(sortResources(loaded));
-    setDatasetLoaded(true);
-  }, [datasetId]);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const name = dataset?.name?.trim();
-    document.title = name ? `${text.titleEditor} - ${name}` : text.titleEditor;
-  }, [dataset?.name, text.titleEditor]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setViewSettingsLoaded(false);
-    const storedZoom = Number(window.localStorage.getItem("health-compose-zoom"));
-    if (!Number.isNaN(storedZoom) && storedZoom >= 70 && storedZoom <= 140) {
-      setZoomPercent(storedZoom);
-    }
-    const storedTheme = window.localStorage.getItem("health-compose-theme");
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setTheme(storedTheme);
-    }
-    const rawLayout = window.localStorage.getItem(layoutStorageKey);
-    if (rawLayout) {
-      try {
-        const parsed = JSON.parse(rawLayout) as unknown;
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          const entries = Object.entries(parsed as Record<string, unknown>).filter(
-            ([, value]) => typeof value === "number"
-          );
-          if (entries.length > 0) {
-            setPanelLayout(Object.fromEntries(entries) as Layout);
-          }
-        }
-      } catch {
-        setPanelLayout(null);
-      }
-    }
-    setViewSettingsLoaded(true);
-  }, [layoutStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!viewSettingsLoaded) return;
-    window.localStorage.setItem("health-compose-zoom", String(zoomPercent));
-  }, [zoomPercent, viewSettingsLoaded]);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    if (typeof window !== "undefined") {
-      if (!viewSettingsLoaded) return;
-      window.localStorage.setItem("health-compose-theme", theme);
-    }
-  }, [theme, viewSettingsLoaded]);
-
-  useEffect(() => {
-    if (resources.length === 0) {
-      setSelectedResourceId(null);
-      setResourceNavigation({ history: [], index: -1 });
-      return;
-    }
-    const validIds = new Set(resources.map((entry) => entry.id));
-    setResourceNavigation((prev) => pruneResourceNavigation(prev, validIds));
-
-    if (!selectedResourceId || !validIds.has(selectedResourceId)) {
-      const fallbackId = resources[0].id;
-      setSelectedResourceId(fallbackId);
-      setResourceNavigation((prev) =>
-        pushResourceNavigationEntry(pruneResourceNavigation(prev, validIds), fallbackId)
-      );
-    }
-  }, [resources, selectedResourceId]);
-
-  const [registryState, setRegistryState] = useState<ReturnType<typeof buildRegistry> | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (!dataset || packages.length === 0) return;
-    setRegistryLoaded(false);
-    setInitializationError(null);
-    const dependencyKeys = collectDependencies(dataset.projectKey, graph);
-    const projectKeys = new Set<string>([dataset.projectKey, ...dependencyKeys]);
-
-    let active = true;
-    getResourcePayloadsByPackageKeys(Array.from(projectKeys))
-      .then((payloads) => {
-        if (!active) return;
-        const nextRegistry = buildRegistry(payloads);
-        setRegistryState(nextRegistry);
-        setProfiles(getProfileSummaries(nextRegistry));
-        setRegistryLoaded(true);
-      })
-      .catch((error) => {
-        if (!active) return;
-        const normalizedError =
-          error instanceof Error ? error : new Error(text.errorLoadingResources);
-        setRegistryState(null);
-        setProfiles([]);
-        setInitializationError(normalizedError);
-        setRegistryLoaded(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [dataset, packages.length, graph, getResourcePayloadsByPackageKeys, text.errorLoadingResources]);
-
-  useEffect(() => {
-    if (!datasetLoaded) return;
-    if (!dataset) {
-      setRegistryLoaded(true);
-      return;
-    }
-    if (packages.length === 0) {
-      setRegistryLoaded(true);
-    }
-  }, [datasetLoaded, dataset, packages.length]);
-
-  const selectedResource = resources.find((entry) => entry.id === selectedResourceId) ?? null;
-  const profile =
-    selectedResource && registryState
-      ? resolveProfileForResource(selectedResource.content, registryState)
-      : null;
-  const fields =
-    profile && registryState ? buildFieldDefinitions(profile, registryState) : [];
-
-  const persistResources = (nextResources: DatasetResource[]) => {
-    const sorted = sortResources(nextResources);
-    setResources(sorted);
-    saveDatasetResources(datasetId, sorted);
-  };
-
-  const handleUpdateResource = (nextResource: DatasetResource) => {
-    const nextResources = [
-      nextResource,
-      ...resources.filter((entry) => entry.id !== nextResource.id),
-    ];
-    persistResources(nextResources);
-  };
-
-  const handleSelectResource = (
-    resourceId: string,
-    options?: { recordHistory?: boolean }
-  ) => {
-    const target = resources.find((entry) => entry.id === resourceId);
-    if (!target) {
-      return;
-    }
-    const shouldRecordHistory = options?.recordHistory !== false;
-    const now = Date.now();
-    const nextResources = resources.map((entry) =>
-      entry.id === resourceId ? { ...entry, lastSelectedAt: now } : entry
-    );
-    persistResources(nextResources);
-    setSelectedResourceId(resourceId);
-    if (shouldRecordHistory) {
-      setResourceNavigation((prev) => pushResourceNavigationEntry(prev, resourceId));
-    }
-  };
-
-  const canNavigateBack = resourceNavigation.index > 0;
-  const canNavigateForward =
-    resourceNavigation.index >= 0 &&
-    resourceNavigation.index < resourceNavigation.history.length - 1;
-
-  const handleNavigateBack = () => {
-    if (!canNavigateBack) return;
-    const targetResourceId = resourceNavigation.history[resourceNavigation.index - 1];
-    if (!targetResourceId) return;
-    setResourceNavigation((prev) => ({ ...prev, index: prev.index - 1 }));
-    handleSelectResource(targetResourceId, { recordHistory: false });
-  };
-
-  const handleNavigateForward = () => {
-    if (!canNavigateForward) return;
-    const targetResourceId = resourceNavigation.history[resourceNavigation.index + 1];
-    if (!targetResourceId) return;
-    setResourceNavigation((prev) => ({ ...prev, index: prev.index + 1 }));
-    handleSelectResource(targetResourceId, { recordHistory: false });
-  };
 
   const handleOpenProjects = () => {
     router.push("/");
@@ -578,7 +271,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   };
 
   const handleFocusFormSearch = () => {
-    resourceDetailRef.current?.focusSearch();
+    focusSearchFn?.();
   };
 
   const handleZoomIn = () => {
@@ -626,9 +319,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const ok = window.confirm(text.removeResourceConfirm);
     if (!ok) return;
     const nextResources = removeDatasetResource(datasetId, resourceId);
-    setResources(nextResources);
-    const validIds = new Set(nextResources.map((entry) => entry.id));
-    setResourceNavigation((prev) => pruneResourceNavigation(prev, validIds));
+    persistResources(nextResources);
   };
 
   const handleExportResource = (resource: DatasetResource) => {
@@ -664,190 +355,15 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     setResourceNavigation((prev) => pushResourceNavigationEntry(prev, duplicated.id));
   };
 
-  const datasetResourcesPayload = useMemo(
-    () => resources.map((entry) => entry.content),
-    [resources]
-  );
-
-  const buildSearchsetBundle = (entries: unknown[]) => ({
-    resourceType: "Bundle",
-    type: "searchset",
-    total: entries.length,
-    entry: entries.map((resource) => ({ resource })),
-  });
-
-  const handleExportDataset = async () => {
-    if (!dataset) return;
-    const safeName = toSafeFilename(dataset.name) || "dataset";
-    let payload: unknown = null;
-    let filename = `${safeName}.json`;
-    let zipName = `${safeName}.zip`;
-
-    if (exportDatasetMode === "package") {
-      const datasetPayload: ComposeDatasetExport = {
-        id: dataset.id,
-        name: dataset.name,
-        projectKey: dataset.projectKey,
-        resources: datasetResourcesPayload,
-      };
-      payload = datasetPayload;
-      filename = `${safeName}.json`;
-      zipName = `${safeName}.zip`;
-    } else if (exportDatasetMode === "resources") {
-      payload = datasetResourcesPayload;
-      filename = `${safeName}-resources.json`;
-      zipName = `${safeName}-resources.zip`;
-    } else {
-      payload = buildSearchsetBundle(datasetResourcesPayload);
-      filename = `${safeName}-searchset.json`;
-      zipName = `${safeName}-searchset.zip`;
-    }
-
-    if (exportFormat === "json") {
-      downloadJson(filename, payload);
-    } else {
-      const zip = new JSZip();
-      zip.file(filename, JSON.stringify(payload, null, 2));
-      const blob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(zipName, blob);
-    }
-    toast.success(text.datasetExported);
-  };
-
-  const prepareProjectExport = async (
-    project: PackageRecord,
-    includeDatasets: boolean
-  ): Promise<{
-    projectKeys: Set<string>;
-    exportPackages: ComposePackageExport[];
-    exportDatasets: ComposeDatasetExport[];
-  } | null> => {
-    const dependencyKeys = collectDependencies(project.key, graph);
-    const projectKeys = new Set<string>([project.key, ...dependencyKeys]);
-    const packageRecords = Array.from(projectKeys)
-      .map((key) => graph.byKey.get(key))
-      .filter((record): record is PackageRecord => Boolean(record));
-
-    if (packageRecords.length === 0) {
-      toast.error(text.noPackagesToExport);
-      return null;
-    }
-
-    const payloads = await getResourcePayloadsByPackageKeys(Array.from(projectKeys));
-    const payloadsByKey = new Map<string, typeof payloads>();
-    for (const payload of payloads) {
-      const list = payloadsByKey.get(payload.packageKey) ?? [];
-      list.push(payload);
-      payloadsByKey.set(payload.packageKey, list);
-    }
-
-    const exportPackages: ComposePackageExport[] = packageRecords.map((pkg) => ({
-      key: pkg.key,
-      id: pkg.id,
-      version: pkg.version,
-      manifest: pkg.manifest,
-      resources: (payloadsByKey.get(pkg.key) ?? []).map((resource) => ({
-        resourceType: resource.resourceType,
-        id: resource.id,
-        url: resource.url,
-        content: resource.content,
-      })),
-    }));
-
-    const exportDatasets: ComposeDatasetExport[] = includeDatasets
-      ? datasets
-          .filter((entry) => projectKeys.has(entry.projectKey ?? ""))
-          .map((entry) => ({
-            id: entry.id,
-            name: entry.name,
-            projectKey: entry.projectKey,
-            resources:
-              entry.id === dataset?.id
-                ? datasetResourcesPayload
-                : loadDatasetResources(entry.id).map((item) => item.content),
-          }))
-      : [];
-
-    return {
-      projectKeys,
-      exportPackages,
-      exportDatasets,
-    };
-  };
-
-  const exportProjectAsJson = async (project: PackageRecord, includeDatasets: boolean) => {
-    const prepared = await prepareProjectExport(project, includeDatasets);
-    if (!prepared) return;
-
-    const payload: ComposeProjectExport = {
-      type: "health-compose-project",
-      version: 1,
-      targetKey: project.key,
-      exportedAt: new Date().toISOString(),
-      packages: prepared.exportPackages,
-      datasets: prepared.exportDatasets,
-    };
-
-    const filename =
-      toSafeFilename(`${project.id}-${project.version}-compose.json`) ||
-      "compose-project.json";
-    downloadJson(filename, payload);
-    toast.success(text.projectExported);
-  };
-
-  const exportProjectAsZip = async (project: PackageRecord, includeDatasets: boolean) => {
-    const prepared = await prepareProjectExport(project, includeDatasets);
-    if (!prepared) return;
-
-    const zip = new JSZip();
-    const packagesFolder = zip.folder("packages");
-    const datasetsFolder = zip.folder("datasets");
-
-    const packageEntries = prepared.exportPackages.map((pkg) => {
-      const filename = toSafeFilename(`${pkg.key}.json`) || "package.json";
-      packagesFolder?.file(filename, JSON.stringify(pkg, null, 2));
-      return {
-        key: pkg.key,
-        id: pkg.id,
-        version: pkg.version,
-        manifest: pkg.manifest,
-        file: `packages/${filename}`,
-      };
-    });
-
-    const datasetEntries = prepared.exportDatasets.map((entry, index) => {
-      const baseName = toSafeFilename(entry.id ?? entry.name) || `dataset-${index + 1}`;
-      const filename = `${baseName}.json`;
-      datasetsFolder?.file(filename, JSON.stringify(entry, null, 2));
-      return {
-        id: entry.id,
-        name: entry.name,
-        projectKey: entry.projectKey,
-        file: `datasets/${filename}`,
-      };
-    });
-
-    const manifest: ComposeProjectArchiveManifest = {
-      type: "health-compose-project-archive",
-      version: 1,
-      targetKey: project.key,
-      exportedAt: new Date().toISOString(),
-      packages: packageEntries,
-      datasets: includeDatasets ? datasetEntries : undefined,
-    };
-
-    zip.file("compose-project.json", JSON.stringify(manifest, null, 2));
-    const blob = await zip.generateAsync({ type: "blob" });
-    const filename =
-      toSafeFilename(`${project.id}-${project.version}-compose.zip`) || "compose-project.zip";
-    downloadBlob(filename, blob);
-    toast.success(text.projectExported);
-  };
-
   const handleExportConfirm = async () => {
     if (!dataset) return;
     if (exportScope === "dataset") {
-      await handleExportDataset();
+      await exportDatasetAction({
+        dataset,
+        mode: exportDatasetMode,
+        exportFormat,
+        text,
+      });
       setExportDialogOpen(false);
       return;
     }
@@ -858,20 +374,21 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       return;
     }
 
-    if (exportFormat === "json") {
-      await exportProjectAsJson(targetProject, exportIncludeDatasets);
-    } else {
-      await exportProjectAsZip(targetProject, exportIncludeDatasets);
-    }
+    await exportProject({
+      project: targetProject,
+      includeDatasets: exportIncludeDatasets,
+      exportFormat,
+      graph,
+      datasets,
+      getResourcePayloadsByPackageKeys,
+      text,
+    });
     setExportDialogOpen(false);
   };
 
   const handleCreateResource = (payload: { profileUrl: string; resourceId?: string }) => {
     if (!registryState) return;
-    const profileDefinition = getStructureDefinitionByCanonical(
-      registryState,
-      payload.profileUrl
-    );
+    const profileDefinition = resolveStructureDefinition(payload.profileUrl);
     if (!profileDefinition) return;
     const resourceType = profileDefinition.type ?? profileDefinition.id ?? "Resource";
     const now = Date.now();
@@ -903,66 +420,15 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   };
 
   if (!datasetLoaded || !viewSettingsLoaded) {
-    return (
-      <div className="relative flex h-[100dvh] items-center justify-center bg-muted/20">
-        <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
-          {text.loadingFallback}
-        </div>
-      </div>
-    );
+    return <FullPageMessage>{text.loadingFallback}</FullPageMessage>;
   }
 
   if (!dataset) {
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
-        <Card className="border-foreground/10">
-          <CardHeader>
-            <CardTitle className="text-2xl">{text.datasetNotFoundTitle}</CardTitle>
-            <CardDescription>
-              {text.datasetNotFoundDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {text.missingIdPrefix} {datasetId}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <DatasetNotFoundPanel datasetId={datasetId} text={text} />;
   }
 
   if (initializationError) {
-    const details = [`message: ${initializationError.message}`];
-    if (initializationError.stack) {
-      details.push("", initializationError.stack);
-    }
-
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
-        <Card className="border-foreground/10">
-          <CardHeader>
-            <CardTitle className="text-2xl">{text.editorInitErrorTitle}</CardTitle>
-            <CardDescription>{text.editorInitErrorDescription}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isDevModeEnabled() ? (
-              <pre className="max-h-[45dvh] overflow-auto rounded-md border border-foreground/10 bg-muted/30 p-3 text-xs whitespace-pre-wrap">
-                {details.join("\n")}
-              </pre>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {text.devModeHintPrefix}{" "}
-                <Link href="/devmode" className="underline">
-                  /devmode
-                </Link>{" "}
-                {text.devModeHintSuffix}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <InitializationErrorPanel error={initializationError} text={text} />;
   }
 
   const zoomLabel = `${zoomPercent}%`;
@@ -998,12 +464,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
         <div className="min-h-0 flex-1 overflow-hidden px-6 pb-6 pt-4">
           <ResizablePanelGroup
             direction="horizontal"
-            onLayoutChanged={(layout: Layout) => {
-              setPanelLayout(layout);
-              if (typeof window !== "undefined" && viewSettingsLoaded) {
-                window.localStorage.setItem(layoutStorageKey, JSON.stringify(layout));
-              }
-            }}
+            onLayoutChanged={(layout: Layout) => persistPanelLayout(layout)}
             className="h-full min-h-0 rounded-xl border border-foreground/10 bg-background"
           >
             <ResizablePanel
