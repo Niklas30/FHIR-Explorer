@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -458,7 +457,108 @@ const overviewText = {
 };
 
 type OverviewText = Record<keyof (typeof overviewText)["en"], string>;
-const localizedOverviewText: { de: OverviewText; en: OverviewText } = overviewText;
+const localizedOverviewText = {
+  ...overviewText,
+  fr: {
+    ...overviewText.en,
+    pageBrowserTitle: "Projets",
+    pageTitle: "Vue d'ensemble des projets",
+    pageDescription:
+      "Consultez les paquets cibles importes, examinez les dependances et demarrez des datasets. Ouvrez un dataset pour composer des ressources avec des formulaires guides par profil.",
+    projectsOverviewTitle: "Vue d'ensemble des projets",
+    datasetsOverviewTitle: "Vue d'ensemble des datasets",
+    projectsOverviewDescription:
+      "Consultez les projets cibles importes et leurs dependances.",
+    datasetsOverviewDescription:
+      "Gerez les datasets et voyez a quel projet ils appartiennent.",
+    importProject: "Importer un projet",
+    createDataset: "Creer un dataset",
+    refresh: "Actualiser",
+    filterPlaceholder: "Filtrer",
+    projectViewAria: "Vue projet",
+    datasetViewAria: "Vue dataset",
+    noTargetsTitle: "Aucune cible pour le moment",
+    noTargetsDescription:
+      "Importez un paquet cible pour commencer a construire des datasets et des dependances.",
+    goToImporter: "Aller a l'importateur",
+    dependencyProjectsTitle: "Projets de dependance",
+    dependencyProjectsDescription:
+      "Paquets importes pour satisfaire les dependances des cibles.",
+    noDependenciesTitle: "Aucune dependance a afficher",
+    noDatasetsTitle: "Aucun dataset a afficher",
+    open: "Ouvrir",
+    exportProject: "Exporter le projet...",
+    deleteProject: "Supprimer le projet",
+    exportDataset: "Exporter le dataset",
+    deleteDataset: "Supprimer le dataset",
+  },
+  es: {
+    ...overviewText.en,
+    pageBrowserTitle: "Proyectos",
+    pageTitle: "Resumen de proyectos",
+    pageDescription:
+      "Revisa los paquetes objetivo importados, inspecciona dependencias y comienza datasets. Abre un dataset para componer recursos con formularios guiados por perfil.",
+    projectsOverviewTitle: "Resumen de proyectos",
+    datasetsOverviewTitle: "Resumen de datasets",
+    projectsOverviewDescription:
+      "Revisa los proyectos objetivo importados y sus dependencias.",
+    datasetsOverviewDescription:
+      "Gestiona datasets y ve a que proyecto pertenecen.",
+    importProject: "Importar proyecto",
+    createDataset: "Crear dataset",
+    refresh: "Actualizar",
+    filterPlaceholder: "Filtrar",
+    projectViewAria: "Vista de proyectos",
+    datasetViewAria: "Vista de datasets",
+    noTargetsTitle: "Sin objetivos todavia",
+    noTargetsDescription:
+      "Importa un paquete objetivo para empezar a crear datasets y dependencias.",
+    goToImporter: "Ir al importador",
+    dependencyProjectsTitle: "Proyectos de dependencia",
+    dependencyProjectsDescription:
+      "Paquetes importados para cumplir dependencias del objetivo.",
+    noDependenciesTitle: "No hay dependencias para mostrar",
+    noDatasetsTitle: "No hay datasets para mostrar",
+    open: "Abrir",
+    exportProject: "Exportar proyecto...",
+    deleteProject: "Eliminar proyecto",
+    exportDataset: "Exportar dataset",
+    deleteDataset: "Eliminar dataset",
+  },
+  it: {
+    ...overviewText.en,
+    pageBrowserTitle: "Progetti",
+    pageTitle: "Panoramica progetti",
+    pageDescription:
+      "Controlla i pacchetti target importati, ispeziona le dipendenze e avvia i dataset. Apri un dataset per comporre risorse con moduli guidati dal profilo.",
+    projectsOverviewTitle: "Panoramica progetti",
+    datasetsOverviewTitle: "Panoramica dataset",
+    projectsOverviewDescription:
+      "Controlla i progetti target importati e le loro dipendenze.",
+    datasetsOverviewDescription:
+      "Gestisci i dataset e vedi a quale progetto appartengono.",
+    importProject: "Importa progetto",
+    createDataset: "Crea dataset",
+    refresh: "Aggiorna",
+    filterPlaceholder: "Filtra",
+    projectViewAria: "Vista progetti",
+    datasetViewAria: "Vista dataset",
+    noTargetsTitle: "Nessun target per ora",
+    noTargetsDescription:
+      "Importa un pacchetto target per iniziare a creare dataset e dipendenze.",
+    goToImporter: "Vai all'importatore",
+    dependencyProjectsTitle: "Progetti dipendenza",
+    dependencyProjectsDescription:
+      "Pacchetti importati per soddisfare le dipendenze del target.",
+    noDependenciesTitle: "Nessuna dipendenza da mostrare",
+    noDatasetsTitle: "Nessun dataset da mostrare",
+    open: "Apri",
+    exportProject: "Esporta progetto...",
+    deleteProject: "Elimina progetto",
+    exportDataset: "Esporta dataset",
+    deleteDataset: "Elimina dataset",
+  },
+} satisfies Record<"de" | "en" | "fr" | "es" | "it", OverviewText>;
 
 const formatText = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
@@ -1293,7 +1393,6 @@ export default function EditorOverviewPage() {
             <Button variant="ghost" onClick={() => void refresh()}>
               {text.refresh}
             </Button>
-            <LanguageSwitcher />
           </div>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">

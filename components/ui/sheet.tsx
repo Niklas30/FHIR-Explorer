@@ -55,7 +55,13 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
 }) {
   const { locale } = useI18n()
-  const closeLabel = byLocale(locale, { de: "Schließen", en: "Close" })
+  const closeLabel = byLocale(locale, {
+    de: "Schließen",
+    en: "Close",
+    fr: "Fermer",
+    es: "Cerrar",
+    it: "Chiudi",
+  })
   return (
     <SheetPortal>
       <SheetOverlay />

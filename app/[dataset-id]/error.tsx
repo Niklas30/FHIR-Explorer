@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +37,39 @@ export default function DatasetEditorError({
       retry: "Try again",
       openDevMode: "Open Dev Mode",
       home: "Back to home",
+    },
+    fr: {
+      title: "Erreur de l'éditeur",
+      description: "Une erreur est survenue lors du chargement ou du rendu de l'éditeur.",
+      noMessage: "(pas de message)",
+      devModeHintPrefix:
+        "Pour les détails techniques, vous pouvez activer le mode Dev via",
+      devModeHintSuffix: ".",
+      retry: "Réessayer",
+      openDevMode: "Ouvrir le mode Dev",
+      home: "Retour à l'accueil",
+    },
+    es: {
+      title: "Error del editor",
+      description: "Ocurrió un error al cargar o renderizar el editor.",
+      noMessage: "(sin mensaje)",
+      devModeHintPrefix:
+        "Para más detalles técnicos, puedes activar el modo Dev en",
+      devModeHintSuffix: ".",
+      retry: "Reintentar",
+      openDevMode: "Abrir modo Dev",
+      home: "Volver al inicio",
+    },
+    it: {
+      title: "Errore editor",
+      description: "Si è verificato un errore durante il caricamento o il rendering dell'editor.",
+      noMessage: "(nessun messaggio)",
+      devModeHintPrefix:
+        "Per i dettagli tecnici puoi attivare la modalità Dev tramite",
+      devModeHintSuffix: ".",
+      retry: "Riprova",
+      openDevMode: "Apri modalità Dev",
+      home: "Torna alla home",
     },
   });
 
@@ -82,7 +114,6 @@ export default function DatasetEditorError({
             <Button asChild variant="outline">
               <Link href="/devmode">{text.openDevMode}</Link>
             </Button>
-            <LanguageSwitcher />
             <Button asChild variant="secondary">
               <Link href="/">{text.home}</Link>
             </Button>

@@ -68,6 +68,45 @@ export const FileDropzone = ({
       clipboardBlocked: "Clipboard access was blocked.",
       clipboardImportedFiles: "Imported file(s) from clipboard.",
     },
+    fr: {
+      label: "Televerser un fichier",
+      hint: "Glisser-deposer les fichiers ici",
+      chooseFile: "Choisir un fichier",
+      pasteFromClipboard: "Coller depuis le presse-papiers",
+      clipboardTip: "Astuce: focusez cette zone puis appuyez sur Ctrl/Cmd+V",
+      clipboardNotSupported:
+        "L'acces au presse-papiers n'est pas pris en charge par ce navigateur.",
+      clipboardEmpty: "Le presse-papiers est vide.",
+      clipboardImportedJson: "Texte JSON importe depuis le presse-papiers.",
+      clipboardBlocked: "L'acces au presse-papiers a ete bloque.",
+      clipboardImportedFiles: "Fichier(s) importes depuis le presse-papiers.",
+    },
+    es: {
+      label: "Subir archivo",
+      hint: "Arrastra y suelta archivos aqui",
+      chooseFile: "Elegir archivo",
+      pasteFromClipboard: "Pegar desde el portapapeles",
+      clipboardTip: "Consejo: enfoca esta zona y pulsa Ctrl/Cmd+V",
+      clipboardNotSupported:
+        "El acceso al portapapeles no esta disponible en este navegador.",
+      clipboardEmpty: "El portapapeles esta vacio.",
+      clipboardImportedJson: "Texto JSON importado desde el portapapeles.",
+      clipboardBlocked: "El acceso al portapapeles fue bloqueado.",
+      clipboardImportedFiles: "Archivo(s) importado(s) desde el portapapeles.",
+    },
+    it: {
+      label: "Carica file",
+      hint: "Trascina qui i file",
+      chooseFile: "Scegli file",
+      pasteFromClipboard: "Incolla dagli appunti",
+      clipboardTip: "Suggerimento: focalizza questa area e premi Ctrl/Cmd+V",
+      clipboardNotSupported:
+        "L'accesso agli appunti non e supportato da questo browser.",
+      clipboardEmpty: "Gli appunti sono vuoti.",
+      clipboardImportedJson: "Testo JSON importato dagli appunti.",
+      clipboardBlocked: "L'accesso agli appunti e stato bloccato.",
+      clipboardImportedFiles: "File importati dagli appunti.",
+    },
   });
 
   const inputRef = useRef<HTMLInputElement | null>(null);

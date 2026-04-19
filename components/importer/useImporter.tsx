@@ -60,6 +60,24 @@ export const useImporter = (): UseImporterResult => {
       clientNotReady: "Importer client is not ready yet.",
       composeImportFailed: "Project import failed",
     },
+    fr: {
+      failedToLoadState: "Impossible de charger l'état de l'importateur",
+      importFailed: "Échec de l'import",
+      clientNotReady: "Le client importateur n'est pas encore prêt.",
+      composeImportFailed: "Échec de l'import du projet",
+    },
+    es: {
+      failedToLoadState: "No se pudo cargar el estado del importador",
+      importFailed: "Error de importación",
+      clientNotReady: "El cliente importador aún no está listo.",
+      composeImportFailed: "Error al importar el proyecto",
+    },
+    it: {
+      failedToLoadState: "Impossibile caricare lo stato dell'importatore",
+      importFailed: "Importazione non riuscita",
+      clientNotReady: "Il client importatore non è ancora pronto.",
+      composeImportFailed: "Importazione progetto non riuscita",
+    },
   });
 
   const refresh = useCallback(async () => {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,6 +68,87 @@ export const ImportWizard = () => {
   const lastResultRef = useRef<string | null>(null);
   const progressToastId = useRef<string>("import-progress");
   const completionHandledRef = useRef<string | null>(null);
+  const enText = {
+    none: "None",
+    failedComposeProjectImport: "Failed to import compose project file.",
+    composeProjectImported:
+      "Compose project imported ({imported} packages, {skipped} skipped).",
+    packageAlreadyImported: "Package {packageKey} is already imported.",
+    targetPackageImported: "Target package {packageKey} imported.",
+    dependencyImported: "Dependency {packageKey} imported.",
+    packageImportedButNotMissing:
+      "Package {packageKey} imported, but it was not listed as missing.",
+    targetPackageAlreadyImported: "Target package {packageKey} is already imported.",
+    importingPackage: "Importing package",
+    packageAlreadyImportedShort: "Package {packageKey} already imported.",
+    importedPackageShort: "Imported {packageKey}.",
+    errorPrefix: "Error: {error}",
+    title: "Package Import",
+    importer: "FHIR Importer",
+    cancelImport: "Cancel Import",
+    projectsOverview: "Projects Overview",
+    home: "Home",
+    intro:
+      "Import FHIR packages and every transitive dependency entirely in the browser. The wizard updates after each upload.",
+    imported: "Imported: {count}",
+    missing: "Missing: {count}",
+    definitions: "Definitions: {count}",
+    target: "Target: {value}",
+    importSuccessful: "Import Successful",
+    importSuccessfulDescription:
+      "{targetKey} was imported successfully. You can start a new import below or go to the Projects Overview.",
+    goToProjectsOverview: "Go to Projects Overview",
+    targetImported: "Target imported: {value}",
+    targetPackage: "Target Package",
+    targetSetDescription:
+      "Target set. Download the package and upload it to start the import.",
+    targetUploadOrEnter:
+      "Upload the target package directly or enter id + version.",
+    importStartedFor: "Import started for:",
+    downloadPackages: "Download (packages2.fhir.org)",
+    copyLink: "Copy Link",
+    uploadTargetPackage: "Upload target package (.tgz)",
+    uploadTargetHelper:
+      "Download the target from packages2.fhir.org, then upload it here to start the import.",
+    uploadTargetHint: "Drag & drop the target .tgz file here",
+    uploadTargetOrCompose:
+      "Upload target package (.tgz) or compose project (.json/.zip)",
+    uploadTargetOrComposeHelper:
+      "The package must contain package/package.json",
+    uploadTargetOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+    packageId: "Package ID",
+    version: "Version",
+    setTarget: "Set Target",
+    dependencies: "Dependencies",
+    dependenciesDescription:
+      "Upload any missing dependency in any order. You can start multiple downloads at once.",
+    uploadTargetToDetect:
+      "Upload the target package to detect its dependencies.",
+    allDependenciesResolved: "All dependencies resolved.",
+    required: "Required: {value}",
+    chooseVersion: "Choose version",
+    setVersion: "Set Version",
+    clear: "Clear",
+    download: "Download:",
+    selectVersionForLink: "Select a version to generate a link",
+    openLink: "Open Link",
+    uploadPackageOrCompose:
+      "Upload package (.tgz) or compose project (.json/.zip)",
+    uploadPackageOrComposeHelper:
+      "Upload target or dependency packages. The importer will detect matches.",
+    uploadPackageOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+    importHistory: "Import History",
+    importHistoryDescription: "Previously imported target packages.",
+    noImportsYet: "No imports yet.",
+    importLog: "Import Log",
+    latestImportActions: "Latest actions during this import.",
+    importLogHistory: "History of the last completed import.",
+    showLog: "Show log ({count})",
+    noLogEntries: "No log entries yet.",
+    conflicts: "Conflicts",
+    conflictsDescription: "Resolve these before the import is complete.",
+    versionConflict: "Version conflict",
+  };
   const text = byLocale(locale, {
     de: {
       none: "Keine",
@@ -151,86 +231,268 @@ export const ImportWizard = () => {
         "Löse diese Konflikte, bevor der Import abgeschlossen ist.",
       versionConflict: "Versionskonflikt",
     },
-    en: {
-      none: "None",
-      failedComposeProjectImport: "Failed to import compose project file.",
+    en: enText,
+    fr: {
+      ...enText,
+      none: "Aucun",
+      failedComposeProjectImport: "Echec de l'import du fichier projet compose.",
       composeProjectImported:
-        "Compose project imported ({imported} packages, {skipped} skipped).",
-      packageAlreadyImported: "Package {packageKey} is already imported.",
-      targetPackageImported: "Target package {packageKey} imported.",
-      dependencyImported: "Dependency {packageKey} imported.",
+        "Projet compose importe ({imported} paquets, {skipped} ignores).",
+      packageAlreadyImported: "Le paquet {packageKey} est deja importe.",
+      targetPackageImported: "Paquet cible {packageKey} importe.",
+      dependencyImported: "Dependance {packageKey} importee.",
       packageImportedButNotMissing:
-        "Package {packageKey} imported, but it was not listed as missing.",
-      targetPackageAlreadyImported: "Target package {packageKey} is already imported.",
-      importingPackage: "Importing package",
-      packageAlreadyImportedShort: "Package {packageKey} already imported.",
-      importedPackageShort: "Imported {packageKey}.",
+        "Paquet {packageKey} importe, mais il n'etait pas marque manquant.",
+      targetPackageAlreadyImported:
+        "Le paquet cible {packageKey} est deja importe.",
+      importingPackage: "Import du paquet",
+      packageAlreadyImportedShort: "Paquet {packageKey} deja importe.",
+      importedPackageShort: "{packageKey} importe.",
+      errorPrefix: "Erreur: {error}",
+      title: "Import de paquet",
+      importer: "Importeur FHIR",
+      cancelImport: "Annuler l'import",
+      projectsOverview: "Vue d'ensemble des projets",
+      home: "Accueil",
+      intro:
+        "Importez des paquets FHIR et toutes les dependances transitives dans le navigateur. L'assistant se met a jour apres chaque televersement.",
+      imported: "Importes: {count}",
+      missing: "Manquants: {count}",
+      definitions: "Definitions: {count}",
+      target: "Cible: {value}",
+      importSuccessful: "Import reussi",
+      importSuccessfulDescription:
+        "{targetKey} a ete importe avec succes. Vous pouvez lancer un nouvel import ou revenir a la vue des projets.",
+      goToProjectsOverview: "Aller a la vue des projets",
+      targetImported: "Cible importee: {value}",
+      targetPackage: "Paquet cible",
+      targetSetDescription:
+        "Cible definie. Telechargez le paquet puis televersez-le pour lancer l'import.",
+      targetUploadOrEnter:
+        "Televersez directement le paquet cible ou saisissez id + version.",
+      importStartedFor: "Import demarre pour:",
+      downloadPackages: "Telecharger (packages2.fhir.org)",
+      uploadTargetPackage: "Televerser le paquet cible (.tgz)",
+      uploadTargetHelper:
+        "Telechargez la cible depuis packages2.fhir.org, puis televersez-la ici pour demarrer l'import.",
+      uploadTargetHint: "Glisser-deposer le fichier .tgz cible ici",
+      uploadTargetOrCompose:
+        "Televerser le paquet cible (.tgz) ou un projet compose (.json/.zip)",
+      uploadTargetOrComposeHelper:
+        "Le paquet doit contenir package/package.json",
+      uploadTargetOrComposeHint:
+        "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
+      packageId: "ID du paquet",
+      version: "Version",
+      setTarget: "Definir la cible",
+      dependencies: "Dependances",
+      dependenciesDescription:
+        "Televersez les dependances manquantes dans n'importe quel ordre. Vous pouvez lancer plusieurs telechargements en parallele.",
+      uploadTargetToDetect:
+        "Televersez le paquet cible pour detecter ses dependances.",
+      allDependenciesResolved: "Toutes les dependances sont resolues.",
+      required: "Requis: {value}",
+      chooseVersion: "Choisir la version",
+      setVersion: "Definir la version",
+      clear: "Effacer",
+      download: "Telecharger:",
+      selectVersionForLink:
+        "Selectionnez une version pour generer un lien",
+      openLink: "Ouvrir le lien",
+      uploadPackageOrCompose:
+        "Televerser un paquet (.tgz) ou un projet compose (.json/.zip)",
+      uploadPackageOrComposeHelper:
+        "Televersez des paquets cibles ou de dependance. L'importeur detectera les correspondances.",
+      uploadPackageOrComposeHint:
+        "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
+      importHistory: "Historique d'import",
+      importHistoryDescription: "Paquets cibles importes precedemment.",
+      noImportsYet: "Aucun import pour le moment.",
+      importLog: "Journal d'import",
+      latestImportActions: "Dernieres actions pendant cet import.",
+      importLogHistory: "Historique du dernier import termine.",
+      showLog: "Afficher le journal ({count})",
+      noLogEntries: "Aucune entree de journal.",
+      conflicts: "Conflits",
+      conflictsDescription:
+        "Resolvez ces conflits avant la fin de l'import.",
+      versionConflict: "Conflit de version",
+      copyLink: "Copier le lien",
+    },
+    es: {
+      ...enText,
+      none: "Ninguno",
+      failedComposeProjectImport:
+        "Error al importar el archivo de proyecto compose.",
+      composeProjectImported:
+        "Proyecto compose importado ({imported} paquetes, {skipped} omitidos).",
+      packageAlreadyImported: "El paquete {packageKey} ya esta importado.",
+      targetPackageImported: "Paquete objetivo {packageKey} importado.",
+      dependencyImported: "Dependencia {packageKey} importada.",
+      packageImportedButNotMissing:
+        "Paquete {packageKey} importado, pero no estaba marcado como faltante.",
+      targetPackageAlreadyImported:
+        "El paquete objetivo {packageKey} ya esta importado.",
+      importingPackage: "Importando paquete",
+      packageAlreadyImportedShort: "Paquete {packageKey} ya importado.",
+      importedPackageShort: "{packageKey} importado.",
       errorPrefix: "Error: {error}",
-      title: "Package Import",
-      importer: "FHIR Importer",
-      cancelImport: "Cancel Import",
-      projectsOverview: "Projects Overview",
+      title: "Importacion de paquetes",
+      importer: "Importador FHIR",
+      cancelImport: "Cancelar importacion",
+      projectsOverview: "Resumen de proyectos",
+      home: "Inicio",
+      intro:
+        "Importa paquetes FHIR y todas las dependencias transitivas en el navegador. El asistente se actualiza tras cada carga.",
+      imported: "Importados: {count}",
+      missing: "Faltantes: {count}",
+      definitions: "Definiciones: {count}",
+      target: "Objetivo: {value}",
+      importSuccessful: "Importacion correcta",
+      importSuccessfulDescription:
+        "{targetKey} se importo correctamente. Puedes iniciar una nueva importacion o volver al resumen de proyectos.",
+      goToProjectsOverview: "Ir al resumen de proyectos",
+      targetImported: "Objetivo importado: {value}",
+      targetPackage: "Paquete objetivo",
+      targetSetDescription:
+        "Objetivo definido. Descarga el paquete y subelo para iniciar la importacion.",
+      targetUploadOrEnter:
+        "Sube el paquete objetivo directamente o introduce id + version.",
+      importStartedFor: "Importacion iniciada para:",
+      downloadPackages: "Descargar (packages2.fhir.org)",
+      uploadTargetPackage: "Subir paquete objetivo (.tgz)",
+      uploadTargetHelper:
+        "Descarga el objetivo desde packages2.fhir.org y subelo aqui para iniciar la importacion.",
+      uploadTargetHint: "Arrastra y suelta el archivo .tgz objetivo aqui",
+      uploadTargetOrCompose:
+        "Subir paquete objetivo (.tgz) o proyecto compose (.json/.zip)",
+      uploadTargetOrComposeHelper:
+        "El paquete debe contener package/package.json",
+      uploadTargetOrComposeHint:
+        "Arrastra y suelta archivos .tgz, .json o .zip aqui",
+      packageId: "ID del paquete",
+      version: "Version",
+      setTarget: "Definir objetivo",
+      dependencies: "Dependencias",
+      dependenciesDescription:
+        "Sube cualquier dependencia faltante en cualquier orden. Puedes iniciar varias descargas a la vez.",
+      uploadTargetToDetect:
+        "Sube el paquete objetivo para detectar sus dependencias.",
+      allDependenciesResolved: "Todas las dependencias resueltas.",
+      required: "Requerido: {value}",
+      chooseVersion: "Elegir version",
+      setVersion: "Definir version",
+      clear: "Limpiar",
+      download: "Descargar:",
+      selectVersionForLink:
+        "Selecciona una version para generar un enlace",
+      openLink: "Abrir enlace",
+      uploadPackageOrCompose:
+        "Subir paquete (.tgz) o proyecto compose (.json/.zip)",
+      uploadPackageOrComposeHelper:
+        "Sube paquetes objetivo o de dependencia. El importador detectara coincidencias.",
+      uploadPackageOrComposeHint:
+        "Arrastra y suelta archivos .tgz, .json o .zip aqui",
+      importHistory: "Historial de importacion",
+      importHistoryDescription: "Paquetes objetivo importados anteriormente.",
+      noImportsYet: "Aun no hay importaciones.",
+      importLog: "Registro de importacion",
+      latestImportActions: "Ultimas acciones durante esta importacion.",
+      importLogHistory: "Historial de la ultima importacion completada.",
+      showLog: "Mostrar registro ({count})",
+      noLogEntries: "No hay entradas en el registro.",
+      conflicts: "Conflictos",
+      conflictsDescription:
+        "Resuelve estos conflictos antes de completar la importacion.",
+      versionConflict: "Conflicto de version",
+      copyLink: "Copiar enlace",
+    },
+    it: {
+      ...enText,
+      none: "Nessuno",
+      failedComposeProjectImport:
+        "Importazione del file progetto compose non riuscita.",
+      composeProjectImported:
+        "Progetto compose importato ({imported} pacchetti, {skipped} saltati).",
+      packageAlreadyImported: "Il pacchetto {packageKey} e gia importato.",
+      targetPackageImported: "Pacchetto target {packageKey} importato.",
+      dependencyImported: "Dipendenza {packageKey} importata.",
+      packageImportedButNotMissing:
+        "Pacchetto {packageKey} importato, ma non era segnato come mancante.",
+      targetPackageAlreadyImported:
+        "Il pacchetto target {packageKey} e gia importato.",
+      importingPackage: "Importazione pacchetto",
+      packageAlreadyImportedShort: "Pacchetto {packageKey} gia importato.",
+      importedPackageShort: "{packageKey} importato.",
+      errorPrefix: "Errore: {error}",
+      title: "Importazione pacchetti",
+      importer: "Importatore FHIR",
+      cancelImport: "Annulla importazione",
+      projectsOverview: "Panoramica progetti",
       home: "Home",
       intro:
-        "Import FHIR packages and every transitive dependency entirely in the browser. The wizard updates after each upload.",
-      imported: "Imported: {count}",
-      missing: "Missing: {count}",
-      definitions: "Definitions: {count}",
+        "Importa pacchetti FHIR e tutte le dipendenze transitive nel browser. La procedura guidata si aggiorna dopo ogni caricamento.",
+      imported: "Importati: {count}",
+      missing: "Mancanti: {count}",
+      definitions: "Definizioni: {count}",
       target: "Target: {value}",
-      importSuccessful: "Import Successful",
+      importSuccessful: "Importazione riuscita",
       importSuccessfulDescription:
-        "{targetKey} was imported successfully. You can start a new import below or go to the Projects Overview.",
-      goToProjectsOverview: "Go to Projects Overview",
-      targetImported: "Target imported: {value}",
-      targetPackage: "Target Package",
+        "{targetKey} e stato importato con successo. Puoi avviare una nuova importazione o tornare alla panoramica progetti.",
+      goToProjectsOverview: "Vai alla panoramica progetti",
+      targetImported: "Target importato: {value}",
+      targetPackage: "Pacchetto target",
       targetSetDescription:
-        "Target set. Download the package and upload it to start the import.",
+        "Target impostato. Scarica il pacchetto e caricalo per avviare l'importazione.",
       targetUploadOrEnter:
-        "Upload the target package directly or enter id + version.",
-      importStartedFor: "Import started for:",
-      downloadPackages: "Download (packages2.fhir.org)",
-      copyLink: "Copy Link",
-      uploadTargetPackage: "Upload target package (.tgz)",
+        "Carica direttamente il pacchetto target o inserisci id + versione.",
+      importStartedFor: "Importazione avviata per:",
+      downloadPackages: "Scarica (packages2.fhir.org)",
+      uploadTargetPackage: "Carica pacchetto target (.tgz)",
       uploadTargetHelper:
-        "Download the target from packages2.fhir.org, then upload it here to start the import.",
-      uploadTargetHint: "Drag & drop the target .tgz file here",
+        "Scarica il target da packages2.fhir.org, poi caricalo qui per avviare l'importazione.",
+      uploadTargetHint: "Trascina qui il file .tgz target",
       uploadTargetOrCompose:
-        "Upload target package (.tgz) or compose project (.json/.zip)",
+        "Carica pacchetto target (.tgz) o progetto compose (.json/.zip)",
       uploadTargetOrComposeHelper:
-        "The package must contain package/package.json",
-      uploadTargetOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
-      packageId: "Package ID",
-      version: "Version",
-      setTarget: "Set Target",
-      dependencies: "Dependencies",
+        "Il pacchetto deve contenere package/package.json",
+      uploadTargetOrComposeHint:
+        "Trascina qui file .tgz, .json o .zip",
+      packageId: "ID pacchetto",
+      version: "Versione",
+      setTarget: "Imposta target",
+      dependencies: "Dipendenze",
       dependenciesDescription:
-        "Upload any missing dependency in any order. You can start multiple downloads at once.",
+        "Carica qualsiasi dipendenza mancante in qualsiasi ordine. Puoi avviare piu download contemporaneamente.",
       uploadTargetToDetect:
-        "Upload the target package to detect its dependencies.",
-      allDependenciesResolved: "All dependencies resolved.",
-      required: "Required: {value}",
-      chooseVersion: "Choose version",
-      setVersion: "Set Version",
-      clear: "Clear",
-      download: "Download:",
-      selectVersionForLink: "Select a version to generate a link",
-      openLink: "Open Link",
+        "Carica il pacchetto target per rilevare le sue dipendenze.",
+      allDependenciesResolved: "Tutte le dipendenze risolte.",
+      required: "Richiesto: {value}",
+      chooseVersion: "Scegli versione",
+      setVersion: "Imposta versione",
+      clear: "Pulisci",
+      download: "Scarica:",
+      selectVersionForLink: "Seleziona una versione per generare un link",
+      openLink: "Apri link",
       uploadPackageOrCompose:
-        "Upload package (.tgz) or compose project (.json/.zip)",
+        "Carica pacchetto (.tgz) o progetto compose (.json/.zip)",
       uploadPackageOrComposeHelper:
-        "Upload target or dependency packages. The importer will detect matches.",
-      uploadPackageOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
-      importHistory: "Import History",
-      importHistoryDescription: "Previously imported target packages.",
-      noImportsYet: "No imports yet.",
-      importLog: "Import Log",
-      latestImportActions: "Latest actions during this import.",
-      importLogHistory: "History of the last completed import.",
-      showLog: "Show log ({count})",
-      noLogEntries: "No log entries yet.",
-      conflicts: "Conflicts",
-      conflictsDescription: "Resolve these before the import is complete.",
-      versionConflict: "Version conflict",
+        "Carica pacchetti target o di dipendenza. L'importatore rilevera le corrispondenze.",
+      uploadPackageOrComposeHint:
+        "Trascina qui file .tgz, .json o .zip",
+      importHistory: "Cronologia importazioni",
+      importHistoryDescription: "Pacchetti target importati in precedenza.",
+      noImportsYet: "Nessuna importazione.",
+      importLog: "Log importazione",
+      latestImportActions: "Ultime azioni durante questa importazione.",
+      importLogHistory: "Cronologia dell'ultima importazione completata.",
+      showLog: "Mostra log ({count})",
+      noLogEntries: "Nessuna voce di log.",
+      conflicts: "Conflitti",
+      conflictsDescription:
+        "Risolvi questi conflitti prima del completamento dell'importazione.",
+      versionConflict: "Conflitto di versione",
+      copyLink: "Copia link",
     },
 	  });
 
@@ -576,7 +838,6 @@ export const ImportWizard = () => {
                 </Button>
               ) : null
             ) : null}
-            <LanguageSwitcher />
             <Button asChild variant="ghost" size="sm">
               <Link href="/">{text.projectsOverview}</Link>
             </Button>
