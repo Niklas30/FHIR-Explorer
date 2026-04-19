@@ -11,7 +11,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, Moon, Settings2, Sun, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Moon,
+  Settings2,
+  Sun,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 
 type EditorHeaderProps = {
   datasetName: string;
@@ -25,6 +34,10 @@ type EditorHeaderProps = {
   zoomLabel: string;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  canNavigateBack: boolean;
+  canNavigateForward: boolean;
+  onNavigateBack: () => void;
+  onNavigateForward: () => void;
 };
 
 export const EditorHeader = ({
@@ -39,6 +52,10 @@ export const EditorHeader = ({
   zoomLabel,
   onZoomIn,
   onZoomOut,
+  canNavigateBack,
+  canNavigateForward,
+  onNavigateBack,
+  onNavigateForward,
 }: EditorHeaderProps) => {
   return (
     <header className="border-b border-foreground/10 bg-background/90 px-6 py-4">
@@ -58,6 +75,26 @@ export const EditorHeader = ({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label="Previous resource"
+            title="Previous resource"
+            disabled={!canNavigateBack}
+            onClick={onNavigateBack}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label="Next resource"
+            title="Next resource"
+            disabled={!canNavigateForward}
+            onClick={onNavigateForward}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
           <Button asChild variant="outline">
             <Link href="/">Back to projects</Link>
           </Button>
