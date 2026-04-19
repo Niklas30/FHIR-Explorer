@@ -9,6 +9,7 @@ import { EditorCommandPalette } from "@/components/editor/commands/EditorCommand
 import { createEditorCommands } from "@/components/editor/commands/create-editor-commands";
 import { useEditorCommandShortcuts } from "@/components/editor/commands/use-editor-command-shortcuts";
 import { DatasetDiagramDialog } from "@/components/editor/DatasetDiagramDialog";
+import { DatasetInfoDialog } from "@/components/editor/DatasetInfoDialog";
 import { DependencyTreeDialog } from "@/components/editor/DependencyTreeDialog";
 import { EditorHeader } from "@/components/editor/EditorHeader";
 import { ExportDialog } from "@/components/editor/ExportDialog";
@@ -24,17 +25,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DatasetRecord } from "@/lib/datasets/storage";
@@ -69,6 +59,8 @@ import JSZip from "jszip";
 type DatasetEditorProps = {
   datasetId: string;
 };
+
+const EMPTY_PACKAGES: PackageRecord[] = [];
 
 type ResourceNavigationState = {
   history: string[];
@@ -164,8 +156,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [isDatasetInfoOpen, setDatasetInfoOpen] = useState(false);
   const [dependencyTreeRootKey, setDependencyTreeRootKey] = useState<string | null>(null);
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [datasetNameDraft, setDatasetNameDraft] = useState("");
-  const [datasetProjectKeyDraft, setDatasetProjectKeyDraft] = useState("");
   const [exportScope, setExportScope] = useState<"dataset" | "project">("dataset");
   const [exportFormat, setExportFormat] = useState<"json" | "zip">("json");
   const [exportDatasetMode, setExportDatasetMode] = useState<
@@ -179,7 +169,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
   const [panelLayout, setPanelLayout] = useState<Layout | null>(null);
 
   const { snapshot, getResourcePayloadsByPackageKeys } = useImporter();
-  const packages = snapshot?.packages ?? [];
+  const packages = snapshot?.packages ?? EMPTY_PACKAGES;
   const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
   const projectSuggestions = useMemo(() => {
     return [...packages]
@@ -365,10 +355,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       loadingFallback: "Caricamento editor…",
     },
   });
-  const hasSuggestedProject = useMemo(
-    () => projectSuggestions.some((project) => project.key === datasetProjectKeyDraft),
-    [projectSuggestions, datasetProjectKeyDraft]
-  );
 
   const sortResources = (items: DatasetResource[]) => {
     return [...items].sort((a, b) => {
@@ -393,12 +379,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     const name = dataset?.name?.trim();
     document.title = name ? `${text.titleEditor} - ${name}` : text.titleEditor;
   }, [dataset?.name, text.titleEditor]);
-
-  useEffect(() => {
-    if (!isDatasetInfoOpen || !dataset) return;
-    setDatasetNameDraft(dataset.name);
-    setDatasetProjectKeyDraft(dataset.projectKey);
-  }, [isDatasetInfoOpen, dataset]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -434,7 +414,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     if (typeof window === "undefined") return;
     if (!viewSettingsLoaded) return;
     window.localStorage.setItem("fhir-explorer-zoom", String(zoomPercent));
-  }, [zoomPercent]);
+  }, [zoomPercent, viewSettingsLoaded]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -594,18 +574,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
 
   const handleOpenDatasetInfo = () => {
     if (!dataset) return;
-    setDatasetNameDraft(dataset.name);
-    setDatasetProjectKeyDraft(dataset.projectKey);
     setDatasetInfoOpen(true);
-  };
-
-  const handleOpenDependencyTree = () => {
-    const key = datasetProjectKeyDraft.trim();
-    if (!key) {
-      toast.error(text.projectKeyRequired);
-      return;
-    }
-    setDependencyTreeRootKey(key);
   };
 
   const handleFocusFormSearch = () => {
@@ -620,28 +589,17 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     setZoomPercent((prev) => Math.max(70, prev - 5));
   };
 
-  const handleSaveDatasetInfo = () => {
+  const handleSaveDatasetInfo = (payload: { id: string; name: string; projectKey: string }) => {
     if (!dataset) return;
-    const nextName = datasetNameDraft.trim();
-    const nextProjectKey = datasetProjectKeyDraft.trim();
-    if (!nextName) {
-      toast.error(text.datasetNameRequired);
-      return;
-    }
-    if (!nextProjectKey) {
-      toast.error(text.projectKeyRequired);
-      return;
-    }
+    if (dataset.id !== payload.id) return;
     const nextDataset: DatasetRecord = {
       ...dataset,
-      name: nextName,
-      projectKey: nextProjectKey,
+      name: payload.name,
+      projectKey: payload.projectKey,
     };
     const nextDatasets = upsertDataset(nextDataset);
     setDataset(nextDataset);
     setDatasets(nextDatasets);
-    setDatasetInfoOpen(false);
-    toast.success(text.datasetInfoUpdated);
   };
 
   const editorCommands = createEditorCommands({
@@ -1107,91 +1065,14 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
           profiles={profiles}
           onCreate={handleCreateResource}
         />
-        <Dialog open={isDatasetInfoOpen} onOpenChange={setDatasetInfoOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{text.datasetInfoTitle}</DialogTitle>
-              <DialogDescription>{text.datasetInfoDescription}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="dataset-info-name">{text.datasetNameLabel}</Label>
-                <Input
-                  id="dataset-info-name"
-                  value={datasetNameDraft}
-                  onChange={(event) => setDatasetNameDraft(event.target.value)}
-                  placeholder={text.datasetNamePlaceholder}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dataset-info-project">{text.projectKeyLabel}</Label>
-                <select
-                  id="dataset-info-project"
-                  className="h-9 rounded-md border border-foreground/20 bg-background px-3 text-sm"
-                  value={
-                    hasSuggestedProject
-                      ? datasetProjectKeyDraft
-                      : "__custom_project_key__"
-                  }
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value === "__custom_project_key__") {
-                      if (hasSuggestedProject) {
-                        setDatasetProjectKeyDraft("");
-                      }
-                      return;
-                    }
-                    setDatasetProjectKeyDraft(value);
-                  }}
-                >
-                  {projectSuggestions.length === 0 ? (
-                    <option value="__custom_project_key__">
-                      {text.noProjectsAvailable}
-                    </option>
-                  ) : null}
-                  {projectSuggestions.map((project) => (
-                    <option key={project.key} value={project.key}>
-                      {project.label}
-                    </option>
-                  ))}
-                  <option value="__custom_project_key__">{text.customProjectKey}</option>
-                </select>
-                {!hasSuggestedProject ? (
-                  <Input
-                    value={datasetProjectKeyDraft}
-                    onChange={(event) => setDatasetProjectKeyDraft(event.target.value)}
-                    placeholder={text.projectKeyPlaceholder}
-                  />
-                ) : null}
-                <p className="text-xs text-muted-foreground">{text.projectKeyHint}</p>
-                <div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleOpenDependencyTree}
-                  >
-                    {text.showDependencyTree}
-                  </Button>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dataset-info-id">{text.datasetIdLabel}</Label>
-                <Input id="dataset-info-id" value={dataset.id} readOnly />
-                <p className="text-xs text-muted-foreground">{text.datasetIdReadonlyHint}</p>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {text.createdPrefix} {new Date(dataset.createdAt).toLocaleString()}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDatasetInfoOpen(false)}>
-                {text.cancel}
-              </Button>
-              <Button onClick={handleSaveDatasetInfo}>{text.save}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DatasetInfoDialog
+          open={isDatasetInfoOpen}
+          onOpenChange={setDatasetInfoOpen}
+          dataset={dataset}
+          projectSuggestions={projectSuggestions}
+          onOpenDependencyTree={setDependencyTreeRootKey}
+          onSave={handleSaveDatasetInfo}
+        />
         <EditorCommandPalette
           open={isCommandPaletteOpen}
           onOpenChange={setCommandPaletteOpen}
