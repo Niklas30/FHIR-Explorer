@@ -9,6 +9,7 @@ import { clearDatasets, loadDatasets, upsertDataset } from "@/lib/datasets/stora
 import { clearAllDatasetResources } from "@/lib/datasets/content";
 import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { EditorOverviewLayout } from "@/components/overview/EditorOverviewLayout";
 import type { OverviewViewMode, OverviewText } from "@/components/overview/types";
 import {
@@ -305,7 +306,7 @@ export default function EditorOverviewPage() {
       setSelectedProjectKey(null);
       toast.success(text.localDataCleared);
     } catch (error) {
-      console.error("Failed to clear local data", error);
+      logger.error("Failed to clear local data", { error });
       toast.error(text.failedClearLocalData);
     }
   };

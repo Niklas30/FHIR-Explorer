@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { byLocale } from "@/lib/i18n/select";
 import { isDevModeEnabled } from "@/lib/dev-mode";
+import { logger } from "@/lib/logger";
 
 export default function DatasetEditorError({
   error,
@@ -74,7 +75,7 @@ export default function DatasetEditorError({
   });
 
   useEffect(() => {
-    console.error(error);
+    logger.error("Unhandled editor route error", { error, digest: error.digest });
   }, [error]);
 
   const errorDetails = useMemo(() => {

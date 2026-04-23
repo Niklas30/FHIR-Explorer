@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { hydrateDatasetResources, saveDatasetResources } from "@/lib/datasets/content";
 import { upsertDataset, type DatasetRecord } from "@/lib/datasets/storage";
+import { logger } from "@/lib/logger";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
@@ -53,7 +54,7 @@ const parseComposeZip = async (file: File): Promise<ComposeProjectExport | null>
       datasets,
     };
   } catch (err) {
-    console.error(err);
+    logger.error("Failed to parse compose project zip", { error: err });
     return null;
   }
 };
@@ -136,8 +137,7 @@ export const maybeImportComposeProject = async ({
     }
     return await importComposeBundle({ bundle: parsed, importComposeProject, text, format });
   } catch (err) {
-    console.error(err);
+    logger.error("Failed to import compose project bundle", { error: err });
     return text.failedComposeProjectImport;
   }
 };
-

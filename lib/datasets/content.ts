@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 export type DatasetResource = {
   id: string;
   resourceType: string;
@@ -41,7 +43,7 @@ const loadStore = (): DatasetResourceStore => {
     }
     return store;
   } catch (error) {
-    console.error("Failed to load dataset resources", error);
+    logger.error("Failed to load dataset resources", { error });
     return {};
   }
 };
@@ -51,7 +53,7 @@ const saveStore = (store: DatasetResourceStore) => {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   } catch (error) {
-    console.error("Failed to save dataset resources", error);
+    logger.error("Failed to save dataset resources", { error });
   }
 };
 
@@ -121,7 +123,7 @@ export const clearAllDatasetResources = () => {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error("Failed to clear dataset resources", error);
+    logger.error("Failed to clear dataset resources", { error });
   }
 };
 

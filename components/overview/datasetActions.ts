@@ -2,6 +2,7 @@
 
 import JSZip from "jszip";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import {
   removeDataset,
@@ -127,7 +128,7 @@ export const importDatasetAction = async ({
     toast.success(text.datasetImported);
   } catch (error) {
     toast.error(text.datasetImportFailed);
-    console.error(error);
+    logger.error("Dataset import failed", { error });
   }
 };
 

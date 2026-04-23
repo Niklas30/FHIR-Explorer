@@ -5,6 +5,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { byLocale } from "@/lib/i18n/select";
+import { logger } from "@/lib/logger";
 
 const defaultAccept = ".tgz,application/gzip,application/x-gzip";
 
@@ -134,7 +135,7 @@ export const FileDropzone = ({
       handleFiles([toClipboardFile(clipboardText, clipboardFilename)]);
       setClipboardStatus(i18n.clipboardImportedJson);
     } catch (error) {
-      console.error(error);
+      logger.warn("Clipboard access failed", { error });
       setClipboardStatus(i18n.clipboardBlocked);
     }
   };
