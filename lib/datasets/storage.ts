@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 export type DatasetRecord = {
   id: string;
   name: string;
@@ -27,7 +29,7 @@ export const loadDatasets = (): DatasetRecord[] => {
       )
       .sort(sortByNewest);
   } catch (error) {
-    console.error("Failed to load datasets", error);
+    logger.error("Failed to load datasets", { error });
     return [];
   }
 };
@@ -37,7 +39,7 @@ export const saveDatasets = (datasets: DatasetRecord[]) => {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(datasets));
   } catch (error) {
-    console.error("Failed to save datasets", error);
+    logger.error("Failed to save datasets", { error });
   }
 };
 
@@ -67,6 +69,6 @@ export const clearDatasets = () => {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error("Failed to clear datasets", error);
+    logger.error("Failed to clear datasets", { error });
   }
 };

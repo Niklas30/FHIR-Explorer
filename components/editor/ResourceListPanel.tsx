@@ -18,6 +18,7 @@ import { buildFieldDefinitions, resolveProfileForResource } from "@/lib/fhir-edi
 import type { FhirRegistry } from "@/lib/fhir-editor/registry";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
 import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
+import { logger } from "@/lib/logger";
 
 type ResourceListPanelProps = {
   resources: DatasetResource[];
@@ -261,7 +262,7 @@ export const ResourceListPanel = ({
           locale,
         }).filter((issue) => issue.severity === "error").length;
       } catch (error) {
-        console.error("Failed to validate resource", resource.id, error);
+        logger.error("Failed to validate resource", { error, resourceId: resource.id });
       }
 
       const cacheEntry = {
