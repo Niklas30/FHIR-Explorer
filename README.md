@@ -64,6 +64,33 @@ Tip: There are alternate scripts using Turbo mode:
 npm run dev:turbo
 ```
 
+## Docker
+
+### Production (container)
+
+Build and run the production image:
+
+```bash
+docker build -t health-compose-editor .
+docker run --rm -p 3000:3000 health-compose-editor
+```
+
+Then open `http://localhost:3000`.
+
+### Docker Compose
+
+Production:
+
+```bash
+docker compose up --build
+```
+
+Development (hot reload, bind mount):
+
+```bash
+docker compose --profile dev up --build dev
+```
+
 ## Scripts
 
 - `npm run dev` – start dev server (Webpack)
