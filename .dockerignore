@@ -1,0 +1,16 @@
+.git
+.gitignore
+.backup
+.next
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.env*
+coverage
+out
+build
+sample projects
+tsconfig.tsbuildinfo
+*.tgz
