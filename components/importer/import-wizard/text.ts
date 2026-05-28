@@ -6,9 +6,9 @@ import { byLocale } from "@/lib/i18n/select";
 
 const EN_TEXT = {
   none: "None",
-  failedComposeProjectImport: "Failed to import compose project file.",
-  composeProjectImported:
-    "Compose project imported ({imported} packages, {skipped} skipped).",
+  failedFhirExplorerProjectImport: "Failed to import FHIR Explorer project file.",
+  fhirExplorerProjectImported:
+    "FHIR Explorer project imported ({imported} packages, {skipped} skipped).",
   packageAlreadyImported: "Package {packageKey} is already imported.",
   targetPackageImported: "Target package {packageKey} imported.",
   dependencyImported: "Dependency {packageKey} imported.",
@@ -46,9 +46,9 @@ const EN_TEXT = {
   uploadTargetHelper:
     "Download the target from packages2.fhir.org, then upload it here to start the import.",
   uploadTargetHint: "Drag & drop the target .tgz file here",
-  uploadTargetOrCompose: "Upload target package (.tgz) or compose project (.json/.zip)",
-  uploadTargetOrComposeHelper: "The package must contain package/package.json",
-  uploadTargetOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+  uploadTargetOrExplorer: "Upload target package (.tgz) or FHIR Explorer project (.json/.zip)",
+  uploadTargetOrExplorerHelper: "The package must contain package/package.json",
+  uploadTargetOrExplorerHint: "Drag & drop .tgz, .json, or .zip files here",
   packageId: "Package ID",
   version: "Version",
   setTarget: "Set Target",
@@ -64,10 +64,10 @@ const EN_TEXT = {
   download: "Download:",
   selectVersionForLink: "Select a version to generate a link",
   openLink: "Open Link",
-  uploadPackageOrCompose: "Upload package (.tgz) or compose project (.json/.zip)",
-  uploadPackageOrComposeHelper:
+  uploadPackageOrExplorer: "Upload package (.tgz) or FHIR Explorer project (.json/.zip)",
+  uploadPackageOrExplorerHelper:
     "Upload target or dependency packages. The importer will detect matches.",
-  uploadPackageOrComposeHint: "Drag & drop .tgz, .json, or .zip files here",
+  uploadPackageOrExplorerHint: "Drag & drop .tgz, .json, or .zip files here",
   importHistory: "Import History",
   importHistoryDescription: "Previously imported target packages.",
   noImportsYet: "No imports yet.",
@@ -84,9 +84,9 @@ const EN_TEXT = {
 const LOCALE_TEXT = {
   de: {
     none: "Keine",
-    failedComposeProjectImport: "Import der Compose-Projektdatei fehlgeschlagen.",
-    composeProjectImported:
-      "Compose-Projekt importiert ({imported} Pakete, {skipped} übersprungen).",
+    failedFhirExplorerProjectImport: "Import der FHIR-Explorer-Projektdatei fehlgeschlagen.",
+    fhirExplorerProjectImported:
+      "FHIR-Explorer-Projekt importiert ({imported} Pakete, {skipped} übersprungen).",
     packageAlreadyImported: "Paket {packageKey} ist bereits importiert.",
     targetPackageImported: "Zielpaket {packageKey} importiert.",
     dependencyImported: "Abhängigkeit {packageKey} importiert.",
@@ -124,9 +124,9 @@ const LOCALE_TEXT = {
     uploadTargetHelper:
       "Lade das Ziel von packages2.fhir.org herunter und lade es hier hoch, um den Import zu starten.",
     uploadTargetHint: "Ziehe die Ziel-.tgz-Datei hier hinein",
-    uploadTargetOrCompose: "Zielpaket (.tgz) oder Compose-Projekt (.json/.zip) hochladen",
-    uploadTargetOrComposeHelper: "Das Paket muss package/package.json enthalten",
-    uploadTargetOrComposeHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
+    uploadTargetOrExplorer: "Zielpaket (.tgz) oder FHIR-Explorer-Projekt (.json/.zip) hochladen",
+    uploadTargetOrExplorerHelper: "Das Paket muss package/package.json enthalten",
+    uploadTargetOrExplorerHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
     packageId: "Paket-ID",
     version: "Version",
     setTarget: "Ziel setzen",
@@ -143,10 +143,10 @@ const LOCALE_TEXT = {
     download: "Download:",
     selectVersionForLink: "Wähle eine Version, um einen Link zu erzeugen",
     openLink: "Link öffnen",
-    uploadPackageOrCompose: "Paket (.tgz) oder Compose-Projekt (.json/.zip) hochladen",
-    uploadPackageOrComposeHelper:
+    uploadPackageOrExplorer: "Paket (.tgz) oder FHIR-Explorer-Projekt (.json/.zip) hochladen",
+    uploadPackageOrExplorerHelper:
       "Lade Ziel- oder Abhängigkeitspakete hoch. Der Importer erkennt passende Pakete automatisch.",
-    uploadPackageOrComposeHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
+    uploadPackageOrExplorerHint: "Ziehe .tgz-, .json- oder .zip-Dateien hier hinein",
     importHistory: "Import-Historie",
     importHistoryDescription: "Bisher importierte Zielpakete.",
     noImportsYet: "Noch keine Importe.",
@@ -163,8 +163,8 @@ const LOCALE_TEXT = {
   fr: {
     ...EN_TEXT,
     none: "Aucun",
-    failedComposeProjectImport: "Echec de l'import du fichier projet compose.",
-    composeProjectImported:
+    failedFhirExplorerProjectImport: "Echec de l'import du fichier projet FHIR Explorer.",
+    fhirExplorerProjectImported:
       "Projet compose importe ({imported} paquets, {skipped} ignores).",
     packageAlreadyImported: "Le paquet {packageKey} est deja importe.",
     targetPackageImported: "Paquet cible {packageKey} importe.",
@@ -202,9 +202,9 @@ const LOCALE_TEXT = {
     uploadTargetHelper:
       "Telechargez la cible depuis packages2.fhir.org, puis televersez-la ici pour demarrer l'import.",
     uploadTargetHint: "Glisser-deposer le fichier .tgz cible ici",
-    uploadTargetOrCompose: "Televerser le paquet cible (.tgz) ou un projet compose (.json/.zip)",
-    uploadTargetOrComposeHelper: "Le paquet doit contenir package/package.json",
-    uploadTargetOrComposeHint: "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
+    uploadTargetOrExplorer: "Televerser le paquet cible (.tgz) ou un projet FHIR Explorer (.json/.zip)",
+    uploadTargetOrExplorerHelper: "Le paquet doit contenir package/package.json",
+    uploadTargetOrExplorerHint: "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
     packageId: "ID du paquet",
     version: "Version",
     setTarget: "Definir la cible",
@@ -220,10 +220,10 @@ const LOCALE_TEXT = {
     download: "Telecharger:",
     selectVersionForLink: "Selectionnez une version pour generer un lien",
     openLink: "Ouvrir le lien",
-    uploadPackageOrCompose: "Televerser un paquet (.tgz) ou un projet compose (.json/.zip)",
-    uploadPackageOrComposeHelper:
+    uploadPackageOrExplorer: "Televerser un paquet (.tgz) ou un projet FHIR Explorer (.json/.zip)",
+    uploadPackageOrExplorerHelper:
       "Televersez des paquets cibles ou de dependance. L'importeur detectera les correspondances.",
-    uploadPackageOrComposeHint: "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
+    uploadPackageOrExplorerHint: "Glisser-deposer des fichiers .tgz, .json ou .zip ici",
     importHistory: "Historique d'import",
     importHistoryDescription: "Paquets cibles importes precedemment.",
     noImportsYet: "Aucun import pour le moment.",
@@ -240,8 +240,8 @@ const LOCALE_TEXT = {
   es: {
     ...EN_TEXT,
     none: "Ninguno",
-    failedComposeProjectImport: "Error al importar el archivo de proyecto compose.",
-    composeProjectImported:
+    failedFhirExplorerProjectImport: "Error al importar el archivo de proyecto FHIR Explorer.",
+    fhirExplorerProjectImported:
       "Proyecto compose importado ({imported} paquetes, {skipped} omitidos).",
     packageAlreadyImported: "El paquete {packageKey} ya esta importado.",
     targetPackageImported: "Paquete objetivo {packageKey} importado.",
@@ -279,9 +279,9 @@ const LOCALE_TEXT = {
     uploadTargetHelper:
       "Descarga el objetivo desde packages2.fhir.org y subelo aqui para iniciar la importacion.",
     uploadTargetHint: "Arrastra y suelta el archivo .tgz objetivo aqui",
-    uploadTargetOrCompose: "Subir paquete objetivo (.tgz) o proyecto compose (.json/.zip)",
-    uploadTargetOrComposeHelper: "El paquete debe contener package/package.json",
-    uploadTargetOrComposeHint: "Arrastra y suelta archivos .tgz, .json o .zip aqui",
+    uploadTargetOrExplorer: "Subir paquete objetivo (.tgz) o proyecto FHIR Explorer (.json/.zip)",
+    uploadTargetOrExplorerHelper: "El paquete debe contener package/package.json",
+    uploadTargetOrExplorerHint: "Arrastra y suelta archivos .tgz, .json o .zip aqui",
     packageId: "ID del paquete",
     version: "Version",
     setTarget: "Definir objetivo",
@@ -297,10 +297,10 @@ const LOCALE_TEXT = {
     download: "Descargar:",
     selectVersionForLink: "Selecciona una version para generar un enlace",
     openLink: "Abrir enlace",
-    uploadPackageOrCompose: "Subir paquete (.tgz) o proyecto compose (.json/.zip)",
-    uploadPackageOrComposeHelper:
+    uploadPackageOrExplorer: "Subir paquete (.tgz) o proyecto FHIR Explorer (.json/.zip)",
+    uploadPackageOrExplorerHelper:
       "Sube paquetes objetivo o de dependencia. El importador detectara coincidencias.",
-    uploadPackageOrComposeHint: "Arrastra y suelta archivos .tgz, .json o .zip aqui",
+    uploadPackageOrExplorerHint: "Arrastra y suelta archivos .tgz, .json o .zip aqui",
     importHistory: "Historial de importacion",
     importHistoryDescription: "Paquetes objetivo importados anteriormente.",
     noImportsYet: "Aun no hay importaciones.",
@@ -317,8 +317,8 @@ const LOCALE_TEXT = {
   it: {
     ...EN_TEXT,
     none: "Nessuno",
-    failedComposeProjectImport: "Importazione del file progetto compose non riuscita.",
-    composeProjectImported:
+    failedFhirExplorerProjectImport: "Importazione del file progetto FHIR Explorer non riuscita.",
+    fhirExplorerProjectImported:
       "Progetto compose importato ({imported} pacchetti, {skipped} saltati).",
     packageAlreadyImported: "Il pacchetto {packageKey} e gia importato.",
     targetPackageImported: "Pacchetto target {packageKey} importato.",
@@ -356,9 +356,9 @@ const LOCALE_TEXT = {
     uploadTargetHelper:
       "Scarica il target da packages2.fhir.org, poi caricalo qui per avviare l'importazione.",
     uploadTargetHint: "Trascina qui il file .tgz target",
-    uploadTargetOrCompose: "Carica pacchetto target (.tgz) o progetto compose (.json/.zip)",
-    uploadTargetOrComposeHelper: "Il pacchetto deve contenere package/package.json",
-    uploadTargetOrComposeHint: "Trascina qui file .tgz, .json o .zip",
+    uploadTargetOrExplorer: "Carica pacchetto target (.tgz) o progetto FHIR Explorer (.json/.zip)",
+    uploadTargetOrExplorerHelper: "Il pacchetto deve contenere package/package.json",
+    uploadTargetOrExplorerHint: "Trascina qui file .tgz, .json o .zip",
     packageId: "ID pacchetto",
     version: "Versione",
     setTarget: "Imposta target",
@@ -374,10 +374,10 @@ const LOCALE_TEXT = {
     download: "Scarica:",
     selectVersionForLink: "Seleziona una versione per generare un link",
     openLink: "Apri link",
-    uploadPackageOrCompose: "Carica pacchetto (.tgz) o progetto compose (.json/.zip)",
-    uploadPackageOrComposeHelper:
+    uploadPackageOrExplorer: "Carica pacchetto (.tgz) o progetto FHIR Explorer (.json/.zip)",
+    uploadPackageOrExplorerHelper:
       "Carica pacchetti target o di dipendenza. L'importatore rilevera le corrispondenze.",
-    uploadPackageOrComposeHint: "Trascina qui file .tgz, .json o .zip",
+    uploadPackageOrExplorerHint: "Trascina qui file .tgz, .json o .zip",
     importHistory: "Cronologia importazioni",
     importHistoryDescription: "Pacchetti target importati in precedenza.",
     noImportsYet: "Nessuna importazione.",

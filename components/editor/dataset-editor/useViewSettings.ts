@@ -30,12 +30,12 @@ export const useDatasetEditorViewSettings = (layoutStorageKey: string) => {
     if (typeof window === "undefined") return;
     setLoaded(false);
 
-    const storedZoom = Number(window.localStorage.getItem("health-compose-zoom"));
+    const storedZoom = Number(window.localStorage.getItem("fhir-explorer-zoom"));
     if (!Number.isNaN(storedZoom) && storedZoom >= 70 && storedZoom <= 140) {
       setZoomPercent(storedZoom);
     }
 
-    const storedTheme = window.localStorage.getItem("health-compose-theme");
+    const storedTheme = window.localStorage.getItem("fhir-explorer-theme");
     if (storedTheme === "light" || storedTheme === "dark") {
       setTheme(storedTheme);
     }
@@ -47,7 +47,7 @@ export const useDatasetEditorViewSettings = (layoutStorageKey: string) => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!loaded) return;
-    window.localStorage.setItem("health-compose-zoom", String(zoomPercent));
+    window.localStorage.setItem("fhir-explorer-zoom", String(zoomPercent));
   }, [loaded, zoomPercent]);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export const useDatasetEditorViewSettings = (layoutStorageKey: string) => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     if (typeof window === "undefined") return;
     if (!loaded) return;
-    window.localStorage.setItem("health-compose-theme", theme);
+    window.localStorage.setItem("fhir-explorer-theme", theme);
   }, [loaded, theme]);
 
   const persistPanelLayout = (layout: Layout) => {

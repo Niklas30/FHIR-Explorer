@@ -72,5 +72,5 @@ See `SECURITY.md` for reporting instructions.
 
 ## Contact
 
-- General OSS / contributions: oss@health-compose.com
+- General OSS / contributions: oss@fhir-explorer.com
 

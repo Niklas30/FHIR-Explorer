@@ -5,9 +5,9 @@ import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "FHIR Compose",
-  description: "FHIR Compose projects, importer, and editor.",
-  applicationName: "FHIR Compose",
+  title: "FHIR Explorer",
+  description: "FHIR Explorer projects, importer, and editor.",
+  applicationName: "FHIR Explorer",
   icons: {
     icon: [{ url: "/favicon.ico" }],
     apple: [{ url: "/apple-icon.png" }],

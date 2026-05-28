@@ -139,11 +139,11 @@ export const DependenciesCard = ({
 
         {missing.length > 0 ? (
           <FileDropzone
-            label={text.uploadPackageOrCompose}
-            helperText={text.uploadPackageOrComposeHelper}
+            label={text.uploadPackageOrExplorer}
+            helperText={text.uploadPackageOrExplorerHelper}
             disabled={!currentTarget || isUploading}
             accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-            hint={text.uploadPackageOrComposeHint}
+            hint={text.uploadPackageOrExplorerHint}
             onFiles={onUpload}
           />
         ) : null}

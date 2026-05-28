@@ -50,7 +50,7 @@ const assertFixtureTree = async (targetRoot: string) => {
 export default async function setupFixtures() {
   const fixtureRoot = path.resolve(
     os.tmpdir(),
-    `health-compose-editor-test-fixtures-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    `fhir-explorer-test-fixtures-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   );
   await mkdir(fixtureRoot, { recursive: true });
   process.env.FHIR_TEST_FIXTURE_ROOT = fixtureRoot;

@@ -8,7 +8,7 @@ import type {
   ImportResult,
   ResourcePayload,
 } from "@/lib/fhir-importer/types";
-import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
+import type { FhirExplorerProjectExport } from "@/lib/fhir-importer/fhir-explorer";
 import { ImporterClient } from "@/lib/fhir-importer/client";
 import { registryStrategies } from "@/lib/fhir-importer/registry";
 import { byLocale } from "@/lib/i18n/select";
@@ -28,7 +28,7 @@ type UseImporterResult = {
   addImportHistory: (targetKey: string) => Promise<void>;
   deletePackage: (packageKey: string) => Promise<void>;
   clearAllData: () => Promise<void>;
-  importComposeProject: (bundle: ComposeProjectExport) => Promise<{
+  importFhirExplorerProject: (bundle: FhirExplorerProjectExport) => Promise<{
     imported: number;
     skipped: number;
   } | null>;
@@ -52,31 +52,31 @@ export const useImporter = (): UseImporterResult => {
       failedToLoadState: "Importer-Status konnte nicht geladen werden",
       importFailed: "Import fehlgeschlagen",
       clientNotReady: "Importer-Client ist noch nicht bereit.",
-      composeImportFailed: "Import der Compose-Projektdatei fehlgeschlagen",
+      fhirExplorerImportFailed: "Import der FHIR-Explorer-Projektdatei fehlgeschlagen",
     },
     en: {
       failedToLoadState: "Failed to load importer state",
       importFailed: "Import failed",
       clientNotReady: "Importer client is not ready yet.",
-      composeImportFailed: "Compose project import failed",
+      fhirExplorerImportFailed: "FHIR Explorer project import failed",
     },
     fr: {
       failedToLoadState: "Impossible de charger l'état de l'importateur",
       importFailed: "Échec de l'import",
       clientNotReady: "Le client importateur n'est pas encore prêt.",
-      composeImportFailed: "Échec de l'import du projet compose",
+      fhirExplorerImportFailed: "Échec de l'import du projet FHIR Explorer",
     },
     es: {
       failedToLoadState: "No se pudo cargar el estado del importador",
       importFailed: "Error de importación",
       clientNotReady: "El cliente importador aún no está listo.",
-      composeImportFailed: "Error al importar el proyecto compose",
+      fhirExplorerImportFailed: "Error al importar el proyecto FHIR Explorer",
     },
     it: {
       failedToLoadState: "Impossibile caricare lo stato dell'importatore",
       importFailed: "Importazione non riuscita",
       clientNotReady: "Il client importatore non è ancora pronto.",
-      composeImportFailed: "Importazione progetto compose non riuscita",
+      fhirExplorerImportFailed: "Importazione progetto FHIR Explorer non riuscita",
     },
   });
 
@@ -217,23 +217,23 @@ export const useImporter = (): UseImporterResult => {
     await refresh();
   }, [client, refresh, text.clientNotReady]);
 
-  const importComposeProject = useCallback(
-    async (bundle: ComposeProjectExport) => {
+  const importFhirExplorerProject = useCallback(
+    async (bundle: FhirExplorerProjectExport) => {
       if (!client) return null;
       try {
-        const result = await client.importComposeProject(bundle, (update) => {
+        const result = await client.importFhirExplorerProject(bundle, (update) => {
           setProgress(update);
         });
         await refresh();
         return result;
       } catch (err) {
-        setError(err instanceof Error ? err.message : text.composeImportFailed);
+        setError(err instanceof Error ? err.message : text.fhirExplorerImportFailed);
         return null;
       } finally {
         setProgress({ phase: "idle" });
       }
     },
-    [client, refresh, text.composeImportFailed]
+    [client, refresh, text.fhirExplorerImportFailed]
   );
 
   const getResourcePayloadsByPackageKeys = useCallback(
@@ -259,7 +259,7 @@ export const useImporter = (): UseImporterResult => {
     addImportHistory,
     deletePackage,
     clearAllData,
-    importComposeProject,
+    importFhirExplorerProject,
     getResourcePayloadsByPackageKeys,
     getDownloadUrl: client ? client.getDownloadUrl.bind(client) : () => "",
     refresh,

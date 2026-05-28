@@ -94,7 +94,7 @@ export const ResourceDetailPanel = forwardRef<
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("health-compose-field-search-visible");
+    const stored = window.localStorage.getItem("fhir-explorer-field-search-visible");
     if (stored === "true" || stored === "false") {
       setShowSearch(stored === "true");
     }
@@ -105,7 +105,7 @@ export const ResourceDetailPanel = forwardRef<
     if (typeof window === "undefined") return;
     if (!settingsLoaded) return;
     window.localStorage.setItem(
-      "health-compose-field-search-visible",
+      "fhir-explorer-field-search-visible",
       String(showSearch)
     );
   }, [showSearch, settingsLoaded]);

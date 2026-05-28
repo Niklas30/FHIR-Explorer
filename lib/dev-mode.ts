@@ -1,4 +1,4 @@
-const DEV_MODE_STORAGE_KEY = "health-compose-dev-mode";
+const DEV_MODE_STORAGE_KEY = "fhir-explorer-dev-mode";
 const DEV_MODE_COOKIE_KEY = "health_compose_dev_mode";
 const DEV_MODE_COOKIE_VALUE = "1";
 const DEV_MODE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;

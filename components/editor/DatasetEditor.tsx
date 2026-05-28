@@ -178,7 +178,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     "package" | "resources" | "searchset"
   >("package");
   const [exportIncludeDatasets, setExportIncludeDatasets] = useState(true);
-  const layoutStorageKey = "health-compose-editor-layout";
+  const layoutStorageKey = "fhir-explorer-layout";
   const {
     viewSettingsLoaded,
     zoomPercent,

@@ -14,7 +14,7 @@ import { buildPackageKey } from "./utils";
 import type { RegistryStrategy } from "./registry";
 import { defaultRegistry } from "./registry";
 import { parsePackageInWorker } from "./worker-client";
-import type { ComposeProjectExport } from "./compose";
+import type { FhirExplorerProjectExport } from "./fhir-explorer";
 
 export type ImporterClientOptions = {
   registry?: RegistryStrategy;
@@ -172,11 +172,11 @@ export class ImporterClient {
     return this.storage.listResourcePayloadsByPackageKeys(packageKeys);
   }
 
-  async importComposeProject(
-    bundle: ComposeProjectExport,
+  async importFhirExplorerProject(
+    bundle: FhirExplorerProjectExport,
     onProgress?: (progress: ImportProgress) => void
   ): Promise<{ imported: number; skipped: number }> {
-    onProgress?.({ phase: "parsing", message: "Parsing compose project" });
+    onProgress?.({ phase: "parsing", message: "Parsing FHIR Explorer project" });
 
     const packages = bundle.packages ?? [];
     let imported = 0;
@@ -206,7 +206,7 @@ export class ImporterClient {
           title,
           content: resource.content,
           packageKey,
-          sourcePath: `compose/${pkg.id}/${resourceType}-${id ?? index}.json`,
+          sourcePath: `fhir-explorer/${pkg.id}/${resourceType}-${id ?? index}.json`,
         };
       });
 
@@ -254,7 +254,7 @@ export class ImporterClient {
       });
     }
 
-    onProgress?.({ phase: "completed", message: "Compose project imported" });
+    onProgress?.({ phase: "completed", message: "FHIR Explorer project imported" });
 
     return { imported, skipped };
   }

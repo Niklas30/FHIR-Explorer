@@ -23,7 +23,7 @@ type DiagramSettings = {
   fieldSelection: DiagramFieldSelection;
 };
 
-const DIAGRAM_SETTINGS_KEY = "health-compose-diagram-settings";
+const DIAGRAM_SETTINGS_KEY = "fhir-explorer-diagram-settings";
 const FIELD_VALUE_LIMIT = 48;
 const FIELD_PREVIEW_LIMIT = 3;
 const EXCLUDED_FIELDS = new Set(["resourceType", "id", "meta"]);

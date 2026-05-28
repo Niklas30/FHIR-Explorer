@@ -5,7 +5,7 @@ import { ImporterLoadingFallback } from "@/components/importer/ImporterLoadingFa
 import { ImportWizard } from "@/components/importer/ImportWizard";
 
 export const metadata: Metadata = {
-  title: "FHIR Compose",
+  title: "FHIR Explorer",
 };
 
 export default function ImporterPage() {

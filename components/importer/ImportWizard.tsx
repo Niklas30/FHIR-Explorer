@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ConflictsCard } from "@/components/importer/import-wizard/ConflictsCard";
-import { maybeImportComposeProject } from "@/components/importer/import-wizard/composeProjectImport";
+import { maybeImportFhirExplorerProject } from "@/components/importer/import-wizard/fhirExplorerProjectImport";
 import { DependenciesCard } from "@/components/importer/import-wizard/DependenciesCard";
 import { parsePackageKey } from "@/components/importer/import-wizard/helpers";
 import { ImportHistoryCard } from "@/components/importer/import-wizard/ImportHistoryCard";
@@ -39,7 +39,7 @@ export const ImportWizard = () => {
     clearVersionSelection,
     importFile,
     importTargetFile,
-    importComposeProject,
+    importFhirExplorerProject,
     addImportHistory,
     getDownloadUrl,
   } = useImporter();
@@ -158,14 +158,14 @@ export const ImportWizard = () => {
       const notices: string[] = [];
 
       for (const file of files) {
-        const composeNotice = await maybeImportComposeProject({
+        const explorerNotice = await maybeImportFhirExplorerProject({
           file,
-          importComposeProject,
+          importFhirExplorerProject,
           text,
           format,
         });
-        if (composeNotice) {
-          notices.push(composeNotice);
+        if (explorerNotice) {
+          notices.push(explorerNotice);
           continue;
         }
 
@@ -193,7 +193,7 @@ export const ImportWizard = () => {
         setUploadNotice(notices.join(" "));
       }
     },
-    [currentTarget, format, importComposeProject, importFile, missing, text]
+    [currentTarget, format, importFhirExplorerProject, importFile, missing, text]
   );
 
   const handleTargetUpload = useCallback(
@@ -203,14 +203,14 @@ export const ImportWizard = () => {
       const notices: string[] = [];
 
       for (const file of files) {
-        const composeNotice = await maybeImportComposeProject({
+        const explorerNotice = await maybeImportFhirExplorerProject({
           file,
-          importComposeProject,
+          importFhirExplorerProject,
           text,
           format,
         });
-        if (composeNotice) {
-          notices.push(composeNotice);
+        if (explorerNotice) {
+          notices.push(explorerNotice);
           continue;
         }
 
@@ -231,7 +231,7 @@ export const ImportWizard = () => {
         setUploadNotice(notices.join(" "));
       }
     },
-    [format, importComposeProject, importTargetFile, text]
+    [format, importFhirExplorerProject, importTargetFile, text]
   );
 
   const handleCancel = useCallback(async () => {

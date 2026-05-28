@@ -6,11 +6,11 @@ import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
 import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import { collectDependencies } from "@/lib/fhir-importer/dependency-graph";
 import type {
-  ComposeDatasetExport,
-  ComposePackageExport,
-  ComposeProjectArchiveManifest,
-  ComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
+  FhirExplorerDatasetExport,
+  FhirExplorerPackageExport,
+  FhirExplorerProjectArchiveManifest,
+  FhirExplorerProjectExport,
+} from "@/lib/fhir-importer/fhir-explorer";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import { loadDatasetResources } from "@/lib/datasets/content";
 import type { OverviewText } from "@/components/overview/types";
@@ -34,8 +34,8 @@ export const prepareProjectExport = async ({
   text: ProjectExportText;
 }): Promise<{
   projectKeys: Set<string>;
-  exportPackages: ComposePackageExport[];
-  exportDatasets: ComposeDatasetExport[];
+  exportPackages: FhirExplorerPackageExport[];
+  exportDatasets: FhirExplorerDatasetExport[];
 } | null> => {
   const dependencyKeys = collectDependencies(project.key, graph);
   const projectKeys = new Set<string>([project.key, ...dependencyKeys]);
@@ -56,7 +56,7 @@ export const prepareProjectExport = async ({
     payloadsByKey.set(payload.packageKey, list);
   }
 
-  const exportPackages: ComposePackageExport[] = packageRecords.map((pkg) => ({
+  const exportPackages: FhirExplorerPackageExport[] = packageRecords.map((pkg) => ({
     key: pkg.key,
     id: pkg.id,
     version: pkg.version,
@@ -69,7 +69,7 @@ export const prepareProjectExport = async ({
     })),
   }));
 
-  const exportDatasets: ComposeDatasetExport[] = includeDatasets
+  const exportDatasets: FhirExplorerDatasetExport[] = includeDatasets
     ? datasets
         .filter((dataset) => projectKeys.has(dataset.projectKey))
         .map((dataset) => ({
@@ -111,8 +111,8 @@ export const exportProject = async ({
   if (!prepared) return;
 
   if (exportFormat === "json") {
-    const payload: ComposeProjectExport = {
-      type: "health-compose-project",
+    const payload: FhirExplorerProjectExport = {
+      type: "fhir-explorer-project",
       version: 1,
       targetKey: project.key,
       exportedAt: new Date().toISOString(),
@@ -120,7 +120,7 @@ export const exportProject = async ({
       datasets: prepared.exportDatasets,
     };
 
-    const filename = toSafeFilename(`${project.id}-${project.version}-compose.json`) || "compose-project.json";
+    const filename = toSafeFilename(`${project.id}-${project.version}-fhir-explorer.json`) || "fhir-explorer-project.json";
     downloadJson(filename, payload);
     toast.success(text.projectExported);
     return;
@@ -154,8 +154,8 @@ export const exportProject = async ({
     };
   });
 
-  const manifest: ComposeProjectArchiveManifest = {
-    type: "health-compose-project-archive",
+  const manifest: FhirExplorerProjectArchiveManifest = {
+    type: "fhir-explorer-project-archive",
     version: 1,
     targetKey: project.key,
     exportedAt: new Date().toISOString(),
@@ -163,9 +163,9 @@ export const exportProject = async ({
     datasets: includeDatasets ? datasetEntries : undefined,
   };
 
-  zip.file("compose-project.json", JSON.stringify(manifest, null, 2));
+  zip.file("fhir-explorer-project.json", JSON.stringify(manifest, null, 2));
   const blob = await zip.generateAsync({ type: "blob" });
-  const filename = toSafeFilename(`${project.id}-${project.version}-compose.zip`) || "compose-project.zip";
+  const filename = toSafeFilename(`${project.id}-${project.version}-fhir-explorer.zip`) || "fhir-explorer-project.zip";
   downloadBlob(filename, blob);
   toast.success(text.projectExported);
 };

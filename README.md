@@ -1,7 +1,7 @@
-# Health Compose Editor
+# FHIR Explorer
 
 Local‑first FHIR R4 **package importer**, **project/dataset manager**, and **resource editor**.
-Health Compose Editor runs entirely in the browser: no backend required.
+FHIR Explorer runs entirely in the browser: no backend required.
 
 > Status: work in progress (internal tooling). APIs and UX may change.
 
@@ -71,8 +71,8 @@ npm run dev:turbo
 Build and run the production image:
 
 ```bash
-docker build -t health-compose-editor .
-docker run --rm -p 3000:3000 health-compose-editor
+docker build -t fhir-explorer .
+docker run --rm -p 3000:3000 fhir-explorer
 ```
 
 Then open `http://localhost:3000`.

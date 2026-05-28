@@ -53,7 +53,7 @@ export default function EditorOverviewPage() {
   const { snapshot, refresh, deletePackage, getResourcePayloadsByPackageKeys, clearAllData } = useImporter();
 
   const [filter, setFilter] = useState("");
-  const { viewMode, setViewMode } = usePersistedViewMode("health-compose-overview-viewmode");
+  const { viewMode, setViewMode } = usePersistedViewMode("fhir-explorer-overview-viewmode");
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

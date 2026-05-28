@@ -88,11 +88,11 @@ export const TargetPackageCard = ({
         ) : (
           <>
             <FileDropzone
-              label={text.uploadTargetOrCompose}
-              helperText={text.uploadTargetOrComposeHelper}
+              label={text.uploadTargetOrExplorer}
+              helperText={text.uploadTargetOrExplorerHelper}
               disabled={isUploading}
               accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
-              hint={text.uploadTargetOrComposeHint}
+              hint={text.uploadTargetOrExplorerHint}
               onFiles={onTargetUpload}
             />
             <div className="grid gap-4 md:grid-cols-3">

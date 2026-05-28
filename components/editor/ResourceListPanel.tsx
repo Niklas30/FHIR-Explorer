@@ -52,8 +52,8 @@ const getResourceSecondary = (resource: DatasetResource) => {
 
 type SortMode = "lastSelected" | "lastCreated" | "alphabetic";
 
-const SORT_STORAGE_KEY = "health-compose-resource-sort";
-const SEARCH_VISIBLE_KEY = "health-compose-resource-search-visible";
+const SORT_STORAGE_KEY = "fhir-explorer-resource-sort";
+const SEARCH_VISIBLE_KEY = "fhir-explorer-resource-search-visible";
 const validationIssueCountCache = new Map<
   string,
   {

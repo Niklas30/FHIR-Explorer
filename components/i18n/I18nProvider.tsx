@@ -11,7 +11,7 @@ import {
 } from "react";
 import { isLocale, type Locale } from "@/lib/i18n/types";
 
-const LOCALE_STORAGE_KEY = "health-compose-locale";
+const LOCALE_STORAGE_KEY = "fhir-explorer-locale";
 type LocaleMode = Locale | "system";
 
 type I18nContextValue = {

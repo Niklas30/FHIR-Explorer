@@ -7,7 +7,7 @@ Please **do not** disclose security issues publicly (issues, discussions, or soc
 Preferred reporting channels:
 
 1. GitHub Security Advisories (if enabled for this repository), or
-2. Email: security@health-compose.com
+2. Email: security@fhir-explorer.com
 
 When reporting, include as much detail as possible:
 
