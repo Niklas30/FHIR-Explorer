@@ -1,3 +1,4 @@
+import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { parseTgzPackage } from "@/lib/fhir-importer/parser";
 
@@ -51,8 +52,8 @@ const createTarArchive = (entries: Array<{ name: string; content: string }>) => 
 };
 
 describe("FHIR package parser", () => {
-  it("imports plain tar archives", async () => {
-    const archive = createTarArchive([
+  const createDirectoryFixtureArchive = () =>
+    createTarArchive([
       {
         name: "package/package.json",
         content: JSON.stringify({
@@ -71,6 +72,9 @@ describe("FHIR package parser", () => {
       },
     ]);
 
+  it("imports plain tar archives", async () => {
+    const archive = createDirectoryFixtureArchive();
+
     const parsed = await parseTgzPackage(archive);
 
     expect(parsed.packageKey).toBe("de.gematik.fhir.directory@1.0.0");
@@ -81,5 +85,18 @@ describe("FHIR package parser", () => {
       id: "test",
       packageKey: "de.gematik.fhir.directory@1.0.0",
     });
+  });
+
+  it("imports gzipped tar archives", async () => {
+    const archive = createDirectoryFixtureArchive();
+    const compressed = gzipSync(new Uint8Array(archive));
+
+    const parsed = await parseTgzPackage(
+      compressed.buffer.slice(compressed.byteOffset, compressed.byteOffset + compressed.byteLength)
+    );
+
+    expect(parsed.packageKey).toBe("de.gematik.fhir.directory@1.0.0");
+    expect(parsed.manifest.dependencies).toEqual({ "de.gematik.ti": "1.1.1" });
+    expect(parsed.resources).toHaveLength(1);
   });
 });

@@ -24,7 +24,16 @@ const isGzipArchive = (buffer: ArrayBuffer) => {
 };
 
 const readTarData = async (buffer: ArrayBuffer) => {
-  return isGzipArchive(buffer) ? await gunzip(buffer) : new Uint8Array(buffer);
+  if (!isGzipArchive(buffer)) {
+    return new Uint8Array(buffer);
+  }
+
+  try {
+    return await gunzip(buffer);
+  } catch (error) {
+    const message = error instanceof Error && error.message ? error.message : "Unknown gzip error";
+    throw new Error(`Failed to decompress gzip FHIR package archive: ${message}`);
+  }
 };
 
 export const parseTgzPackage = async (
