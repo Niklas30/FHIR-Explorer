@@ -142,7 +142,7 @@ export const DependenciesCard = ({
             label={text.uploadPackageOrExplorer}
             helperText={text.uploadPackageOrExplorerHelper}
             disabled={!currentTarget || isUploading}
-            accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+            accept=".tar,.tgz,.json,.zip,application/x-tar,application/tar,application/gzip,application/x-gzip,application/json,application/zip"
             hint={text.uploadPackageOrExplorerHint}
             onFiles={onUpload}
           />
@@ -151,4 +151,3 @@ export const DependenciesCard = ({
     </Card>
   );
 };
-

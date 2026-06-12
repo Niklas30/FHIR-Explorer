@@ -80,7 +80,7 @@ export const TargetPackageCard = ({
               label={text.uploadTargetPackage}
               helperText={text.uploadTargetHelper}
               disabled={isUploading}
-              accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+              accept=".tar,.tgz,.json,.zip,application/x-tar,application/tar,application/gzip,application/x-gzip,application/json,application/zip"
               hint={text.uploadTargetHint}
               onFiles={onTargetUpload}
             />
@@ -91,7 +91,7 @@ export const TargetPackageCard = ({
               label={text.uploadTargetOrExplorer}
               helperText={text.uploadTargetOrExplorerHelper}
               disabled={isUploading}
-              accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+              accept=".tar,.tgz,.json,.zip,application/x-tar,application/tar,application/gzip,application/x-gzip,application/json,application/zip"
               hint={text.uploadTargetOrExplorerHint}
               onFiles={onTargetUpload}
             />
@@ -130,4 +130,3 @@ export const TargetPackageCard = ({
     </Card>
   );
 };
-

@@ -17,6 +17,16 @@ const decodeJson = <T,>(payload: Uint8Array, path: string): T => {
   }
 };
 
+const isGzipArchive = (buffer: ArrayBuffer) => {
+  if (buffer.byteLength < 2) return false;
+  const bytes = new Uint8Array(buffer, 0, 2);
+  return bytes[0] === 0x1f && bytes[1] === 0x8b;
+};
+
+const readTarData = async (buffer: ArrayBuffer) => {
+  return isGzipArchive(buffer) ? await gunzip(buffer) : new Uint8Array(buffer);
+};
+
 export const parseTgzPackage = async (
   buffer: ArrayBuffer,
   options: ParseOptions = {}
@@ -26,7 +36,7 @@ export const parseTgzPackage = async (
   let manifest: PackageManifest | undefined;
   const resources: ParsedResource[] = [];
 
-  const tarData = await gunzip(buffer);
+  const tarData = await readTarData(buffer);
 
   parseTar(tarData, {
     onEntry: (entry) => {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { byLocale } from "@/lib/i18n/select";
 import { logger } from "@/lib/logger";
 
-const defaultAccept = ".tgz,application/gzip,application/x-gzip";
+const defaultAccept = ".tar,.tgz,application/x-tar,application/tar,application/gzip,application/x-gzip";
 
 type FileDropzoneProps = {
   label?: string;
