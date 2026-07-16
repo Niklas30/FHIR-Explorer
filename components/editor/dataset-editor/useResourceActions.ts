@@ -28,10 +28,13 @@ const cloneContent = (content: Record<string, unknown>) =>
     ? structuredClone(content)
     : (JSON.parse(JSON.stringify(content)) as Record<string, unknown>);
 
+type PersistResources = (
+  next: DatasetResource[] | ((previous: DatasetResource[]) => DatasetResource[])
+) => void;
+
 type UseResourceActionsArgs = {
   datasetId: string;
-  resources: DatasetResource[];
-  persistResources: (next: DatasetResource[]) => void;
+  persistResources: PersistResources;
   resolveStructureDefinition: (canonicalUrl: string) => StructureDefinition | null;
   text: { removeResourceConfirm: string; referenceTargetCreated: string };
   /** Called with the new dataset resource id when a resource was created or duplicated. */
@@ -41,7 +44,6 @@ type UseResourceActionsArgs = {
 /** CRUD actions on dataset resources, shared by the editor panels. */
 export const useDatasetResourceActions = ({
   datasetId,
-  resources,
   persistResources,
   resolveStructureDefinition,
   text,
@@ -76,7 +78,7 @@ export const useDatasetResourceActions = ({
       lastSelectedAt: now,
     };
 
-    persistResources([duplicated, ...resources]);
+    persistResources((previous) => [duplicated, ...previous]);
     onResourceCreated(duplicated.id);
   };
 
@@ -103,7 +105,7 @@ export const useDatasetResourceActions = ({
       lastSelectedAt: now,
     };
 
-    persistResources([nextResource, ...resources]);
+    persistResources((previous) => [nextResource, ...previous]);
     onResourceCreated(nextResource.id);
   };
 
@@ -129,7 +131,7 @@ export const useDatasetResourceActions = ({
 
     // The new target stays in the background; the user keeps editing the
     // resource that references it and can navigate via the reference field.
-    persistResources([nextResource, ...resources]);
+    persistResources((previous) => [nextResource, ...previous]);
     const reference = `${target.resourceType}/${contentId}`;
     toast.success(formatTemplate(text.referenceTargetCreated, { reference }));
     return reference;

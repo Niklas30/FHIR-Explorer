@@ -307,7 +307,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     createReferenceTarget: handleCreateReferenceTarget,
   } = useDatasetResourceActions({
     datasetId,
-    resources,
     persistResources,
     resolveStructureDefinition,
     text,
