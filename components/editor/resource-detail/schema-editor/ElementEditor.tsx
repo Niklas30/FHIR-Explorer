@@ -25,6 +25,7 @@ import {
   getReferenceTargetTypes,
   isNodePresent,
   isRecord,
+  isUppercaseTypeCode,
   parseMaxCount,
   resolveRenderKind,
   setChildValue,
@@ -61,6 +62,7 @@ import {
 import { PrimitiveValueInput } from "@/components/editor/resource-detail/schema-editor/PrimitiveValueInput";
 import { ExtensionEditor } from "@/components/editor/resource-detail/schema-editor/ExtensionEditor";
 import { NarrativeEditor } from "@/components/editor/resource-detail/schema-editor/NarrativeEditor";
+import { PrimitiveExtensionsSection } from "@/components/editor/resource-detail/schema-editor/PrimitiveExtensionsSection";
 import {
   ChoiceTypeSelector,
   NodeBadges,
@@ -786,14 +788,28 @@ export function ElementEditor({
               depth={depth}
             />
           ) : (
-            <ValueEditor
-              node={node}
-              typeCode={selectedTypeCode}
-              value={value}
-              onChange={handleValueChange}
-              path={fieldPath}
-              depth={depth}
-            />
+            <>
+              <ValueEditor
+                node={node}
+                typeCode={selectedTypeCode}
+                value={value}
+                onChange={handleValueChange}
+                path={fieldPath}
+                depth={depth}
+              />
+              {selectedTypeCode &&
+              !isUppercaseTypeCode(selectedTypeCode) &&
+              depth < MAX_EDITOR_DEPTH - 1 ? (
+                <PrimitiveExtensionsSection
+                  node={node}
+                  valueKey={key}
+                  parentValue={parentValue}
+                  onParentChange={onParentChange}
+                  path={path}
+                  depth={depth}
+                />
+              ) : null}
+            </>
           )}
         </div>
       )}

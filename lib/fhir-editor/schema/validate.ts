@@ -47,6 +47,7 @@ type ValidationText = {
   invalidDateTime: string;
   invalidTime: string;
   invalidNumber: string;
+  invalidCompanion: string;
   unknownElement: string;
   referenceBroken: string;
 };
@@ -76,6 +77,8 @@ const getText = (locale: Locale): ValidationText =>
       invalidDateTime: 'Ungültiger Zeitstempel "{value}".',
       invalidTime: 'Ungültige Uhrzeit "{value}" (erwartet: HH:MM:SS).',
       invalidNumber: 'Wert "{value}" ist keine gültige Zahl.',
+      invalidCompanion:
+        '"{key}" muss ein Objekt mit Extensions sein (Begleitelement eines primitiven Werts).',
       unknownElement: 'Element "{key}" ist im Profil nicht definiert.',
       referenceBroken: 'Referenz "{reference}" zeigt auf fehlende Resource "{targetKey}".',
     },
@@ -99,6 +102,8 @@ const getText = (locale: Locale): ValidationText =>
       invalidDateTime: 'Invalid timestamp "{value}".',
       invalidTime: 'Invalid time "{value}" (expected HH:MM:SS).',
       invalidNumber: 'Value "{value}" is not a valid number.',
+      invalidCompanion:
+        '"{key}" must be an object carrying extensions (primitive value companion).',
       unknownElement: 'Element "{key}" is not defined by the profile.',
       referenceBroken: 'Reference "{reference}" points to missing resource "{targetKey}".',
     },
@@ -341,7 +346,26 @@ const validateChildren = (
 
   const known = collectKnownKeys(children);
   for (const key of Object.keys(value)) {
-    if (known.has(key)) continue;
+    if (known.has(key)) {
+      // Primitive companions ("_birthDate") must be objects (or aligned
+      // arrays for repeating primitives), never plain values.
+      if (key.startsWith("_")) {
+        const companion = value[key];
+        const isValidShape =
+          companion === undefined ||
+          companion === null ||
+          isRecord(companion) ||
+          Array.isArray(companion);
+        if (!isValidShape) {
+          push(walker, {
+            code: "primitive-companion-invalid",
+            path: joinPath(key),
+            message: format(walker.text.invalidCompanion, { key }),
+          });
+        }
+      }
+      continue;
+    }
     push(walker, {
       code: "unknown-element",
       path: joinPath(key),

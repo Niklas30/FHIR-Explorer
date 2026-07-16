@@ -99,6 +99,7 @@ export const useResourceDetailText = () => {
     customUnitPlaceholder: "Unit text (free form)",
     contactPointSystem: "System",
     contactPointValue: "Value",
+    primitiveExtensions: "Extensions ({count})",
   };
 
   const text = byLocale(locale, {
@@ -198,6 +199,7 @@ export const useResourceDetailText = () => {
       customUnitPlaceholder: "Einheitentext (Freitext)",
       contactPointSystem: "System",
       contactPointValue: "Wert",
+      primitiveExtensions: "Extensions ({count})",
     },
     en: enText,
     fr: {
