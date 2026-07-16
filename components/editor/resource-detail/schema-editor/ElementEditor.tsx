@@ -54,11 +54,11 @@ import {
   useSchemaEditor,
 } from "@/components/editor/resource-detail/schema-editor/context";
 import {
-  getCodingOptionsForNode,
   getContactPointSystemOptions,
   getIdentifierSystemsForNode,
   getIdentifierTypeOptionsForNode,
 } from "@/components/editor/resource-detail/schema-editor/helpers";
+import { useCodingOptions } from "@/components/editor/resource-detail/schema-editor/useCodingOptions";
 import { PrimitiveValueInput } from "@/components/editor/resource-detail/schema-editor/PrimitiveValueInput";
 import { ExtensionEditor } from "@/components/editor/resource-detail/schema-editor/ExtensionEditor";
 import { NarrativeEditor } from "@/components/editor/resource-detail/schema-editor/NarrativeEditor";
@@ -289,10 +289,7 @@ const ValueEditor = (props: ValueEditorProps) => {
   const { node, typeCode, value, onChange, path, depth } = props;
   const { ctx } = useSchemaEditor();
 
-  const codingOptions = useMemo(
-    () => getCodingOptionsForNode(node, ctx),
-    [node, ctx]
-  );
+  const codingOptions = useCodingOptions(node);
 
   const renderKind = resolveRenderKind(typeCode);
 
