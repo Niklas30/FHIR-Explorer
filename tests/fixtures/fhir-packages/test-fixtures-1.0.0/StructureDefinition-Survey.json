@@ -47,6 +47,14 @@
      {
       "code": "BackboneElement"
      }
+    ],
+    "constraint": [
+     {
+      "key": "sur-1",
+      "severity": "warning",
+      "human": "Items should carry a human readable text",
+      "expression": "text.exists()"
+     }
     ]
    },
    {

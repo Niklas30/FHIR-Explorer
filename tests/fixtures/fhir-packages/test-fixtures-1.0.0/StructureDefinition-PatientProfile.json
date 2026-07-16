@@ -15,7 +15,15 @@
     "id": "Patient",
     "path": "Patient",
     "min": 0,
-    "max": "*"
+    "max": "*",
+    "constraint": [
+     {
+      "key": "pat-prof-1",
+      "severity": "error",
+      "human": "Deceased patients must have a name on record",
+      "expression": "deceased.exists().not() or name.exists()"
+     }
+    ]
    },
    {
     "id": "Patient.extension:birthPlace",
