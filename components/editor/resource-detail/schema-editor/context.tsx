@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { DatasetResource } from "@/lib/datasets/content";
 import type { SchemaContext, SchemaTree } from "@/lib/fhir-editor/schema";
 import type { ValidationIssue } from "@/lib/fhir-editor/schema";
+import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
 
 export type SchemaEditorContextValue = {
   ctx: SchemaContext;
@@ -12,6 +13,11 @@ export type SchemaEditorContextValue = {
   referenceIndex: Set<string>;
   validationIssues: ValidationIssue[];
   onSelectResource: (resourceId: string) => void;
+  /**
+   * Creates a new resource in the dataset for a reference field and returns
+   * the local reference string ("Type/id"), or null when creation failed.
+   */
+  onCreateReferenceTarget?: (target: ReferenceCreationTarget) => string | null;
 };
 
 const SchemaEditorReactContext = createContext<SchemaEditorContextValue | null>(null);

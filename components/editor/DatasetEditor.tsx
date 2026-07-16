@@ -29,11 +29,6 @@ import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import { upsertDataset } from "@/lib/datasets/storage";
-import {
-  createDatasetResourceId,
-  removeDatasetResource,
-  type DatasetResource,
-} from "@/lib/datasets/content";
 import { isDevModeEnabled } from "@/lib/dev-mode";
 import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
@@ -45,6 +40,7 @@ import { datasetEditorText } from "@/components/editor/dataset-editor/text";
 import { useDatasetEditorViewSettings } from "@/components/editor/dataset-editor/useViewSettings";
 import { useDatasetEditorDatasetState } from "@/components/editor/dataset-editor/useDatasetState";
 import { useDatasetEditorRegistryState } from "@/components/editor/dataset-editor/useRegistryState";
+import { useDatasetResourceActions } from "@/components/editor/dataset-editor/useResourceActions";
 
 type DatasetEditorProps = {
   datasetId: string;
@@ -55,19 +51,6 @@ const EMPTY_PACKAGES: PackageRecord[] = [];
 type ResourceNavigationState = {
   history: string[];
   index: number;
-};
-
-const downloadJson = (filename: string, payload: unknown) => {
-  if (typeof window === "undefined") return;
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
 };
 
 const pushResourceNavigationEntry = (
@@ -316,44 +299,28 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
 
   useEditorCommandShortcuts({ commands: editorCommands });
 
-  const handleRemoveResource = (resourceId: string) => {
-    const ok = window.confirm(text.removeResourceConfirm);
-    if (!ok) return;
-    const nextResources = removeDatasetResource(datasetId, resourceId);
-    persistResources(nextResources);
-  };
+  const {
+    removeResource: handleRemoveResource,
+    exportResource: handleExportResource,
+    duplicateResource: handleDuplicateResource,
+    createResource,
+    createReferenceTarget: handleCreateReferenceTarget,
+  } = useDatasetResourceActions({
+    datasetId,
+    resources,
+    persistResources,
+    resolveStructureDefinition,
+    text,
+    onResourceCreated: (resourceId) => {
+      setSelectedResourceId(resourceId);
+      setResourceNavigation((prev) => pushResourceNavigationEntry(prev, resourceId));
+    },
+  });
 
-  const handleExportResource = (resource: DatasetResource) => {
-    const id =
-      typeof resource.content.id === "string" && resource.content.id.trim()
-        ? resource.content.id.trim()
-        : resource.id;
-    const safeId = id.replace(/[^a-zA-Z0-9-_]+/g, "-");
-    downloadJson(`${resource.resourceType}-${safeId}.json`, resource.content);
-  };
-
-  const handleDuplicateResource = (resource: DatasetResource) => {
-    const now = Date.now();
-    const cloneContent =
-      typeof structuredClone === "function"
-        ? structuredClone(resource.content)
-        : (JSON.parse(JSON.stringify(resource.content)) as Record<string, unknown>);
-    const newContentId = createDatasetResourceId();
-    cloneContent.id = newContentId;
-
-    const duplicated: DatasetResource = {
-      ...resource,
-      id: createDatasetResourceId(),
-      content: cloneContent,
-      createdAt: now,
-      updatedAt: now,
-      lastSelectedAt: now,
-    };
-
-    const nextResources = [duplicated, ...resources];
-    persistResources(nextResources);
-    setSelectedResourceId(duplicated.id);
-    setResourceNavigation((prev) => pushResourceNavigationEntry(prev, duplicated.id));
+  const handleCreateResource = (payload: { profileUrl: string; resourceId?: string }) => {
+    if (!registryState) return;
+    createResource(payload);
+    setCreateDialogOpen(false);
   };
 
   const handleExportConfirm = async () => {
@@ -385,39 +352,6 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
       text,
     });
     setExportDialogOpen(false);
-  };
-
-  const handleCreateResource = (payload: { profileUrl: string; resourceId?: string }) => {
-    if (!registryState) return;
-    const profileDefinition = resolveStructureDefinition(payload.profileUrl);
-    if (!profileDefinition) return;
-    const resourceType = profileDefinition.type ?? profileDefinition.id ?? "Resource";
-    const now = Date.now();
-    const content: Record<string, unknown> = {
-      resourceType,
-    };
-    if (profileDefinition.url) {
-      content.meta = { profile: [profileDefinition.url] };
-    }
-    if (payload.resourceId) {
-      content.id = payload.resourceId;
-    }
-
-    const nextResource: DatasetResource = {
-      id: createDatasetResourceId(),
-      resourceType,
-      profile: profileDefinition.url,
-      content,
-      createdAt: now,
-      updatedAt: now,
-      lastSelectedAt: now,
-    };
-
-    const nextResources = [nextResource, ...resources];
-    persistResources(nextResources);
-    setSelectedResourceId(nextResource.id);
-    setResourceNavigation((prev) => pushResourceNavigationEntry(prev, nextResource.id));
-    setCreateDialogOpen(false);
   };
 
   if (!datasetLoaded || !viewSettingsLoaded) {
@@ -501,6 +435,7 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
                 onSelectResource={handleSelectResource}
                 onUpdateResource={handleUpdateResource}
                 onRemoveResource={handleRemoveResource}
+                onCreateReferenceTarget={handleCreateReferenceTarget}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />

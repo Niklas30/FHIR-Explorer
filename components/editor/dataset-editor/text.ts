@@ -43,6 +43,7 @@ const enText = {
   loadingEditorOverlay: "Loading editor…",
   loadingFallback: "Loading editor…",
   errorLoadingResources: "Failed to load FHIR package resources.",
+  referenceTargetCreated: "Created {reference} and linked it.",
 };
 
 export type DatasetEditorText = typeof enText;
@@ -94,6 +95,7 @@ export const datasetEditorText: Dictionary = {
     loadingEditorOverlay: "Editor wird geladen…",
     loadingFallback: "Editor wird geladen…",
     errorLoadingResources: "FHIR-Paketressourcen konnten nicht geladen werden.",
+    referenceTargetCreated: "{reference} angelegt und verknüpft.",
   },
   en: enText,
   fr: {

@@ -35,6 +35,7 @@ import {
   type SchemaTree,
 } from "@/lib/fhir-editor/schema";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
+import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
 import { ElementEditor } from "@/components/editor/resource-detail/schema-editor/ElementEditor";
 import { SchemaEditorProvider } from "@/components/editor/resource-detail/schema-editor/context";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
@@ -49,6 +50,7 @@ type ResourceDetailPanelProps = {
   onSelectResource: (resourceId: string) => void;
   onUpdateResource: (resource: DatasetResource) => void;
   onRemoveResource: (resourceId: string) => void;
+  onCreateReferenceTarget?: (target: ReferenceCreationTarget) => string | null;
 };
 
 export type ResourceDetailPanelHandle = {
@@ -73,6 +75,7 @@ export const ResourceDetailPanel = forwardRef<
     onSelectResource,
     onUpdateResource,
     onRemoveResource,
+    onCreateReferenceTarget,
   },
   ref
 ) {
@@ -222,6 +225,7 @@ export const ResourceDetailPanel = forwardRef<
           referenceIndex,
           validationIssues,
           onSelectResource,
+          onCreateReferenceTarget,
         }
       : null;
 

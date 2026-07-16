@@ -90,6 +90,8 @@ export const useResourceDetailText = () => {
     noEditableChildren: "No structured definition available — editing as JSON.",
     itemLabel: "Item {index}",
     metadataSection: "Metadata",
+    createReferenceTarget: "Create target resource",
+    searchTargetTypes: "Search target types",
   };
 
   const text = byLocale(locale, {
@@ -180,6 +182,8 @@ export const useResourceDetailText = () => {
       noEditableChildren: "Keine strukturierte Definition verfügbar — Bearbeitung als JSON.",
       itemLabel: "Eintrag {index}",
       metadataSection: "Metadaten",
+      createReferenceTarget: "Zielressource anlegen",
+      searchTargetTypes: "Zieltypen suchen",
     },
     en: enText,
     fr: {
