@@ -94,7 +94,7 @@ export const useDatasetEditorRegistryState = ({
 
   const resolveStructureDefinition = (canonicalUrl: string) => {
     if (!registryState) return null;
-    return getStructureDefinitionByCanonical(registryState, canonicalUrl);
+    return getStructureDefinitionByCanonical(registryState, canonicalUrl) ?? null;
   };
 
   return {

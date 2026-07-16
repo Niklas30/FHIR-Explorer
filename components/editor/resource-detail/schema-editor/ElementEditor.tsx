@@ -33,6 +33,7 @@ import {
   getSliceDiscriminatorPattern,
   matchesSlice,
 } from "@/lib/fhir-editor/schema/slicing";
+import { getReferenceCreationTargets } from "@/lib/fhir-editor/reference-targets";
 import { isBrokenLocalReference } from "@/lib/fhir-editor/references";
 import { PopupSearchSelect } from "@/components/editor/resource-detail/PopupSearchSelect";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
@@ -77,7 +78,14 @@ const ReferenceValueEditor = ({
   value: unknown;
   onChange: (value: unknown) => void;
 }) => {
-  const { ctx, datasetResources, referenceIndex, onSelectResource } = useSchemaEditor();
+  const {
+    ctx,
+    datasetResources,
+    referenceIndex,
+    onSelectResource,
+    onCreateReferenceTarget,
+  } = useSchemaEditor();
+  const { text } = useResourceDetailText();
   const [includeDisplay, setIncludeDisplay] = useState(false);
 
   const targets = useMemo(() => getReferenceTargetTypes(node, ctx), [node, ctx]);
@@ -90,21 +98,54 @@ const ReferenceValueEditor = ({
     [datasetResources, targets, allowAny]
   );
 
+  const creationTargets = useMemo(
+    () => (onCreateReferenceTarget ? getReferenceCreationTargets(node, ctx) : []),
+    [node, ctx, onCreateReferenceTarget]
+  );
+
+  const handleCreateTarget = (targetKey: string) => {
+    const target = creationTargets.find(
+      (entry) => (entry.profileUrl ?? entry.resourceType) === targetKey
+    );
+    if (!target || !onCreateReferenceTarget) return;
+    const reference = onCreateReferenceTarget(target);
+    if (reference) {
+      onChange({ reference });
+    }
+  };
+
   const reference = extractReferenceString(value);
   const broken =
     reference && isBrokenLocalReference(reference, referenceIndex) ? reference : null;
 
   return (
-    <ReferenceFieldInput
-      value={value}
-      referenceOptions={referenceOptions}
-      allDatasetResources={datasetResources}
-      onOpenResource={onSelectResource}
-      includeReferenceDisplay={includeDisplay}
-      setIncludeReferenceDisplay={setIncludeDisplay}
-      onChange={onChange}
-      brokenReference={broken}
-    />
+    <div className="grid gap-2">
+      <ReferenceFieldInput
+        value={value}
+        referenceOptions={referenceOptions}
+        allDatasetResources={datasetResources}
+        onOpenResource={onSelectResource}
+        includeReferenceDisplay={includeDisplay}
+        setIncludeReferenceDisplay={setIncludeDisplay}
+        onChange={onChange}
+        brokenReference={broken}
+      />
+      {creationTargets.length > 0 ? (
+        <div className="w-fit min-w-56">
+          <PopupSearchSelect
+            value=""
+            options={creationTargets.map((target) => ({
+              value: target.profileUrl ?? target.resourceType,
+              label: `${target.label} (${target.resourceType})`,
+              searchText: `${target.label} ${target.resourceType} ${target.profileUrl ?? ""}`,
+            }))}
+            placeholder={`+ ${text.createReferenceTarget}`}
+            searchPlaceholder={text.searchTargetTypes}
+            onValueChange={handleCreateTarget}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 };
 
