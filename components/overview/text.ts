@@ -116,6 +116,8 @@ type OverviewTextBase = {
   settingsTitle: string;
   settingsDescription: string;
   settingsDeleteInfo: string;
+  terminologyServerLabel: string;
+  terminologyServerHint: string;
   close: string;
   deleteAllLocalData: string;
   thisProject: string;
@@ -247,6 +249,9 @@ const overviewText = {
     settingsDescription: "Verwalte lokal gespeicherte Daten für diesen Browser.",
     settingsDeleteInfo:
       "Beim Löschen werden importierte Pakete, Abhängigkeitsmetadaten, gecachte Ressourcen und alle Datasets in diesem Browser entfernt.",
+    terminologyServerLabel: "Terminologie-Server (optional)",
+    terminologyServerHint:
+      "FHIR-Basis-URL für $expand, z. B. https://tx.fhir.org/r4. Wird nur genutzt, wenn ein ValueSet lokal nicht auflösbar ist.",
     close: "Schließen",
     deleteAllLocalData: "Alle lokalen Daten löschen",
     thisProject: "dieses Projekt",
@@ -372,6 +377,9 @@ const overviewText = {
     settingsDescription: "Manage locally stored data for this browser.",
     settingsDeleteInfo:
       "Deleting data removes imported packages, dependency metadata, cached resources, and all datasets saved in this browser.",
+    terminologyServerLabel: "Terminology server (optional)",
+    terminologyServerHint:
+      "FHIR base URL used for $expand, e.g. https://tx.fhir.org/r4. Only queried when a ValueSet cannot be resolved locally.",
     close: "Close",
     deleteAllLocalData: "Delete all local data",
     thisProject: "this project",
