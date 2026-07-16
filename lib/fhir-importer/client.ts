@@ -7,7 +7,7 @@ import type {
   ResourcePayload,
 } from "./types";
 import { buildResourceIndexEntries } from "./indexer";
-import { parseTgzPackage } from "./parser";
+import { parsePackage as parsePackageArchive } from "./parser";
 import { resolveDependencies } from "./resolver";
 import { ImporterStorage } from "./storage";
 import { buildPackageKey } from "./utils";
@@ -267,7 +267,7 @@ export class ImporterClient {
       return await parsePackageInWorker(buffer, onProgress);
     }
 
-    return await parseTgzPackage(buffer, { onProgress });
+    return await parsePackageArchive(buffer, { onProgress });
   }
 
   private async importParsedPackage(

@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { parseTgzPackage } from "./parser";
+import { parsePackage } from "./parser";
 
 type WorkerRequest = {
   id: string;
@@ -16,7 +16,7 @@ const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
 ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const { id, buffer } = event.data;
   try {
-    const parsed = await parseTgzPackage(buffer, {
+    const parsed = await parsePackage(buffer, {
       onProgress: (progress) => {
         const message: WorkerResponse = { id, type: "progress", progress };
         ctx.postMessage(message);

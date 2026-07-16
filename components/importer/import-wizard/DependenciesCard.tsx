@@ -142,7 +142,7 @@ export const DependenciesCard = ({
             label={text.uploadPackageOrCompose}
             helperText={text.uploadPackageOrComposeHelper}
             disabled={!currentTarget || isUploading}
-            accept=".tgz,.json,.zip,application/gzip,application/x-gzip,application/json,application/zip"
+            accept=".tgz,.tar.gz,.tar,.json,.zip,application/gzip,application/x-gzip,application/x-tar,application/json,application/zip"
             hint={text.uploadPackageOrComposeHint}
             onFiles={onUpload}
           />
