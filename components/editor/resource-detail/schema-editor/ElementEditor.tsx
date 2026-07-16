@@ -44,7 +44,9 @@ import {
 } from "@/components/editor/resource-detail/utils";
 import { UnknownValueEditor } from "@/components/editor/resource-detail/UnknownValueEditor";
 import { CodingFieldInput } from "@/components/editor/resource-detail/field-input/CodingFieldInput";
+import { ContactPointFieldInput } from "@/components/editor/resource-detail/field-input/ContactPointFieldInput";
 import { IdentifierFieldInput } from "@/components/editor/resource-detail/field-input/IdentifierFieldInput";
+import { QuantityFieldInput } from "@/components/editor/resource-detail/field-input/QuantityFieldInput";
 import { ReferenceFieldInput } from "@/components/editor/resource-detail/field-input/ReferenceFieldInput";
 import {
   MAX_EDITOR_DEPTH,
@@ -52,6 +54,7 @@ import {
 } from "@/components/editor/resource-detail/schema-editor/context";
 import {
   getCodingOptionsForNode,
+  getContactPointSystemOptions,
   getIdentifierSystemsForNode,
   getIdentifierTypeOptionsForNode,
 } from "@/components/editor/resource-detail/schema-editor/helpers";
@@ -245,24 +248,44 @@ const GenericComplexEditor = ({
 /* Single value dispatch                                               */
 /* ------------------------------------------------------------------ */
 
-const ValueEditor = ({
-  node,
-  typeCode,
-  value,
-  onChange,
-  path,
-  depth,
-}: {
+type ValueEditorProps = {
   node: SchemaNode;
   typeCode?: string;
   value: unknown;
   onChange: (value: unknown) => void;
   path: string;
   depth: number;
-}) => {
-  const { ctx } = useSchemaEditor();
+};
+
+/**
+ * Wraps a dedicated datatype editor with a toggle to the generic recursive
+ * editor for full access to all sub-elements (multiple codings, period, …).
+ */
+const DedicatedEditorWithDetails = ({
+  typeCode,
+  dedicated,
+  ...props
+}: ValueEditorProps & { typeCode: string; dedicated: React.ReactNode }) => {
   const [showDetails, setShowDetails] = useState(false);
   const { text } = useResourceDetailText();
+
+  return (
+    <div className="grid gap-2">
+      {showDetails ? <GenericComplexEditor {...props} typeCode={typeCode} /> : dedicated}
+      <button
+        type="button"
+        onClick={() => setShowDetails((previous) => !previous)}
+        className="w-fit text-xs text-muted-foreground underline-offset-2 hover:underline"
+      >
+        {showDetails ? text.collapse : text.expand}
+      </button>
+    </div>
+  );
+};
+
+const ValueEditor = (props: ValueEditorProps) => {
+  const { node, typeCode, value, onChange, path, depth } = props;
+  const { ctx } = useSchemaEditor();
 
   const codingOptions = useMemo(
     () => getCodingOptionsForNode(node, ctx),
@@ -274,16 +297,6 @@ const ValueEditor = ({
   if (depth >= MAX_EDITOR_DEPTH) {
     return <UnknownValueEditor value={value} onChange={onChange} />;
   }
-
-  const detailsToggle = (
-    <button
-      type="button"
-      onClick={() => setShowDetails((previous) => !previous)}
-      className="w-fit text-xs text-muted-foreground underline-offset-2 hover:underline"
-    >
-      {showDetails ? text.collapse : text.expand}
-    </button>
-  );
 
   switch (renderKind.kind) {
     case "primitive":
@@ -300,49 +313,57 @@ const ValueEditor = ({
     case "Coding":
     case "CodeableConcept":
       return (
-        <div className="grid gap-2">
-          {showDetails ? (
-            <GenericComplexEditor
-              node={node}
-              typeCode={renderKind.kind}
-              value={value}
-              onChange={onChange}
-              path={path}
-              depth={depth}
-            />
-          ) : (
+        <DedicatedEditorWithDetails
+          {...props}
+          typeCode={renderKind.kind}
+          dedicated={
             <CodingFieldInput
               kind={renderKind.kind}
               value={value}
               options={codingOptions}
               onChange={onChange}
             />
-          )}
-          {detailsToggle}
-        </div>
+          }
+        />
       );
     case "Identifier":
       return (
-        <div className="grid gap-2">
-          {showDetails ? (
-            <GenericComplexEditor
-              node={node}
-              typeCode="Identifier"
-              value={value}
-              onChange={onChange}
-              path={path}
-              depth={depth}
-            />
-          ) : (
+        <DedicatedEditorWithDetails
+          {...props}
+          typeCode="Identifier"
+          dedicated={
             <IdentifierFieldInput
               value={value}
               identifierSystems={getIdentifierSystemsForNode(node, ctx)}
               identifierTypeOptions={getIdentifierTypeOptionsForNode(node, ctx)}
               onChange={onChange}
             />
-          )}
-          {detailsToggle}
-        </div>
+          }
+        />
+      );
+    case "Quantity":
+      return (
+        <DedicatedEditorWithDetails
+          {...props}
+          typeCode={typeCode ?? "Quantity"}
+          dedicated={
+            <QuantityFieldInput value={value} options={codingOptions} onChange={onChange} />
+          }
+        />
+      );
+    case "ContactPoint":
+      return (
+        <DedicatedEditorWithDetails
+          {...props}
+          typeCode="ContactPoint"
+          dedicated={
+            <ContactPointFieldInput
+              value={value}
+              options={getContactPointSystemOptions(node, ctx)}
+              onChange={onChange}
+            />
+          }
+        />
       );
     case "Extension":
       return (

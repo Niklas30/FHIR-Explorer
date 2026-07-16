@@ -92,6 +92,13 @@ export const useResourceDetailText = () => {
     metadataSection: "Metadata",
     createReferenceTarget: "Create target resource",
     searchTargetTypes: "Search target types",
+    quantityValue: "Value",
+    quantityUnit: "Unit",
+    selectUnit: "Select unit",
+    searchUnits: "Search units",
+    customUnitPlaceholder: "Unit text (free form)",
+    contactPointSystem: "System",
+    contactPointValue: "Value",
   };
 
   const text = byLocale(locale, {
@@ -184,6 +191,13 @@ export const useResourceDetailText = () => {
       metadataSection: "Metadaten",
       createReferenceTarget: "Zielressource anlegen",
       searchTargetTypes: "Zieltypen suchen",
+      quantityValue: "Wert",
+      quantityUnit: "Einheit",
+      selectUnit: "Einheit auswählen",
+      searchUnits: "Einheiten suchen",
+      customUnitPlaceholder: "Einheitentext (Freitext)",
+      contactPointSystem: "System",
+      contactPointValue: "Wert",
     },
     en: enText,
     fr: {

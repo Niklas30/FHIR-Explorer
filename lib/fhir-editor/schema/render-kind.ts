@@ -23,6 +23,8 @@ export type RenderKind =
   | { kind: "Identifier" }
   | { kind: "Extension" }
   | { kind: "Narrative" }
+  | { kind: "Quantity" }
+  | { kind: "ContactPoint" }
   | { kind: "complex"; typeCode: string }
   | { kind: "json" };
 
@@ -58,6 +60,18 @@ const DEDICATED_COMPLEX = new Set([
   "Identifier",
   "Extension",
   "Narrative",
+  "ContactPoint",
+]);
+
+/** Quantity and its specializations share the Quantity editor. */
+const QUANTITY_TYPES = new Set([
+  "Quantity",
+  "SimpleQuantity",
+  "Age",
+  "Distance",
+  "Duration",
+  "Count",
+  "MoneyQuantity",
 ]);
 
 /**
@@ -72,6 +86,9 @@ export const resolveRenderKind = (typeCode: string | undefined): RenderKind => {
   if (!isUppercaseTypeCode(typeCode)) {
     // Unknown primitive: edit as plain string rather than raw JSON.
     return { kind: "primitive", primitive: "string" };
+  }
+  if (QUANTITY_TYPES.has(typeCode)) {
+    return { kind: "Quantity" };
   }
   if (DEDICATED_COMPLEX.has(typeCode)) {
     return { kind: typeCode } as RenderKind;
