@@ -13,11 +13,15 @@ import { Input } from "@/components/ui/input";
 import { byLocale } from "@/lib/i18n/select";
 import { cn } from "@/lib/utils";
 import type { DatasetResource } from "@/lib/datasets/content";
-import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
-import { buildFieldDefinitions, resolveProfileForResource } from "@/lib/fhir-editor/profiles";
+import { resolveProfileForResource } from "@/lib/fhir-editor/profiles";
 import type { FhirRegistry } from "@/lib/fhir-editor/registry";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
-import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
+import {
+  buildSchemaTree,
+  createSchemaContext,
+  validateResource,
+  type SchemaTree,
+} from "@/lib/fhir-editor/schema";
 import { logger } from "@/lib/logger";
 
 type ResourceListPanelProps = {
@@ -225,7 +229,8 @@ export const ResourceListPanel = ({
       registry.valueSetsByUrl.size,
       registry.codeSystemsByUrl.size,
     ].join("|");
-    const fieldsByProfile = new Map<string, FieldDefinition[]>();
+    const schemaCtx = createSchemaContext(registry);
+    const treesByProfile = new Map<string, SchemaTree | null>();
     const byResourceId = new Map<string, number>();
     const nextIds = new Set(resources.map((resource) => resource.id));
 
@@ -249,15 +254,16 @@ export const ResourceListPanel = ({
         continue;
       }
 
-      const fields =
-        fieldsByProfile.get(profileKey) ?? buildFieldDefinitions(profile, registry);
-      if (!fieldsByProfile.has(profileKey)) {
-        fieldsByProfile.set(profileKey, fields);
+      let tree = treesByProfile.get(profileKey);
+      if (tree === undefined) {
+        tree = buildSchemaTree(profile, schemaCtx);
+        treesByProfile.set(profileKey, tree);
       }
+      if (!tree) continue;
 
       let issueCount = 0;
       try {
-        issueCount = validateResourceWithProfile(resource.content, fields, registry, {
+        issueCount = validateResource(resource.content, tree, schemaCtx, {
           existingReferences: referenceIndex,
           locale,
         }).filter((issue) => issue.severity === "error").length;

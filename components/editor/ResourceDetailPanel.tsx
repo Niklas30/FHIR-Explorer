@@ -22,27 +22,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { DatasetResource } from "@/lib/datasets/content";
-import type { FhirRegistry } from "@/lib/fhir-editor/registry";
-import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
 import {
-  getDefaultValueForField,
-  getFieldValue,
-  isFieldFilled,
-  removeFieldValue,
-  setFieldValue,
-} from "@/lib/fhir-editor/fields";
+  createDefaultFieldValue,
+  getChoiceKeys,
+  getNodeChildren,
+  getNodeKey,
+  isNodePresent,
+  setChildValue,
+  validateResource,
+  type SchemaContext,
+  type SchemaNode,
+  type SchemaTree,
+} from "@/lib/fhir-editor/schema";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
-import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
-import { ComplexFieldGroup } from "@/components/editor/resource-detail/ComplexFieldGroup";
-import { FieldRow } from "@/components/editor/resource-detail/FieldRow";
+import { ElementEditor } from "@/components/editor/resource-detail/schema-editor/ElementEditor";
+import { SchemaEditorProvider } from "@/components/editor/resource-detail/schema-editor/context";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 import { formatTemplate } from "@/components/editor/resource-detail/utils";
 import { UnknownFieldsSection } from "@/components/editor/resource-detail/UnknownFieldsSection";
 
 type ResourceDetailPanelProps = {
   resource: DatasetResource | null;
-  fields: FieldDefinition[];
-  registry: FhirRegistry | null;
+  schemaTree: SchemaTree | null;
+  schemaCtx: SchemaContext | null;
   datasetResources: DatasetResource[];
   onSelectResource: (resourceId: string) => void;
   onUpdateResource: (resource: DatasetResource) => void;
@@ -53,14 +55,20 @@ export type ResourceDetailPanelHandle = {
   focusSearch: () => void;
 };
 
+const matchesQuery = (node: SchemaNode, normalizedQuery: string) => {
+  if (!normalizedQuery) return true;
+  const haystack = `${node.label} ${node.path} ${node.short ?? ""}`.toLowerCase();
+  return haystack.includes(normalizedQuery);
+};
+
 export const ResourceDetailPanel = forwardRef<
   ResourceDetailPanelHandle,
   ResourceDetailPanelProps
 >(function ResourceDetailPanel(
   {
     resource,
-    fields,
-    registry,
+    schemaTree,
+    schemaCtx,
     datasetResources,
     onSelectResource,
     onUpdateResource,
@@ -69,8 +77,6 @@ export const ResourceDetailPanel = forwardRef<
   ref
 ) {
   const { locale, text } = useResourceDetailText();
-  const requiredFields = fields.filter((field) => (field.min ?? 0) > 0);
-  const optionalFields = fields.filter((field) => (field.min ?? 0) === 0);
   const [fieldQuery, setFieldQuery] = useState("");
   const [listQuery, setListQuery] = useState("");
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
@@ -110,82 +116,58 @@ export const ResourceDetailPanel = forwardRef<
     );
   }, [showSearch, settingsLoaded]);
 
-  const groupedFields = useMemo(() => {
-    if (!resource) return [];
-    const map = new Map<string, { root?: FieldDefinition; children: FieldDefinition[] }>();
-    for (const field of fields) {
-      const segment = field.segments[0];
-      if (!segment) continue;
-      const entry = map.get(segment) ?? { root: undefined, children: [] };
-      if (field.segments.length === 1) {
-        entry.root = field;
-      } else {
-        entry.children.push(field);
-      }
-      map.set(segment, entry);
-    }
-    return Array.from(map.entries())
-      .map(([segment, entry]) => ({
-        key: segment,
-        root:
-          entry.root ??
-          ({
-            id: segment,
-            path: segment,
-            segments: [segment],
-            label: segment
-              .replace(/[-_]/g, " ")
-              .replace(/([a-z])([A-Z])/g, "$1 $2")
-              .replace(/\s+/g, " ")
-              .trim()
-              .replace(/^\w/, (char) => char.toUpperCase()),
-          } as FieldDefinition),
-        children: entry.children,
-      }))
-      .sort((a, b) => a.root.label.localeCompare(b.root.label));
-  }, [fields, resource]);
-
-  const allAddableFields = useMemo(() => {
-    if (!resource) return [];
-    return fields.filter((field) => {
-      if (field.segments.length !== 1) return false;
-      if (isFieldFilled(resource.content, field)) return false;
-      return true;
-    });
-  }, [fields, resource]);
-
-  const addableFields = useMemo(() => {
-    const normalizedQuery = fieldQuery.trim().toLowerCase();
-    if (!normalizedQuery) return allAddableFields;
-    return allAddableFields.filter((field) => {
-      const label = `${field.label} ${field.path ?? ""}`.toLowerCase();
-      return label.includes(normalizedQuery);
-    });
-  }, [allAddableFields, fieldQuery]);
+  const rootChildren = useMemo(() => {
+    if (!schemaTree || !schemaCtx) return [];
+    return getNodeChildren(schemaTree.root, undefined, schemaCtx, schemaTree).children;
+  }, [schemaTree, schemaCtx]);
 
   const referenceIndex = useMemo(
     () => buildDatasetReferenceIndex(datasetResources),
     [datasetResources]
   );
 
+  const content = resource?.content;
+
   const validationIssues = useMemo(() => {
-    if (!resource || !registry) return [];
-    return validateResourceWithProfile(resource.content, fields, registry, {
+    if (!content || !schemaTree || !schemaCtx) return [];
+    return validateResource(content, schemaTree, schemaCtx, {
       existingReferences: referenceIndex,
       locale,
     });
-  }, [fields, locale, referenceIndex, registry, resource]);
+  }, [content, schemaTree, schemaCtx, referenceIndex, locale]);
 
-  if (!resource) {
+  const requiredCount = rootChildren.filter((node) => node.min > 0).length;
+  const optionalCount = rootChildren.length - requiredCount;
+
+  const visibleNodes = useMemo(() => {
+    if (!content) return [];
+    const normalizedQuery = listQuery.trim().toLowerCase();
+    return rootChildren.filter(
+      (node) =>
+        (isNodePresent(node, content) || node.min > 0) &&
+        matchesQuery(node, normalizedQuery)
+    );
+  }, [rootChildren, content, listQuery]);
+
+  const allAddableNodes = useMemo(() => {
+    if (!content) return [];
+    return rootChildren.filter(
+      (node) => !isNodePresent(node, content) && node.min === 0 && node.max !== "0"
+    );
+  }, [rootChildren, content]);
+
+  const addableNodes = useMemo(() => {
+    const normalizedQuery = fieldQuery.trim().toLowerCase();
+    if (!normalizedQuery) return allAddableNodes;
+    return allAddableNodes.filter((node) => matchesQuery(node, normalizedQuery));
+  }, [allAddableNodes, fieldQuery]);
+
+  if (!resource || !content) {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b border-foreground/10 px-4 py-3">
-          <div className="text-sm font-semibold text-foreground">
-            {text.fieldsTitle}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {text.pickResourceToEdit}
-          </div>
+          <div className="text-sm font-semibold text-foreground">{text.fieldsTitle}</div>
+          <div className="text-xs text-muted-foreground">{text.pickResourceToEdit}</div>
         </div>
         <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
           {text.selectResourceToStart}
@@ -202,54 +184,64 @@ export const ResourceDetailPanel = forwardRef<
     });
   };
 
-  const handleFieldAdd = (field: FieldDefinition) => {
-    if (!registry) return;
-    const defaultValue = getDefaultValueForField(field, registry);
-    const nextContent = setFieldValue(resource.content, field, defaultValue);
-    handleUpdate(nextContent);
+  const handleAddNode = (node: SchemaNode) => {
+    handleUpdate(
+      setChildValue(content, getNodeKey(node), createDefaultFieldValue(node))
+    );
   };
 
-  const handleFieldRemove = (field: FieldDefinition) => {
-    const nextContent = removeFieldValue(resource.content, field);
-    handleUpdate(nextContent);
+  const handleRemoveNode = (node: SchemaNode) => {
+    let next = content;
+    const keys = node.isChoice ? getChoiceKeys(node) : [node.key];
+    for (const key of keys) {
+      next = setChildValue(next, key, undefined);
+    }
+    handleUpdate(next);
   };
 
-  const visibleGroups = groupedFields.filter((group) => {
-    if (getFieldValue(resource.content, group.root) === undefined) return false;
-    if (!listQuery.trim()) return true;
-    const normalized = listQuery.trim().toLowerCase();
-    const rootLabel = `${group.root.label} ${group.root.path ?? ""}`.toLowerCase();
-    if (rootLabel.includes(normalized)) return true;
-    return group.children.some((child) => {
-      const childLabel = `${child.label} ${child.path ?? ""}`.toLowerCase();
-      return childLabel.includes(normalized);
-    });
-  });
+  const knownTopLevel = new Set<string>(["resourceType"]);
+  for (const node of rootChildren) {
+    if (node.isChoice) {
+      for (const key of getChoiceKeys(node)) {
+        knownTopLevel.add(key);
+        knownTopLevel.add(`_${key}`);
+      }
+    } else {
+      knownTopLevel.add(node.key);
+      knownTopLevel.add(`_${node.key}`);
+    }
+  }
+  const unknownKeys = Object.keys(content).filter((key) => !knownTopLevel.has(key));
 
-  const knownTopLevel = new Set(fields.map((field) => field.segments[0]).filter(Boolean));
-  const unknownKeys = Object.keys(resource.content).filter(
-    (key) => key !== "resourceType" && !knownTopLevel.has(key)
-  );
+  const editorContextValue =
+    schemaTree && schemaCtx
+      ? {
+          ctx: schemaCtx,
+          tree: schemaTree,
+          datasetResources,
+          referenceIndex,
+          validationIssues,
+          onSelectResource,
+        }
+      : null;
 
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-foreground/10 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold text-foreground">
-              {text.fieldsTitle}
-            </div>
+            <div className="text-sm font-semibold text-foreground">{text.fieldsTitle}</div>
             <div className="text-xs text-muted-foreground">
               {formatTemplate(text.requiredCount, {
-                required: requiredFields.length,
-                optional: optionalFields.length,
+                required: requiredCount,
+                optional: optionalCount,
               })}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowSearch((prev) => !prev)}
+              onClick={() => setShowSearch((previous) => !previous)}
               className="flex h-8 w-8 items-center justify-center rounded-md border border-foreground/20 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               aria-label={text.ariaToggleSearch}
             >
@@ -269,7 +261,7 @@ export const ResourceDetailPanel = forwardRef<
                 setFieldQuery("");
                 setFieldDialogOpen(true);
               }}
-              disabled={allAddableFields.length === 0}
+              disabled={allAddableNodes.length === 0}
               className="gap-1.5"
             >
               <Plus className="size-4" />
@@ -290,58 +282,49 @@ export const ResourceDetailPanel = forwardRef<
         ) : null}
       </div>
       <ScrollArea className="flex-1 min-h-0">
-        <div className="grid gap-4 p-4">
-          {visibleGroups.length === 0 ? (
+        <div className="grid gap-3 p-4">
+          {!editorContextValue || visibleNodes.length === 0 ? (
             <div className="rounded-lg border border-dashed border-foreground/15 px-3 py-6 text-center text-sm text-muted-foreground">
               <div>{text.noFieldsForProfile}</div>
-              <div className="mt-3 flex justify-center">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setFieldQuery("");
-                    setFieldDialogOpen(true);
-                  }}
-                  disabled={allAddableFields.length === 0}
-                  className="gap-1.5"
-                >
-                  <Plus className="size-4" />
-                  {text.addField}
-                </Button>
-              </div>
+              {editorContextValue ? (
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setFieldQuery("");
+                      setFieldDialogOpen(true);
+                    }}
+                    disabled={allAddableNodes.length === 0}
+                    className="gap-1.5"
+                  >
+                    <Plus className="size-4" />
+                    {text.addField}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
-            visibleGroups.map((group) =>
-              group.children.length === 0 ? (
-                <FieldRow
-                  key={group.key}
-                  field={group.root}
-                  content={resource.content}
-                  registry={registry}
-                  datasetResources={datasetResources}
-                  referenceIndex={referenceIndex}
-                  validationIssues={validationIssues}
-                  onChange={handleUpdate}
-                  onRemove={() => handleFieldRemove(group.root)}
-                  onSelectResource={onSelectResource}
+            <SchemaEditorProvider value={editorContextValue}>
+              {visibleNodes.map((node) => (
+                <ElementEditor
+                  key={node.elementId}
+                  node={node}
+                  parentValue={content}
+                  onParentChange={handleUpdate}
+                  path=""
+                  depth={0}
+                  onRemoveElement={
+                    node.min === 0 && isNodePresent(node, content)
+                      ? () => handleRemoveNode(node)
+                      : undefined
+                  }
                 />
-              ) : (
-                <ComplexFieldGroup
-                  key={group.key}
-                  group={group}
-                  content={resource.content}
-                  registry={registry}
-                  datasetResources={datasetResources}
-                  referenceIndex={referenceIndex}
-                  validationIssues={validationIssues}
-                  onChange={handleUpdate}
-                  onSelectResource={onSelectResource}
-                />
-              )
-            )
+              ))}
+            </SchemaEditorProvider>
           )}
           <UnknownFieldsSection
             unknownKeys={unknownKeys}
-            content={resource.content}
+            content={content}
             title={text.unknownFieldsTitle}
             unknownFieldLabel={text.unknownField}
             notInProfileLabel={text.notInProfile}
@@ -371,25 +354,28 @@ export const ResourceDetailPanel = forwardRef<
               placeholder={text.searchFields}
             />
             <div className="max-h-72 overflow-auto">
-              {addableFields.length === 0 ? (
+              {addableNodes.length === 0 ? (
                 <div className="px-3 py-4 text-sm text-muted-foreground">
                   {text.noFieldsAvailable}
                 </div>
               ) : (
                 <div className="grid gap-1 p-2">
-                  {addableFields.map((field) => (
+                  {addableNodes.map((node) => (
                     <button
-                      key={field.id}
+                      key={node.elementId}
                       type="button"
                       onClick={() => {
-                        handleFieldAdd(field);
+                        handleAddNode(node);
                         setFieldQuery("");
                         setFieldDialogOpen(false);
                       }}
                       className="rounded-md border border-foreground/10 px-3 py-2 text-left text-sm hover:border-foreground/30 hover:bg-muted/40"
                     >
-                      <div className="font-medium text-foreground">{field.label}</div>
-                      <div className="text-xs text-muted-foreground">{field.path}</div>
+                      <div className="font-medium text-foreground">{node.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {node.path}
+                        {node.short ? ` · ${node.short}` : ""}
+                      </div>
                     </button>
                   ))}
                 </div>

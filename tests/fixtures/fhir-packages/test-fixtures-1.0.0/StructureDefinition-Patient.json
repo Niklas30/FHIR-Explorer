@@ -1,0 +1,165 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Patient",
+ "url": "http://hl7.org/fhir/StructureDefinition/Patient",
+ "name": "Patient",
+ "status": "active",
+ "kind": "resource",
+ "abstract": false,
+ "type": "Patient",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/DomainResource",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Patient",
+    "path": "Patient",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Patient.id",
+    "path": "Patient.id",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "id"
+     }
+    ]
+   },
+   {
+    "id": "Patient.extension",
+    "path": "Patient.extension",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "Extension"
+     }
+    ]
+   },
+   {
+    "id": "Patient.modifierExtension",
+    "path": "Patient.modifierExtension",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "Extension"
+     }
+    ],
+    "isModifier": true
+   },
+   {
+    "id": "Patient.identifier",
+    "path": "Patient.identifier",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "Identifier"
+     }
+    ]
+   },
+   {
+    "id": "Patient.active",
+    "path": "Patient.active",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "boolean"
+     }
+    ],
+    "short": "Whether this patient record is in active use"
+   },
+   {
+    "id": "Patient.name",
+    "path": "Patient.name",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "HumanName"
+     }
+    ],
+    "short": "A name associated with the patient"
+   },
+   {
+    "id": "Patient.deceased[x]",
+    "path": "Patient.deceased[x]",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "boolean"
+     },
+     {
+      "code": "dateTime"
+     }
+    ],
+    "short": "Indicates if the individual is deceased or not",
+    "isModifier": true
+   },
+   {
+    "id": "Patient.managingOrganization",
+    "path": "Patient.managingOrganization",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Reference",
+      "targetProfile": [
+       "http://hl7.org/fhir/StructureDefinition/Organization"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "Patient.contact",
+    "path": "Patient.contact",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "BackboneElement"
+     }
+    ],
+    "short": "A contact party for the patient"
+   },
+   {
+    "id": "Patient.contact.relationship",
+    "path": "Patient.contact.relationship",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "CodeableConcept"
+     }
+    ]
+   },
+   {
+    "id": "Patient.contact.name",
+    "path": "Patient.contact.name",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "HumanName"
+     }
+    ]
+   },
+   {
+    "id": "Patient.contact.period",
+    "path": "Patient.contact.period",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Period"
+     }
+    ]
+   }
+  ]
+ }
+}

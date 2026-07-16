@@ -9,24 +9,26 @@ import {
 } from "@/components/ui/resizable";
 import type { DatasetResource } from "@/lib/datasets/content";
 import { byLocale } from "@/lib/i18n/select";
-import type { FhirRegistry } from "@/lib/fhir-editor/registry";
-import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
-import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
+import {
+  validateResource,
+  type SchemaContext,
+  type SchemaTree,
+} from "@/lib/fhir-editor/schema";
 
 type ResourceJsonPanelProps = {
   resource: DatasetResource | null;
   datasetResources: DatasetResource[];
-  fields: FieldDefinition[];
-  registry: FhirRegistry | null;
+  schemaTree: SchemaTree | null;
+  schemaCtx: SchemaContext | null;
   onUpdateResource: (resource: DatasetResource) => void;
 };
 
 export const ResourceJsonPanel = ({
   resource,
   datasetResources,
-  fields,
-  registry,
+  schemaTree,
+  schemaCtx,
   onUpdateResource,
 }: ResourceJsonPanelProps) => {
   const { locale } = useI18n();
@@ -135,12 +137,12 @@ export const ResourceJsonPanel = ({
   );
 
   const validationIssues = useMemo(() => {
-    if (!resource || !parsedDraft.value) return [];
-    return validateResourceWithProfile(parsedDraft.value, fields, registry ?? undefined, {
+    if (!resource || !parsedDraft.value || !schemaTree || !schemaCtx) return [];
+    return validateResource(parsedDraft.value, schemaTree, schemaCtx, {
       existingReferences,
       locale,
     });
-  }, [existingReferences, fields, locale, parsedDraft.value, registry, resource]);
+  }, [existingReferences, locale, parsedDraft.value, schemaTree, schemaCtx, resource]);
 
   const errorCount = validationIssues.filter((issue) => issue.severity === "error").length;
   const warningCount = validationIssues.filter((issue) => issue.severity === "warning").length;

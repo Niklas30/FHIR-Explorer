@@ -1,0 +1,43 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "CodeableConcept",
+ "url": "http://hl7.org/fhir/StructureDefinition/CodeableConcept",
+ "name": "CodeableConcept",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "CodeableConcept",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "CodeableConcept",
+    "path": "CodeableConcept",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "CodeableConcept.coding",
+    "path": "CodeableConcept.coding",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "Coding"
+     }
+    ]
+   },
+   {
+    "id": "CodeableConcept.text",
+    "path": "CodeableConcept.text",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,85 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "contact-preference",
+ "url": "https://example.org/fhir/StructureDefinition/contact-preference",
+ "name": "contact-preference",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "Extension",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Extension",
+ "derivation": "constraint",
+ "differential": {
+  "element": [
+   {
+    "id": "Extension",
+    "path": "Extension",
+    "min": 0,
+    "max": "1"
+   },
+   {
+    "id": "Extension.extension:channel",
+    "path": "Extension.extension",
+    "sliceName": "channel",
+    "min": 1,
+    "max": "1"
+   },
+   {
+    "id": "Extension.extension:channel.url",
+    "path": "Extension.extension.url",
+    "min": 1,
+    "max": "1",
+    "fixedUri": "channel"
+   },
+   {
+    "id": "Extension.extension:channel.value[x]",
+    "path": "Extension.extension.value[x]",
+    "min": 1,
+    "max": "1",
+    "type": [
+     {
+      "code": "code"
+     }
+    ]
+   },
+   {
+    "id": "Extension.extension:priority",
+    "path": "Extension.extension",
+    "sliceName": "priority",
+    "min": 0,
+    "max": "1"
+   },
+   {
+    "id": "Extension.extension:priority.url",
+    "path": "Extension.extension.url",
+    "min": 1,
+    "max": "1",
+    "fixedUri": "priority"
+   },
+   {
+    "id": "Extension.extension:priority.value[x]",
+    "path": "Extension.extension.value[x]",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "integer"
+     }
+    ]
+   },
+   {
+    "id": "Extension.url",
+    "path": "Extension.url",
+    "min": 1,
+    "max": "1",
+    "fixedUri": "https://example.org/fhir/StructureDefinition/contact-preference"
+   },
+   {
+    "id": "Extension.value[x]",
+    "path": "Extension.value[x]",
+    "min": 0,
+    "max": "0"
+   }
+  ]
+ }
+}

@@ -233,7 +233,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
     initializationError,
     registryState,
     profiles,
-    fields,
+    schemaCtx,
+    schemaTree,
     resolveStructureDefinition,
   } = useDatasetEditorRegistryState({
     dataset,
@@ -494,8 +495,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               <ResourceDetailPanel
                 ref={resourceDetailRef}
                 resource={selectedResource}
-                fields={fields}
-                registry={registryState}
+                schemaTree={schemaTree}
+                schemaCtx={schemaCtx}
                 datasetResources={resources}
                 onSelectResource={handleSelectResource}
                 onUpdateResource={handleUpdateResource}
@@ -512,8 +513,8 @@ export const DatasetEditor = ({ datasetId }: DatasetEditorProps) => {
               <ResourceJsonPanel
                 resource={selectedResource}
                 datasetResources={resources}
-                fields={fields}
-                registry={registryState}
+                schemaTree={schemaTree}
+                schemaCtx={schemaCtx}
                 onUpdateResource={handleUpdateResource}
               />
             </ResizablePanel>

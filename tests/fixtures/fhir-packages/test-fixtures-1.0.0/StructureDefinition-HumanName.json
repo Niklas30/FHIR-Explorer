@@ -1,0 +1,79 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "HumanName",
+ "url": "http://hl7.org/fhir/StructureDefinition/HumanName",
+ "name": "HumanName",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "HumanName",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "HumanName",
+    "path": "HumanName",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "HumanName.use",
+    "path": "HumanName.use",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "code"
+     }
+    ],
+    "short": "usual | official | temp | nickname"
+   },
+   {
+    "id": "HumanName.text",
+    "path": "HumanName.text",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "HumanName.family",
+    "path": "HumanName.family",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ],
+    "short": "Family name (often called 'Surname')"
+   },
+   {
+    "id": "HumanName.given",
+    "path": "HumanName.given",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "string"
+     }
+    ],
+    "short": "Given names"
+   },
+   {
+    "id": "HumanName.period",
+    "path": "HumanName.period",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Period"
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,4 +1,4 @@
-import type { ValidationIssue } from "@/lib/fhir-editor/validation";
+import type { ValidationIssue } from "@/lib/fhir-editor/schema";
 
 export const formatTemplate = (
   template: string,

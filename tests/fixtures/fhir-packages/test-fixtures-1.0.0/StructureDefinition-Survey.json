@@ -1,0 +1,83 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Survey",
+ "url": "https://example.org/fhir/StructureDefinition/Survey",
+ "name": "Survey",
+ "status": "active",
+ "kind": "resource",
+ "abstract": false,
+ "type": "Survey",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/DomainResource",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Survey",
+    "path": "Survey",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Survey.id",
+    "path": "Survey.id",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "id"
+     }
+    ]
+   },
+   {
+    "id": "Survey.title",
+    "path": "Survey.title",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "Survey.item",
+    "path": "Survey.item",
+    "min": 0,
+    "max": "*",
+    "type": [
+     {
+      "code": "BackboneElement"
+     }
+    ]
+   },
+   {
+    "id": "Survey.item.linkId",
+    "path": "Survey.item.linkId",
+    "min": 1,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "Survey.item.text",
+    "path": "Survey.item.text",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "Survey.item.item",
+    "path": "Survey.item.item",
+    "min": 0,
+    "max": "*",
+    "contentReference": "#Survey.item"
+   }
+  ]
+ }
+}
