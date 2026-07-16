@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import { loadDatasets } from "@/lib/datasets/storage";
 import type { DatasetResource } from "@/lib/datasets/content";
@@ -109,27 +109,43 @@ export const useDatasetEditorDatasetState = ({
     [resources, selectedResourceId]
   );
 
-  const persistResources = (nextResources: DatasetResource[]) => {
-    const sorted = sortResources(nextResources);
+  // Two persist calls can happen in the same event tick (e.g. creating a
+  // reference target and immediately writing the reference onto the current
+  // resource). Resolving against a ref instead of the render-time closure
+  // keeps the second write from dropping the first one.
+  const resourcesRef = useRef(resources);
+  useEffect(() => {
+    resourcesRef.current = resources;
+  }, [resources]);
+
+  const persistResources = (
+    next: DatasetResource[] | ((previous: DatasetResource[]) => DatasetResource[])
+  ) => {
+    const resolved = typeof next === "function" ? next(resourcesRef.current) : next;
+    const sorted = sortResources(resolved);
+    resourcesRef.current = sorted;
     setResources(sorted);
     saveDatasetResources(datasetId, sorted);
   };
 
   const handleUpdateResource = (nextResource: DatasetResource) => {
-    const nextResources = [nextResource, ...resources.filter((entry) => entry.id !== nextResource.id)];
-    persistResources(nextResources);
+    persistResources((previous) => [
+      nextResource,
+      ...previous.filter((entry) => entry.id !== nextResource.id),
+    ]);
   };
 
   const handleSelectResource = (resourceId: string, options?: { recordHistory?: boolean }) => {
-    const target = resources.find((entry) => entry.id === resourceId);
+    const target = resourcesRef.current.find((entry) => entry.id === resourceId);
     if (!target) return;
 
     const shouldRecordHistory = options?.recordHistory !== false;
     const now = Date.now();
-    const nextResources = resources.map((entry) =>
-      entry.id === resourceId ? { ...entry, lastSelectedAt: now } : entry
+    persistResources((previous) =>
+      previous.map((entry) =>
+        entry.id === resourceId ? { ...entry, lastSelectedAt: now } : entry
+      )
     );
-    persistResources(nextResources);
     setSelectedResourceId(resourceId);
     if (shouldRecordHistory) {
       setResourceNavigation((prev) => pushResourceNavigationEntry(prev, resourceId));
