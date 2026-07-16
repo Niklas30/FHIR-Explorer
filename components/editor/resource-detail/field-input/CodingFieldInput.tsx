@@ -6,7 +6,7 @@ import { useResourceDetailText } from "@/components/editor/resource-detail/text"
 import { formatOptionLabel } from "@/components/editor/resource-detail/utils";
 import { Input } from "@/components/ui/input";
 import type { CodingSelectOption } from "@/components/editor/resource-detail/field-input/types";
-import { getCodingAt, isRecord, setCodingAt } from "@/components/editor/resource-detail/field-input/utils";
+import { isRecord, readCoding, writeCoding } from "@/components/editor/resource-detail/field-input/utils";
 
 export const CodingFieldInput = ({
   kind,
@@ -21,7 +21,7 @@ export const CodingFieldInput = ({
 }) => {
   const { text } = useResourceDetailText();
   const record = isRecord(value) ? value : {};
-  const coding = getCodingAt(record);
+  const coding = readCoding(kind, record);
   const systemValue = typeof coding.system === "string" ? coding.system : "";
   const codeValue = typeof coding.code === "string" ? coding.code : "";
   const displayValue = typeof coding.display === "string" ? coding.display : "";
@@ -48,8 +48,7 @@ export const CodingFieldInput = ({
   );
 
   const applyCoding = (nextCoding: Record<string, unknown>) => {
-    const next = setCodingAt(record, nextCoding);
-    onChange(next);
+    onChange(writeCoding(kind, record, nextCoding));
   };
 
   return (
