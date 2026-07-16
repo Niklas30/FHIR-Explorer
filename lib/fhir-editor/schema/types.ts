@@ -17,8 +17,17 @@ export type SchemaElementDefinition = ElementDefinition & {
   base?: { path?: string; min?: number; max?: string };
   isModifier?: boolean;
   isSummary?: boolean;
+  constraint?: ElementConstraint[];
   // fixed[x] / pattern[x] live under dynamic keys (fixedUri, patternCodeableConcept, ...)
   [key: string]: unknown;
+};
+
+/** FHIRPath invariant attached to an ElementDefinition. */
+export type ElementConstraint = {
+  key?: string;
+  severity?: string;
+  human?: string;
+  expression?: string;
 };
 
 export type SchemaNode = {
@@ -57,6 +66,8 @@ export type SchemaNode = {
   contentReference?: string;
   /** Inline children from the same snapshot (BackboneElements, constrained sub-elements). */
   children: SchemaNode[];
+  /** FHIRPath invariants declared on this element. */
+  constraints?: ElementConstraint[];
 };
 
 export type SchemaTree = {

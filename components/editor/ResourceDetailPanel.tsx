@@ -36,6 +36,7 @@ import {
 } from "@/lib/fhir-editor/schema";
 import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
 import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
+import { useInvariantIssues } from "@/components/editor/dataset-editor/useInvariantIssues";
 import { ElementEditor } from "@/components/editor/resource-detail/schema-editor/ElementEditor";
 import { SchemaEditorProvider } from "@/components/editor/resource-detail/schema-editor/context";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
@@ -131,13 +132,19 @@ export const ResourceDetailPanel = forwardRef<
 
   const content = resource?.content;
 
-  const validationIssues = useMemo(() => {
+  const structuralIssues = useMemo(() => {
     if (!content || !schemaTree || !schemaCtx) return [];
     return validateResource(content, schemaTree, schemaCtx, {
       existingReferences: referenceIndex,
       locale,
     });
   }, [content, schemaTree, schemaCtx, referenceIndex, locale]);
+
+  const invariantIssues = useInvariantIssues(content ?? null, schemaTree);
+  const validationIssues = useMemo(
+    () => [...structuralIssues, ...invariantIssues],
+    [structuralIssues, invariantIssues]
+  );
 
   const requiredCount = rootChildren.filter((node) => node.min > 0).length;
   const optionalCount = rootChildren.length - requiredCount;

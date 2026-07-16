@@ -38,3 +38,8 @@ export {
 } from "@/lib/fhir-editor/schema/values";
 export { resolveRenderKind, type RenderKind, type PrimitiveKind } from "@/lib/fhir-editor/schema/render-kind";
 export { validateResource, type ValidationIssue } from "@/lib/fhir-editor/schema/validate";
+export {
+  collectInvariants,
+  evaluateInvariants,
+  type CollectedInvariant,
+} from "@/lib/fhir-editor/schema/invariants";

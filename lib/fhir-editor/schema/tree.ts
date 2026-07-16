@@ -65,6 +65,7 @@ const buildNodeFromElement = (element: SchemaElementDefinition): SchemaNode => {
     slices: [],
     contentReference: element.contentReference,
     children: [],
+    constraints: Array.isArray(element.constraint) ? element.constraint : undefined,
   };
 };
 

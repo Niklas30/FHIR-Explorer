@@ -15,6 +15,7 @@ import {
   type SchemaContext,
   type SchemaTree,
 } from "@/lib/fhir-editor/schema";
+import { useInvariantIssues } from "@/components/editor/dataset-editor/useInvariantIssues";
 
 type ResourceJsonPanelProps = {
   resource: DatasetResource | null;
@@ -136,13 +137,19 @@ export const ResourceJsonPanel = ({
     [datasetResources]
   );
 
-  const validationIssues = useMemo(() => {
+  const structuralIssues = useMemo(() => {
     if (!resource || !parsedDraft.value || !schemaTree || !schemaCtx) return [];
     return validateResource(parsedDraft.value, schemaTree, schemaCtx, {
       existingReferences,
       locale,
     });
   }, [existingReferences, locale, parsedDraft.value, schemaTree, schemaCtx, resource]);
+
+  const invariantIssues = useInvariantIssues(parsedDraft.value, schemaTree);
+  const validationIssues = useMemo(
+    () => [...structuralIssues, ...invariantIssues],
+    [structuralIssues, invariantIssues]
+  );
 
   const errorCount = validationIssues.filter((issue) => issue.severity === "error").length;
   const warningCount = validationIssues.filter((issue) => issue.severity === "warning").length;
