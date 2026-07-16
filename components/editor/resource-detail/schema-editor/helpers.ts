@@ -1,8 +1,8 @@
 import type { CodingOption } from "@/lib/fhir-editor/registry";
 import { resolveValueSetOptions } from "@/lib/fhir-editor/registry";
 import type { SchemaContext, SchemaNode } from "@/lib/fhir-editor/schema";
+import { getNodeChildren, isRecord } from "@/lib/fhir-editor/schema";
 import { getSliceDiscriminatorPattern } from "@/lib/fhir-editor/schema/slicing";
-import { isRecord } from "@/lib/fhir-editor/schema";
 
 const uniqueOptions = (options: CodingOption[]) => {
   const unique = new Map<string, CodingOption>();
@@ -97,6 +97,20 @@ export const getIdentifierTypeOptionsForNode = (
     options.push(...resolveValueSetOptions(typeChild.binding.valueSet, ctx.registry));
   }
   return uniqueOptions(options);
+};
+
+/**
+ * System codes allowed for a ContactPoint element, resolved from the
+ * binding on its `system` child (profile constraints included).
+ */
+export const getContactPointSystemOptions = (
+  node: SchemaNode,
+  ctx: SchemaContext
+): CodingOption[] => {
+  const { children } = getNodeChildren(node, "ContactPoint", ctx);
+  const system = children.find((child) => child.key === "system");
+  if (!system?.binding?.valueSet) return [];
+  return resolveValueSetOptions(system.binding.valueSet, ctx.registry);
 };
 
 /** Human readable cardinality, e.g. "1..*" or "0..1". */
