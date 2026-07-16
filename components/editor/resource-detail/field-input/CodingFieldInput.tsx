@@ -5,7 +5,7 @@ import { PopupSearchSelect, type PopupSearchOption } from "@/components/editor/r
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 import { formatOptionLabel } from "@/components/editor/resource-detail/utils";
 import { Input } from "@/components/ui/input";
-import type { FieldInputProps } from "@/components/editor/resource-detail/field-input/types";
+import type { CodingSelectOption } from "@/components/editor/resource-detail/field-input/types";
 import { getCodingAt, isRecord, setCodingAt } from "@/components/editor/resource-detail/field-input/utils";
 
 export const CodingFieldInput = ({
@@ -16,7 +16,7 @@ export const CodingFieldInput = ({
 }: {
   kind: "Coding" | "CodeableConcept";
   value: unknown;
-  options: FieldInputProps["options"];
+  options: CodingSelectOption[];
   onChange: (value: unknown) => void;
 }) => {
   const { text } = useResourceDetailText();

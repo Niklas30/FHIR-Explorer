@@ -1,0 +1,95 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "PatientProfile",
+ "url": "https://example.org/fhir/StructureDefinition/PatientProfile",
+ "name": "PatientProfile",
+ "status": "active",
+ "kind": "resource",
+ "abstract": false,
+ "type": "Patient",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Patient",
+ "derivation": "constraint",
+ "differential": {
+  "element": [
+   {
+    "id": "Patient",
+    "path": "Patient",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Patient.extension:birthPlace",
+    "path": "Patient.extension",
+    "sliceName": "birthPlace",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Extension",
+      "profile": [
+       "https://example.org/fhir/StructureDefinition/birth-place"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "Patient.extension:contactPreference",
+    "path": "Patient.extension",
+    "sliceName": "contactPreference",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Extension",
+      "profile": [
+       "https://example.org/fhir/StructureDefinition/contact-preference"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "Patient.identifier:mrn",
+    "path": "Patient.identifier",
+    "sliceName": "mrn",
+    "min": 1,
+    "max": "1",
+    "type": [
+     {
+      "code": "Identifier"
+     }
+    ]
+   },
+   {
+    "id": "Patient.identifier:mrn.system",
+    "path": "Patient.identifier.system",
+    "min": 1,
+    "max": "1",
+    "fixedUri": "https://example.org/mrn"
+   },
+   {
+    "id": "Patient.name",
+    "path": "Patient.name",
+    "min": 1,
+    "max": "*",
+    "mustSupport": true
+   },
+   {
+    "id": "Patient.name.family",
+    "path": "Patient.name.family",
+    "min": 1,
+    "max": "1"
+   },
+   {
+    "id": "Patient.deceasedBoolean",
+    "path": "Patient.deceasedBoolean",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "boolean"
+     }
+    ]
+   }
+  ]
+ }
+}

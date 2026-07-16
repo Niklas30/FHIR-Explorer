@@ -1,0 +1,76 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Identifier",
+ "url": "http://hl7.org/fhir/StructureDefinition/Identifier",
+ "name": "Identifier",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "Identifier",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Identifier",
+    "path": "Identifier",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Identifier.use",
+    "path": "Identifier.use",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "code"
+     }
+    ]
+   },
+   {
+    "id": "Identifier.type",
+    "path": "Identifier.type",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "CodeableConcept"
+     }
+    ]
+   },
+   {
+    "id": "Identifier.system",
+    "path": "Identifier.system",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "uri"
+     }
+    ]
+   },
+   {
+    "id": "Identifier.value",
+    "path": "Identifier.value",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "Identifier.period",
+    "path": "Identifier.period",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "Period"
+     }
+    ]
+   }
+  ]
+ }
+}

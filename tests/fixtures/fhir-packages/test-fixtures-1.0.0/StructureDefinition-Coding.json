@@ -1,0 +1,54 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Coding",
+ "url": "http://hl7.org/fhir/StructureDefinition/Coding",
+ "name": "Coding",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "Coding",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Coding",
+    "path": "Coding",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Coding.system",
+    "path": "Coding.system",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "uri"
+     }
+    ]
+   },
+   {
+    "id": "Coding.code",
+    "path": "Coding.code",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "code"
+     }
+    ]
+   },
+   {
+    "id": "Coding.display",
+    "path": "Coding.display",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   }
+  ]
+ }
+}

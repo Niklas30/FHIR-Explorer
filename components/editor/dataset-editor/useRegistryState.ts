@@ -5,11 +5,11 @@ import type { DatasetRecord } from "@/lib/datasets/storage";
 import type { DatasetResource } from "@/lib/datasets/content";
 import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
 import {
-  buildFieldDefinitions,
   getProfileSummaries,
   resolveProfileForResource,
   type ProfileSummary,
 } from "@/lib/fhir-editor/profiles";
+import { buildSchemaTree, createSchemaContext } from "@/lib/fhir-editor/schema";
 import { collectDependencies, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
 
@@ -80,10 +80,17 @@ export const useDatasetEditorRegistryState = ({
   const profile =
     selectedResource && registryState ? resolveProfileForResource(selectedResource.content, registryState) : null;
 
-  const fields = useMemo(() => {
-    if (!profile || !registryState) return [];
-    return buildFieldDefinitions(profile, registryState);
-  }, [profile, registryState]);
+  // The schema context caches generated snapshots and datatype trees across
+  // all profiles of the loaded registry.
+  const schemaCtx = useMemo(
+    () => (registryState ? createSchemaContext(registryState) : null),
+    [registryState]
+  );
+
+  const schemaTree = useMemo(() => {
+    if (!profile || !schemaCtx) return null;
+    return buildSchemaTree(profile, schemaCtx);
+  }, [profile, schemaCtx]);
 
   const resolveStructureDefinition = (canonicalUrl: string) => {
     if (!registryState) return null;
@@ -95,7 +102,8 @@ export const useDatasetEditorRegistryState = ({
     initializationError,
     registryState,
     profiles,
-    fields,
+    schemaCtx,
+    schemaTree,
     profile,
     resolveStructureDefinition,
   };

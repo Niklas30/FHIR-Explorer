@@ -1,215 +1,139 @@
 import {
-  getDefaultValueForField,
-  getFieldValue,
-  removeFieldValue,
-  setFieldValue,
-} from "@/lib/fhir-editor/fields";
-import type { FieldDefinition } from "@/lib/fhir-editor/profiles";
-import type { FhirRegistry } from "@/lib/fhir-editor/registry";
+  asItems,
+  createDefaultFieldValue,
+  getChoiceKeys,
+  getNodeChildren,
+  getNodeKey,
+  isRecord,
+  setChildValue,
+  type SchemaContext,
+  type SchemaNode,
+  type SchemaTree,
+} from "@/lib/fhir-editor/schema";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value && typeof value === "object" && !Array.isArray(value));
+/**
+ * Simulates the editor's value operations: every UI interaction boils down
+ * to an immutable record update at some nesting level, exactly like
+ * ElementEditor does via setChildValue.
+ */
 
-const findField = (fields: FieldDefinition[], path: string) => {
-  const field = fields.find((entry) => entry.path === path);
-  if (!field) {
-    throw new Error(`Field not found in test context: ${path}`);
+export const findChildNode = (
+  children: SchemaNode[],
+  key: string,
+  sliceName?: string
+): SchemaNode => {
+  const node = children.find((child) =>
+    sliceName
+      ? child.key === key &&
+        (child.sliceName === sliceName ||
+          child.slices.some((slice) => slice.sliceName === sliceName))
+      : child.key === key && !child.sliceName
+  );
+  if (!node) {
+    throw new Error(`Schema node not found: ${key}${sliceName ? `:${sliceName}` : ""}`);
   }
-  return field;
+  if (sliceName && node.sliceName !== sliceName) {
+    const slice = node.slices.find((entry) => entry.sliceName === sliceName);
+    if (!slice) throw new Error(`Slice not found: ${key}:${sliceName}`);
+    return slice;
+  }
+  return node;
 };
 
-const getRepeatingValues = (value: unknown): unknown[] => {
-  if (Array.isArray(value)) return [...value];
-  if (value === undefined || value === null) return [];
-  return [value];
-};
+export const getRootChildren = (tree: SchemaTree, ctx: SchemaContext) =>
+  getNodeChildren(tree.root, undefined, ctx, tree).children;
 
-const withGroupItem = (
+/** "Add field" — sets the node's default value on the record. */
+export const addElement = (
   content: Record<string, unknown>,
-  rootField: FieldDefinition,
+  node: SchemaNode
+): Record<string, unknown> =>
+  setChildValue(content, getNodeKey(node), createDefaultFieldValue(node));
+
+/** "Remove field" — clears all keys the node may occupy. */
+export const removeElement = (
+  content: Record<string, unknown>,
+  node: SchemaNode
+): Record<string, unknown> => {
+  let next = content;
+  const keys = node.isChoice ? getChoiceKeys(node) : [node.key];
+  for (const key of keys) {
+    next = setChildValue(next, key, undefined);
+  }
+  return next;
+};
+
+export const setElement = (
+  content: Record<string, unknown>,
+  key: string,
+  value: unknown
+): Record<string, unknown> => setChildValue(content, key, value);
+
+/** "Add entry" on a repeating element. */
+export const addItem = (
+  content: Record<string, unknown>,
+  key: string,
+  item: unknown
+): Record<string, unknown> =>
+  setChildValue(content, key, [...asItems(content[key]), item]);
+
+export const updateItem = (
+  content: Record<string, unknown>,
+  key: string,
+  index: number,
+  value: unknown
+): Record<string, unknown> => {
+  const items = [...asItems(content[key])];
+  while (items.length <= index) items.push(undefined);
+  items[index] = value;
+  return setChildValue(content, key, items);
+};
+
+export const removeItemAt = (
+  content: Record<string, unknown>,
+  key: string,
+  index: number
+): Record<string, unknown> =>
+  setChildValue(
+    content,
+    key,
+    asItems(content[key]).filter((_, currentIndex) => currentIndex !== index)
+  );
+
+export const moveItem = (
+  content: Record<string, unknown>,
+  key: string,
+  index: number,
+  direction: -1 | 1
+): Record<string, unknown> => {
+  const items = [...asItems(content[key])];
+  const target = index + direction;
+  if (target < 0 || target >= items.length) return content;
+  const [entry] = items.splice(index, 1);
+  items.splice(target, 0, entry);
+  return setChildValue(content, key, items);
+};
+
+export const duplicateItem = (
+  content: Record<string, unknown>,
+  key: string,
+  index: number
+): Record<string, unknown> => {
+  const items = [...asItems(content[key])];
+  items.splice(index + 1, 0, JSON.parse(JSON.stringify(items[index] ?? null)));
+  return setChildValue(content, key, items);
+};
+
+/** Edits one repeating item as a record, like a nested ElementEditor does. */
+export const withItem = (
+  content: Record<string, unknown>,
+  key: string,
   index: number,
   update: (item: Record<string, unknown>) => Record<string, unknown>
-) => {
-  const items = getRepeatingValues(getFieldValue(content, rootField));
-  while (items.length <= index) {
-    items.push({});
-  }
-  const current = isRecord(items[index]) ? items[index] : {};
+): Record<string, unknown> => {
+  const items = [...asItems(content[key])];
+  while (items.length <= index) items.push({});
+  const current = isRecord(items[index]) ? (items[index] as Record<string, unknown>) : {};
   items[index] = update(current);
-  return setFieldValue(content, rootField, items);
-};
-
-export const addField = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string,
-  registry?: FhirRegistry
-) => {
-  const field = findField(fields, path);
-  const defaultValue = getDefaultValueForField(field, registry);
-  return setFieldValue(content, field, defaultValue);
-};
-
-export const removeField = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string
-) => {
-  const field = findField(fields, path);
-  return removeFieldValue(content, field);
-};
-
-export const setField = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string,
-  value: unknown
-) => {
-  const field = findField(fields, path);
-  return setFieldValue(content, field, value);
-};
-
-export const addFieldValue = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string,
-  value: unknown
-) => {
-  const field = findField(fields, path);
-  const values = getRepeatingValues(getFieldValue(content, field));
-  values.push(value);
-  return setFieldValue(content, field, values);
-};
-
-export const updateFieldValue = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string,
-  index: number,
-  value: unknown
-) => {
-  const field = findField(fields, path);
-  const values = getRepeatingValues(getFieldValue(content, field));
-  while (values.length <= index) {
-    values.push(undefined);
-  }
-  values[index] = value;
-  return setFieldValue(content, field, values);
-};
-
-export const removeFieldValueAt = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  path: string,
-  index: number
-) => {
-  const field = findField(fields, path);
-  const values = getRepeatingValues(getFieldValue(content, field)).filter(
-    (_, currentIndex) => currentIndex !== index
-  );
-  return setFieldValue(content, field, values);
-};
-
-export const addGroupEntry = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string
-) => {
-  const rootField = findField(fields, rootPath);
-  const items = getRepeatingValues(getFieldValue(content, rootField));
-  items.push({});
-  return setFieldValue(content, rootField, items);
-};
-
-export const removeGroupEntry = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string,
-  index: number
-) => {
-  const rootField = findField(fields, rootPath);
-  const items = getRepeatingValues(getFieldValue(content, rootField)).filter(
-    (_, currentIndex) => currentIndex !== index
-  );
-  return setFieldValue(content, rootField, items);
-};
-
-export const setGroupChildField = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string,
-  childPath: string,
-  index: number,
-  value: unknown
-) => {
-  const rootField = findField(fields, rootPath);
-  const childField = findField(fields, childPath);
-  const relativeChildField: FieldDefinition = {
-    ...childField,
-    segments: childField.segments.slice(1),
-  };
-  return withGroupItem(content, rootField, index, (item) =>
-    setFieldValue(item, relativeChildField, value)
-  );
-};
-
-export const removeGroupChildField = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string,
-  childPath: string,
-  index: number
-) => {
-  const rootField = findField(fields, rootPath);
-  const childField = findField(fields, childPath);
-  const relativeChildField: FieldDefinition = {
-    ...childField,
-    segments: childField.segments.slice(1),
-  };
-  return withGroupItem(content, rootField, index, (item) =>
-    removeFieldValue(item, relativeChildField)
-  );
-};
-
-export const addGroupChildFieldValue = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string,
-  childPath: string,
-  index: number,
-  value: unknown
-) => {
-  const rootField = findField(fields, rootPath);
-  const childField = findField(fields, childPath);
-  const relativeChildField: FieldDefinition = {
-    ...childField,
-    segments: childField.segments.slice(1),
-  };
-  return withGroupItem(content, rootField, index, (item) => {
-    const values = getRepeatingValues(getFieldValue(item, relativeChildField));
-    values.push(value);
-    return setFieldValue(item, relativeChildField, values);
-  });
-};
-
-export const removeGroupChildFieldValueAt = (
-  content: Record<string, unknown>,
-  fields: FieldDefinition[],
-  rootPath: string,
-  childPath: string,
-  index: number,
-  valueIndex: number
-) => {
-  const rootField = findField(fields, rootPath);
-  const childField = findField(fields, childPath);
-  const relativeChildField: FieldDefinition = {
-    ...childField,
-    segments: childField.segments.slice(1),
-  };
-  return withGroupItem(content, rootField, index, (item) => {
-    const values = getRepeatingValues(getFieldValue(item, relativeChildField)).filter(
-      (_, currentIndex) => currentIndex !== valueIndex
-    );
-    return setFieldValue(item, relativeChildField, values);
-  });
+  return setChildValue(content, key, items);
 };

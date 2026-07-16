@@ -1,0 +1,43 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Period",
+ "url": "http://hl7.org/fhir/StructureDefinition/Period",
+ "name": "Period",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "Period",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Period",
+    "path": "Period",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Period.start",
+    "path": "Period.start",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "dateTime"
+     }
+    ]
+   },
+   {
+    "id": "Period.end",
+    "path": "Period.end",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "dateTime"
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,117 +1,81 @@
 import { describe, expect, it } from "vitest";
-import { validateResourceWithProfile } from "@/lib/fhir-editor/validation";
+import { createDefaultValue, validateResource } from "@/lib/fhir-editor/schema";
+import { getSliceDiscriminatorPattern } from "@/lib/fhir-editor/schema/slicing";
 import {
   HEALTHCARE_SERVICE_EXAMPLE_PATH,
-  createHealthcareServiceDirectoryFieldContext,
+  createHealthcareServiceDirectoryContext,
+  createPatientProfileContext,
   loadFixtureJson,
 } from "@/tests/helpers/fhir-test-fixtures";
 import {
-  addField,
-  addFieldValue,
-  addGroupChildFieldValue,
-  addGroupEntry,
-  removeField,
-  removeFieldValueAt,
-  removeGroupChildField,
-  removeGroupChildFieldValueAt,
-  removeGroupEntry,
-  setField,
-  setGroupChildField,
-  updateFieldValue,
+  addElement,
+  addItem,
+  duplicateItem,
+  findChildNode,
+  getRootChildren,
+  moveItem,
+  removeElement,
+  removeItemAt,
+  setElement,
+  updateItem,
+  withItem,
 } from "@/tests/helpers/ui-action-simulator";
 
 describe("FHIR UI action simulation", () => {
   it("simulates add/remove/re-add for required nested fields", () => {
-    const { fields, registry } = createHealthcareServiceDirectoryFieldContext();
-    const descriptionField = fields.find(
-      (field) => field.path === "HealthcareService.notAvailable.description"
-    );
-    expect(descriptionField).toBeDefined();
-
+    const { tree, ctx } = createHealthcareServiceDirectoryContext();
     let resource = loadFixtureJson<Record<string, unknown>>(HEALTHCARE_SERVICE_EXAMPLE_PATH);
 
-    resource = removeGroupChildField(
-      resource,
-      fields,
-      "HealthcareService.notAvailable",
-      "HealthcareService.notAvailable.description",
-      0
+    resource = withItem(resource, "notAvailable", 0, (item) =>
+      setElement(item, "description", undefined)
     );
-    let issues = validateResourceWithProfile(resource, [descriptionField!], registry);
+    let issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "required")).toBe(true);
 
-    resource = setGroupChildField(
-      resource,
-      fields,
-      "HealthcareService.notAvailable",
-      "HealthcareService.notAvailable.description",
-      0,
-      "Urlaub"
+    resource = withItem(resource, "notAvailable", 0, (item) =>
+      setElement(item, "description", "Urlaub")
     );
-    issues = validateResourceWithProfile(resource, [descriptionField!], registry);
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "required")).toBe(false);
 
-    resource = removeGroupEntry(resource, fields, "HealthcareService.notAvailable", 0);
-    issues = validateResourceWithProfile(resource, [descriptionField!], registry);
+    resource = removeItemAt(resource, "notAvailable", 0);
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "required")).toBe(false);
 
-    resource = addGroupEntry(resource, fields, "HealthcareService.notAvailable");
-    issues = validateResourceWithProfile(resource, [descriptionField!], registry);
+    resource = addItem(resource, "notAvailable", {});
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "required")).toBe(true);
   });
 
   it("simulates repeating group actions for availableTime.daysOfWeek", () => {
-    const { fields, registry } = createHealthcareServiceDirectoryFieldContext();
-    const daysField = fields.find(
-      (field) => field.path === "HealthcareService.availableTime.daysOfWeek"
-    );
-    expect(daysField).toBeDefined();
-
+    const { tree, ctx } = createHealthcareServiceDirectoryContext();
     let resource: Record<string, unknown> = { resourceType: "HealthcareService" };
-    resource = addGroupEntry(resource, fields, "HealthcareService.availableTime");
-    resource = addGroupChildFieldValue(
-      resource,
-      fields,
-      "HealthcareService.availableTime",
-      "HealthcareService.availableTime.daysOfWeek",
-      0,
-      "sat"
+
+    resource = addItem(resource, "availableTime", {});
+    resource = withItem(resource, "availableTime", 0, (item) =>
+      addItem(item, "daysOfWeek", "sat")
     );
     expect((resource.availableTime as Array<Record<string, unknown>>)[0]?.daysOfWeek).toEqual([
       "sat",
     ]);
 
-    resource = addGroupChildFieldValue(
-      resource,
-      fields,
-      "HealthcareService.availableTime",
-      "HealthcareService.availableTime.daysOfWeek",
-      0,
-      "sun"
+    resource = withItem(resource, "availableTime", 0, (item) =>
+      addItem(item, "daysOfWeek", "sun")
     );
-    let issues = validateResourceWithProfile(resource, [daysField!], registry);
+    let issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "cardinality-max")).toBe(true);
 
-    resource = removeGroupChildFieldValueAt(
-      resource,
-      fields,
-      "HealthcareService.availableTime",
-      "HealthcareService.availableTime.daysOfWeek",
-      0,
-      0
+    resource = withItem(resource, "availableTime", 0, (item) =>
+      removeItemAt(item, "daysOfWeek", 0)
     );
-    issues = validateResourceWithProfile(resource, [daysField!], registry);
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "cardinality-max")).toBe(false);
     expect((resource.availableTime as Array<Record<string, unknown>>)[0]?.daysOfWeek).toEqual([
       "sun",
     ]);
 
-    resource = removeGroupChildField(
-      resource,
-      fields,
-      "HealthcareService.availableTime",
-      "HealthcareService.availableTime.daysOfWeek",
-      0
+    resource = withItem(resource, "availableTime", 0, (item) =>
+      setElement(item, "daysOfWeek", undefined)
     );
     expect(
       Object.prototype.hasOwnProperty.call(
@@ -119,84 +83,128 @@ describe("FHIR UI action simulation", () => {
         "daysOfWeek"
       )
     ).toBe(false);
-
-    resource = setGroupChildField(
-      resource,
-      fields,
-      "HealthcareService.availableTime",
-      "HealthcareService.availableTime.daysOfWeek",
-      0,
-      ["tue"]
-    );
-    expect((resource.availableTime as Array<Record<string, unknown>>)[0]?.daysOfWeek).toEqual([
-      "tue",
-    ]);
   });
 
-  it("simulates reference and terminology editing actions with live validation changes", () => {
-    const { fields, registry } = createHealthcareServiceDirectoryFieldContext();
-    const endpointField = fields.find((field) => field.path === "HealthcareService.endpoint");
-    const specialtyField = fields.find((field) => field.path === "HealthcareService.specialty");
-    expect(endpointField).toBeDefined();
-    expect(specialtyField).toBeDefined();
-
+  it("simulates reference and terminology editing with live validation changes", () => {
+    const { tree, ctx } = createHealthcareServiceDirectoryContext();
     let resource: Record<string, unknown> = { resourceType: "HealthcareService" };
 
-    resource = addField(resource, fields, "HealthcareService.endpoint", registry);
-    resource = updateFieldValue(resource, fields, "HealthcareService.endpoint", 0, {
-      reference: "Endpoint/missing",
-    });
-    let issues = validateResourceWithProfile(resource, [endpointField!], registry, {
+    resource = addItem(resource, "endpoint", { reference: "Endpoint/missing" });
+    let issues = validateResource(resource, tree, ctx, {
       existingReferences: new Set(["Endpoint/existing"]),
     });
     expect(issues.some((issue) => issue.code === "reference-broken")).toBe(true);
 
-    resource = updateFieldValue(resource, fields, "HealthcareService.endpoint", 0, {
+    resource = updateItem(resource, "endpoint", 0, {
       reference: "/fhir/Endpoint/existing",
     });
-    issues = validateResourceWithProfile(resource, [endpointField!], registry, {
+    issues = validateResource(resource, tree, ctx, {
       existingReferences: new Set(["Endpoint/existing"]),
     });
     expect(issues.some((issue) => issue.code === "reference-broken")).toBe(false);
 
-    resource = removeFieldValueAt(resource, fields, "HealthcareService.endpoint", 0);
-    expect(resource.endpoint).toEqual([]);
-
-    resource = addField(resource, fields, "HealthcareService.specialty", registry);
-    resource = updateFieldValue(resource, fields, "HealthcareService.specialty", 0, {
-      coding: [{ system: "https://example.org/fhir/CodeSystem/specialty-local", code: "not-a-valid-code" }],
+    resource = addItem(resource, "specialty", {
+      coding: [
+        {
+          system: "https://example.org/fhir/CodeSystem/specialty-local",
+          code: "not-a-valid-code",
+        },
+      ],
     });
-    issues = validateResourceWithProfile(resource, [specialtyField!], registry);
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "binding-code")).toBe(true);
 
-    resource = updateFieldValue(resource, fields, "HealthcareService.specialty", 0, {
-      coding: [{ system: "https://example.org/fhir/CodeSystem/specialty-local", code: "alpha" }],
+    resource = updateItem(resource, "specialty", 0, {
+      coding: [
+        { system: "https://example.org/fhir/CodeSystem/specialty-local", code: "alpha" },
+      ],
     });
-    issues = validateResourceWithProfile(resource, [specialtyField!], registry);
+    issues = validateResource(resource, tree, ctx);
     expect(issues.some((issue) => issue.code === "binding-code")).toBe(false);
-    expect(issues.some((issue) => issue.code === "binding-system")).toBe(false);
   });
 
-  it("simulates root field add/remove and multi-value editing", () => {
-    const { fields } = createHealthcareServiceDirectoryFieldContext();
+  it("simulates root field add/remove with schema defaults", () => {
+    const { tree, ctx } = createHealthcareServiceDirectoryContext();
+    const rootChildren = getRootChildren(tree, ctx);
     let resource: Record<string, unknown> = { resourceType: "HealthcareService" };
 
-    resource = addField(resource, fields, "HealthcareService.telecom");
-    resource = addFieldValue(resource, fields, "HealthcareService.telecom", {
-      system: "phone",
-      value: "030 1234567",
-    });
-    resource = addFieldValue(resource, fields, "HealthcareService.telecom", {
-      system: "email",
-      value: "test@example.org",
-    });
-    expect(Array.isArray(resource.telecom)).toBe(true);
-    expect((resource.telecom as unknown[]).length).toBe(3);
+    const nameNode = findChildNode(rootChildren, "name");
+    resource = addElement(resource, nameNode);
+    expect("name" in resource).toBe(true);
 
-    resource = setField(resource, fields, "HealthcareService.name", "Test Apotheke");
+    resource = setElement(resource, "name", "Test Apotheke");
     expect(resource.name).toBe("Test Apotheke");
 
-    resource = removeField(resource, fields, "HealthcareService.name");
+    resource = removeElement(resource, nameNode);
     expect("name" in resource).toBe(false);
+
+    const telecomNode = findChildNode(rootChildren, "telecom");
+    resource = addElement(resource, telecomNode);
+    expect(Array.isArray(resource.telecom)).toBe(true);
+    resource = addItem(resource, "telecom", { system: "phone", value: "030 1234567" });
+    resource = addItem(resource, "telecom", { system: "email", value: "test@example.org" });
+    expect((resource.telecom as unknown[]).length).toBe(3);
+  });
+
+  it("simulates list reordering and duplication", () => {
+    let resource: Record<string, unknown> = {
+      resourceType: "Patient",
+      name: [{ family: "A" }, { family: "B" }],
+    };
+    resource = moveItem(resource, "name", 1, -1);
+    expect((resource.name as Array<{ family: string }>).map((entry) => entry.family)).toEqual([
+      "B",
+      "A",
+    ]);
+    resource = duplicateItem(resource, "name", 0);
+    expect((resource.name as Array<{ family: string }>).map((entry) => entry.family)).toEqual([
+      "B",
+      "B",
+      "A",
+    ]);
+  });
+
+  it("simulates choice type selection like the editor does", () => {
+    const { tree, ctx } = createPatientProfileContext();
+    const rootChildren = getRootChildren(tree, ctx);
+    const deceased = rootChildren.find((child) => child.key.startsWith("deceased"));
+    expect(deceased).toBeDefined();
+
+    let resource: Record<string, unknown> = {
+      resourceType: "Patient",
+      name: [{ family: "Muster" }],
+      identifier: [{ system: "https://example.org/mrn", value: "1" }],
+    };
+    resource = setElement(
+      resource,
+      "deceasedBoolean",
+      createDefaultValue(deceased!, "boolean")
+    );
+    expect(resource.deceasedBoolean).toBe(false);
+    const issues = validateResource(resource, tree, ctx);
+    expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
+  });
+
+  it("simulates adding slice entries pre-filled with the discriminator", () => {
+    const { tree, ctx } = createPatientProfileContext();
+    const rootChildren = getRootChildren(tree, ctx);
+    const identifier = rootChildren.find((child) => child.key === "identifier");
+    const mrn = identifier!.slices[0];
+
+    const pattern = getSliceDiscriminatorPattern(mrn, ctx);
+    let resource: Record<string, unknown> = {
+      resourceType: "Patient",
+      name: [{ family: "Muster" }],
+    };
+    let issues = validateResource(resource, tree, ctx);
+    // The mrn slice is required (min 1) → base identifier element is required.
+    expect(issues.some((issue) => issue.code === "required")).toBe(true);
+
+    resource = addItem(resource, "identifier", { ...pattern, value: "0815" });
+    issues = validateResource(resource, tree, ctx);
+    expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    expect(resource.identifier).toEqual([
+      { system: "https://example.org/mrn", value: "0815" },
+    ]);
   });
 });

@@ -1,0 +1,43 @@
+{
+ "resourceType": "StructureDefinition",
+ "id": "Reference",
+ "url": "http://hl7.org/fhir/StructureDefinition/Reference",
+ "name": "Reference",
+ "status": "active",
+ "kind": "complex-type",
+ "abstract": false,
+ "type": "Reference",
+ "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Element",
+ "snapshot": {
+  "element": [
+   {
+    "id": "Reference",
+    "path": "Reference",
+    "min": 0,
+    "max": "*"
+   },
+   {
+    "id": "Reference.reference",
+    "path": "Reference.reference",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   },
+   {
+    "id": "Reference.display",
+    "path": "Reference.display",
+    "min": 0,
+    "max": "1",
+    "type": [
+     {
+      "code": "string"
+     }
+    ]
+   }
+  ]
+ }
+}
