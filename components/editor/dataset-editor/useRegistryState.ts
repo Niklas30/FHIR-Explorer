@@ -10,8 +10,12 @@ import {
   type ProfileSummary,
 } from "@/lib/fhir-editor/profiles";
 import { buildSchemaTree, createSchemaContext } from "@/lib/fhir-editor/schema";
-import { collectDependencies, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import { type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
+import { getProject } from "@/lib/projects/storage";
+import { loadProjectResources } from "@/lib/projects/content";
+import type { AuthoredResource } from "@/lib/projects/types";
+import { resolveProjectPackageKeys, toPayloads } from "@/lib/projects/registry-resolution";
 
 export const useDatasetEditorRegistryState = ({
   dataset,
@@ -36,17 +40,31 @@ export const useDatasetEditorRegistryState = ({
   const [registryState, setRegistryState] = useState<ReturnType<typeof buildRegistry> | null>(null);
 
   useEffect(() => {
-    if (!dataset || packages.length === 0) return;
+    if (!dataset) return;
+    // The project may be an authored project (own resources + declared
+    // dependencies) or an imported package (its dependency closure).
+    const authored = getProject(dataset.projectKey) ?? null;
+    if (!authored && packages.length === 0) {
+      setRegistryLoaded(true);
+      return;
+    }
     setRegistryLoaded(false);
     setInitializationError(null);
-    const dependencyKeys = collectDependencies(dataset.projectKey, graph);
-    const projectKeys = new Set<string>([dataset.projectKey, ...dependencyKeys]);
+    const keys = resolveProjectPackageKeys({ authored, projectKey: dataset.projectKey, graph });
 
     let active = true;
-    getResourcePayloadsByPackageKeys(Array.from(projectKeys))
-      .then((payloads) => {
+    Promise.all([
+      getResourcePayloadsByPackageKeys(keys),
+      authored
+        ? loadProjectResources(dataset.projectKey)
+        : Promise.resolve<AuthoredResource[]>([]),
+    ])
+      .then(([dependencyPayloads, authoredResources]) => {
         if (!active) return;
-        const nextRegistry = buildRegistry(payloads);
+        const nextRegistry = buildRegistry([
+          ...dependencyPayloads,
+          ...toPayloads(dataset.projectKey, authoredResources),
+        ]);
         setRegistryState(nextRegistry);
         setProfiles(getProfileSummaries(nextRegistry));
         setRegistryLoaded(true);
@@ -68,17 +86,13 @@ export const useDatasetEditorRegistryState = ({
 
   useEffect(() => {
     if (!datasetLoaded) return;
-    if (!dataset) {
-      setRegistryLoaded(true);
-      return;
-    }
-    if (packages.length === 0) {
-      setRegistryLoaded(true);
-    }
-  }, [datasetLoaded, dataset, packages.length]);
+    if (!dataset) setRegistryLoaded(true);
+  }, [datasetLoaded, dataset]);
 
   const profile =
-    selectedResource && registryState ? resolveProfileForResource(selectedResource.content, registryState) : null;
+    selectedResource && registryState
+      ? resolveProfileForResource(selectedResource.content, registryState)
+      : null;
 
   // The schema context caches generated snapshots and datatype trees across
   // all profiles of the loaded registry.
@@ -108,4 +122,3 @@ export const useDatasetEditorRegistryState = ({
     resolveStructureDefinition,
   };
 };
-

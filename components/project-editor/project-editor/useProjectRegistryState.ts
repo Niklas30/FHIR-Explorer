@@ -8,68 +8,24 @@ import {
   type ProfileSummary,
 } from "@/lib/fhir-editor/profiles";
 import { buildSchemaTree, createSchemaContext } from "@/lib/fhir-editor/schema";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
-import { collectDependencies, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type {
-  PackageRecord,
-  ResourcePayload,
-} from "@/lib/fhir-importer/types";
+import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import type { ResourcePayload } from "@/lib/fhir-importer/types";
 import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-
-const toPayloads = (
-  project: AuthoredProjectRecord,
-  resources: AuthoredResource[]
-): ResourcePayload[] =>
-  resources.map((resource) => {
-    const content = resource.content as Record<string, unknown>;
-    return {
-      key: `${project.key}:${resource.id}`,
-      packageKey: project.key,
-      resourceType: resource.resourceType,
-      id: typeof content.id === "string" ? content.id : undefined,
-      url: typeof content.url === "string" ? content.url : undefined,
-      content: resource.content,
-    };
-  });
-
-/**
- * Resolve the imported package keys the project's manifest dependencies point
- * at, expanded across the importer dependency graph.
- */
-const resolveDependencyKeys = (
-  project: AuthoredProjectRecord,
-  packages: PackageRecord[],
-  graph: DependencyGraph
-): string[] => {
-  const dependencies = project.manifest.dependencies ?? {};
-  const available = new Set(packages.map((pkg) => pkg.key));
-  const keys = new Set<string>();
-  for (const [id, version] of Object.entries(dependencies)) {
-    const directKey = buildPackageKey(id, version);
-    const rootKey = available.has(directKey)
-      ? directKey
-      : packages.find((pkg) => pkg.id === id)?.key;
-    if (!rootKey) continue;
-    keys.add(rootKey);
-    for (const depKey of collectDependencies(rootKey, graph)) {
-      keys.add(depKey);
-    }
-  }
-  return Array.from(keys);
-};
+import {
+  resolveProjectPackageKeys,
+  toPayloads,
+} from "@/lib/projects/registry-resolution";
 
 export const useProjectRegistryState = ({
   project,
   resources,
   selectedResource,
-  packages,
   graph,
   getResourcePayloadsByPackageKeys,
 }: {
   project: AuthoredProjectRecord | null;
   resources: AuthoredResource[];
   selectedResource: AuthoredResource | null;
-  packages: PackageRecord[];
   graph: DependencyGraph;
   getResourcePayloadsByPackageKeys: (keys: string[]) => Promise<ResourcePayload[]>;
 }) => {
@@ -79,12 +35,13 @@ export const useProjectRegistryState = ({
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
 
   const dependencyKeys = useMemo(
-    () => (project ? resolveDependencyKeys(project, packages, graph) : []),
-    [project, packages, graph]
+    () =>
+      project
+        ? resolveProjectPackageKeys({ authored: project, projectKey: project.key, graph })
+        : [],
+    [project, graph]
   );
 
-  // Fetch imported dependency payloads. Recomputed only when the resolved keys
-  // change (join keeps the dep array a stable primitive for the effect).
   const dependencyKeysJoined = dependencyKeys.join("|");
   useEffect(() => {
     if (!project) return;
@@ -113,8 +70,7 @@ export const useProjectRegistryState = ({
   // resources, so project-local profiles/value sets resolve and validate too.
   const registryState = useMemo(() => {
     if (!project) return null;
-    const authoredPayloads = toPayloads(project, resources);
-    return buildRegistry([...dependencyPayloads, ...authoredPayloads]);
+    return buildRegistry([...dependencyPayloads, ...toPayloads(project.key, resources)]);
   }, [project, resources, dependencyPayloads]);
 
   useEffect(() => {
