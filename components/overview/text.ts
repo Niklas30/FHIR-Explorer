@@ -136,6 +136,12 @@ type OverviewTextBase = {
   importedPackagesTitle: string;
   importedPackagesDescription: string;
   openInProjectEditor: string;
+  newProject: string;
+  duplicateProjectAction: string;
+  projectSourceAuthored: string;
+  projectSourceImported: string;
+  projectsSectionDescription: string;
+  projectDuplicated: string;
 };
 
 export type OverviewText = OverviewTextBase;
@@ -286,6 +292,13 @@ const overviewText = {
     importedPackagesDescription:
       "Von anderen Autoren importierte FHIR-Pakete. Im Projekt-Editor ansehen oder als eigenes Projekt duplizieren.",
     openInProjectEditor: "Im Projekt-Editor öffnen",
+    newProject: "Neues Projekt",
+    duplicateProjectAction: "Duplizieren",
+    projectSourceAuthored: "Eigen",
+    projectSourceImported: "Importiert",
+    projectsSectionDescription:
+      "Eigene und importierte FHIR-Projekte. Lege Datasets an, um Ressourcen zu bearbeiten.",
+    projectDuplicated: "Projekt dupliziert.",
   },
   en: {
     pageBrowserTitle: "Projects",
@@ -430,6 +443,13 @@ const overviewText = {
     importedPackagesDescription:
       "FHIR packages imported from other authors. View them in the project editor or duplicate one into your own project.",
     openInProjectEditor: "Open in project editor",
+    newProject: "New project",
+    duplicateProjectAction: "Duplicate",
+    projectSourceAuthored: "Authored",
+    projectSourceImported: "Imported",
+    projectsSectionDescription:
+      "Your own and imported FHIR projects. Create datasets to author resources.",
+    projectDuplicated: "Project duplicated.",
   },
 } satisfies Record<"de" | "en", OverviewText>;
 

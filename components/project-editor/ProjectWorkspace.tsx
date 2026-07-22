@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, Download, Lock, Share2 } from "lucide-react";
@@ -20,6 +21,9 @@ import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
 import { getStructureDefinitionByCanonical, type StructureDefinition } from "@/lib/fhir-editor/registry";
 import type { DatasetRecord } from "@/lib/datasets/storage";
+import { upsertDataset } from "@/lib/datasets/storage";
+import { saveDatasetResources } from "@/lib/datasets/content";
+import { createDatasetId } from "@/components/overview/utils";
 import type {
   AuthoredProjectRecord,
   AuthoredResource,
@@ -76,6 +80,7 @@ export const ProjectWorkspace = ({
 }: Props) => {
   const { locale } = useI18n();
   const t = byLocale(locale, projectEditorText);
+  const router = useRouter();
 
   const [selection, setSelection] = useState<ProjectNodeSelection>({ kind: "dashboard" });
   const [conformanceOpen, setConformanceOpen] = useState(false);
@@ -103,7 +108,6 @@ export const ProjectWorkspace = ({
     project: record,
     resources,
     selectedResource,
-    packages,
     graph,
     getResourcePayloadsByPackageKeys,
   });
@@ -209,6 +213,21 @@ export const ProjectWorkspace = ({
     onUpdateResource({ ...selectedResource, content: next, updatedAt: Date.now() });
   };
 
+  const handleCreateDataset = () => {
+    const suggested = `${record.manifest.title ?? record.id} dataset`;
+    const name = window.prompt(t.newDatasetPrompt, suggested);
+    if (!name || !name.trim()) return;
+    const dataset: DatasetRecord = {
+      id: createDatasetId(),
+      name: name.trim(),
+      projectKey: record.key,
+      createdAt: Date.now(),
+    };
+    upsertDataset(dataset);
+    void saveDatasetResources(dataset.id, []);
+    router.push(`/${dataset.id}`);
+  };
+
   const isProfileLike =
     selectedResource?.kind === "profile" || selectedResource?.kind === "extension";
 
@@ -294,6 +313,7 @@ export const ProjectWorkspace = ({
               onRemove={(resourceId) => {
                 if (window.confirm(t.removeResourceConfirm)) onRemoveResource(resourceId);
               }}
+              onCreateDataset={readOnly ? undefined : handleCreateDataset}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />

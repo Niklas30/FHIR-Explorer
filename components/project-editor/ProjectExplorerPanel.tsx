@@ -39,6 +39,7 @@ type Props = {
   onSelect: (selection: ProjectNodeSelection) => void;
   onAdd: (kind: AuthoredResourceKind) => void;
   onRemove: (resourceId: string) => void;
+  onCreateDataset?: () => void;
   readOnly?: boolean;
   issueCount?: number;
 };
@@ -75,6 +76,7 @@ export const ProjectExplorerPanel = ({
   onSelect,
   onAdd,
   onRemove,
+  onCreateDataset,
   readOnly = false,
   issueCount = 0,
 }: Props) => {
@@ -210,10 +212,23 @@ export const ProjectExplorerPanel = ({
           })}
 
           <div className="mt-2">
-            <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <Database className="size-3.5" />
-              {text.sectionDatasets}
-              <span className="text-[10px] font-normal">({datasets.length})</span>
+            <div className="flex items-center justify-between gap-1 px-2 py-1">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Database className="size-3.5" />
+                {text.sectionDatasets}
+                <span className="text-[10px] font-normal">({datasets.length})</span>
+              </span>
+              {onCreateDataset && !readOnly ? (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={text.newDataset}
+                  title={text.newDataset}
+                  onClick={onCreateDataset}
+                >
+                  <Plus className="size-4" />
+                </Button>
+              ) : null}
             </div>
             {datasets.length === 0 ? (
               <p className="px-3 py-1 text-xs text-muted-foreground">{text.emptySection}</p>
