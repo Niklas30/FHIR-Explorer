@@ -1,19 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ConflictsCard } from "@/components/importer/import-wizard/ConflictsCard";
 import { maybeImportComposeProject } from "@/components/importer/import-wizard/composeProjectImport";
 import { DependenciesCard } from "@/components/importer/import-wizard/DependenciesCard";
-import { parsePackageKey } from "@/components/importer/import-wizard/helpers";
+import { deriveWizardStep, parsePackageKey } from "@/components/importer/import-wizard/helpers";
+import { ImportGraphCard } from "@/components/importer/import-wizard/ImportGraphCard";
 import { ImportHistoryCard } from "@/components/importer/import-wizard/ImportHistoryCard";
 import { ImportLogCard } from "@/components/importer/import-wizard/ImportLogCard";
+import { ImportSuccessCard } from "@/components/importer/import-wizard/ImportSuccessCard";
 import { TargetPackageCard } from "@/components/importer/import-wizard/TargetPackageCard";
 import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
+import { usePageFileDrop } from "@/components/importer/import-wizard/usePageFileDrop";
+import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { useImporter } from "@/components/importer/useImporter";
-import type { DependencyRequirement } from "@/lib/fhir-importer/types";
+import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
+import type { DependencyRequirement, PackageRecord } from "@/lib/fhir-importer/types";
 
 type ImportSummary = {
   targetKey: string;
@@ -21,7 +26,7 @@ type ImportSummary = {
 };
 
 const EMPTY_DEPENDENCIES: DependencyRequirement[] = [];
-const EMPTY_PACKAGES: Array<{ key: string }> = [];
+const EMPTY_PACKAGES: PackageRecord[] = [];
 const EMPTY_IMPORT_HISTORY: Array<{ targetKey: string; completedAt: number }> = [];
 const EMPTY_LOG: string[] = [];
 
@@ -45,6 +50,7 @@ export const ImportWizard = () => {
   } = useImporter();
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [packageId, setPackageId] = useState("");
   const [version, setVersion] = useState("");
   const [versionDrafts, setVersionDrafts] = useState<Record<string, string>>({});
@@ -52,6 +58,8 @@ export const ImportWizard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [importLog, setImportLog] = useState<string[]>([]);
   const [completedSummary, setCompletedSummary] = useState<ImportSummary | null>(null);
+  const [graphDialogRootKey, setGraphDialogRootKey] = useState<string | null>(null);
+  const [highlightDependencyId, setHighlightDependencyId] = useState<string | null>(null);
   const lastNoticeRef = useRef<string | null>(null);
   const lastResultRef = useRef<string | null>(null);
   const progressToastId = useRef<string>("import-progress");
@@ -71,11 +79,21 @@ export const ImportWizard = () => {
     }
   }, [searchParams, currentTarget, packageId.length, version.length]);
 
+  const activeTargetKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (currentTarget) {
+      const key = `${currentTarget.id}@${currentTarget.version}`;
       setPackageId(currentTarget.id);
       setVersion(currentTarget.version);
-      setCompletedSummary(null);
+      // Only clear a previous success summary when a genuinely new target is
+      // started — not on every snapshot refresh (which re-creates the target
+      // object) so the completion effect's summary is not clobbered mid-finalize.
+      if (activeTargetKeyRef.current !== key) {
+        activeTargetKeyRef.current = key;
+        setCompletedSummary(null);
+      }
+    } else {
+      activeTargetKeyRef.current = null;
     }
   }, [currentTarget]);
 
@@ -90,15 +108,11 @@ export const ImportWizard = () => {
   const isTargetImported = targetKey ? packages.some((pkg) => pkg.key === targetKey) : false;
   const targetDownloadUrl = currentTarget ? getDownloadUrl(currentTarget.id, currentTarget.version) : null;
 
-  const importedCount = packages.length;
   const missingCount = missing.length;
   const importedDefinitions = snapshot?.resourceIndexCount ?? 0;
   const allResolved = Boolean(
     currentTarget && isTargetImported && missing.length === 0 && conflicts.length === 0
   );
-  const importedTargetText = currentTarget
-    ? `${currentTarget.id}@${currentTarget.version}`
-    : text.none;
   const isTargetReady = Boolean(currentTarget && isTargetImported);
   const importHistory = snapshot?.state.importHistory ?? EMPTY_IMPORT_HISTORY;
   const lastImportLog = completedSummary?.log ?? EMPTY_LOG;
@@ -263,6 +277,61 @@ export const ImportWizard = () => {
     })();
   }, [allResolved, currentTarget, importLog, finalizeTarget, addImportHistory]);
 
+  const { activeStepIndex, importFinished } = deriveWizardStep({
+    hasTarget: Boolean(currentTarget),
+    isTargetImported,
+    allResolved,
+    hasCompletedSummary: Boolean(completedSummary),
+  });
+
+  const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
+  const graphRootKey = importFinished ? completedSummary?.targetKey ?? null : targetKey;
+  const showGraph = Boolean(graphRootKey) && (isTargetReady || importFinished);
+  const finishDependencyCount = useMemo(
+    () =>
+      importFinished && completedSummary
+        ? collectDependencies(completedSummary.targetKey, graph).size
+        : 0,
+    [importFinished, completedSummary, graph]
+  );
+
+  const handleResolveMissing = useCallback((dependencyId: string) => {
+    setGraphDialogRootKey(null);
+    setHighlightDependencyId(dependencyId);
+    if (typeof document !== "undefined") {
+      window.requestAnimationFrame(() => {
+        const element = document.getElementById(`dependency-${dependencyId}`);
+        element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+    window.setTimeout(() => setHighlightDependencyId(null), 2400);
+  }, []);
+
+  // Route files dropped anywhere on the page to the right handler: while the
+  // target is not imported yet they seed the target, otherwise they resolve
+  // dependencies. Both handlers also detect FHIR-Explorer project exports.
+  const handleGlobalFiles = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) return;
+      if (isTargetImported) {
+        void handleUpload(files);
+      } else {
+        void handleTargetUpload(files);
+      }
+    },
+    [isTargetImported, handleUpload, handleTargetUpload]
+  );
+
+  const { isDragging: isDraggingFile, dropHandlers } = usePageFileDrop(handleGlobalFiles);
+
+  // After a successful import, briefly show the confirmation, then hand the user
+  // off to the projects overview. Unmounting resets the wizard to its initial state.
+  useEffect(() => {
+    if (!importFinished) return;
+    const timer = window.setTimeout(() => router.push("/"), 2200);
+    return () => window.clearTimeout(timer);
+  }, [importFinished, router]);
+
   const logToShow = currentTarget ? importLog : lastImportLog;
 
   const logCardConfig = useMemo(() => {
@@ -273,72 +342,121 @@ export const ImportWizard = () => {
   }, [currentTarget, text.importLogHistory, text.latestImportActions]);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
+    <div
+      className="relative mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8"
+      {...dropHandlers}
+    >
+      {isDraggingFile ? (
+        <div className="pointer-events-none fixed inset-4 z-50 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary bg-primary/5 backdrop-blur-sm">
+          <p className="text-lg font-semibold text-foreground">{text.dropAnywhereTitle}</p>
+          <p className="text-sm text-muted-foreground">{text.dropAnywhereHint}</p>
+        </div>
+      ) : null}
+
       <WizardHeader
         text={text}
-        format={format}
         currentTarget={currentTarget}
         allResolved={allResolved}
-        importedCount={importedCount}
-        missingCount={missingCount}
-        importedDefinitions={importedDefinitions}
-        lastImport={completedSummary}
-        isTargetReady={isTargetReady}
-        importedTargetText={importedTargetText}
+        activeStepIndex={activeStepIndex}
+        importFinished={importFinished}
         onCancel={handleCancel}
       />
 
-      <TargetPackageCard
-        text={text}
-        currentTarget={currentTarget}
-        isTargetReady={isTargetReady}
-        allResolved={allResolved}
-        targetDownloadUrl={targetDownloadUrl}
-        isUploading={isUploading}
-        packageId={packageId}
-        version={version}
-        trimmedPackageId={trimmedPackageId}
-        trimmedVersion={trimmedVersion}
-        onPackageIdChange={setPackageId}
-        onVersionChange={setVersion}
-        onSetTarget={(id, version) => void setTarget(id, version)}
-        onCopy={(link) => void handleCopy(link)}
-        onTargetUpload={(files) => void handleTargetUpload(files)}
+      {importFinished && completedSummary ? (
+        <ImportSuccessCard
+          text={text}
+          format={format}
+          targetKey={completedSummary.targetKey}
+          packageCount={finishDependencyCount + 1}
+          dependencyCount={finishDependencyCount}
+          definitionCount={importedDefinitions}
+        />
+      ) : (
+        <>
+          <TargetPackageCard
+            text={text}
+            currentTarget={currentTarget}
+            isTargetReady={isTargetReady}
+            allResolved={allResolved}
+            targetDownloadUrl={targetDownloadUrl}
+            isUploading={isUploading}
+            packageId={packageId}
+            version={version}
+            trimmedPackageId={trimmedPackageId}
+            trimmedVersion={trimmedVersion}
+            onPackageIdChange={setPackageId}
+            onVersionChange={setVersion}
+            onSetTarget={(id, version) => void setTarget(id, version)}
+            onCopy={(link) => void handleCopy(link)}
+            onTargetUpload={(files) => void handleTargetUpload(files)}
+          />
+
+          {showGraph ? (
+            <ImportGraphCard
+              text={text}
+              graph={graph}
+              rootKey={graphRootKey}
+              hasMissing={missingCount > 0}
+              onExpand={() => setGraphDialogRootKey(graphRootKey)}
+              onResolveMissing={handleResolveMissing}
+            />
+          ) : null}
+
+          <DependenciesCard
+            text={text}
+            format={format}
+            currentTarget={currentTarget}
+            allResolved={allResolved}
+            isTargetImported={isTargetImported}
+            missing={missing}
+            isUploading={isUploading}
+            highlightDependencyId={highlightDependencyId}
+            versionDrafts={versionDrafts}
+            onDraftChange={(depId, value) =>
+              setVersionDrafts((prev) => ({
+                ...prev,
+                [depId]: value,
+              }))
+            }
+            onSetVersion={(depId, value) => void setVersionSelection(depId, value)}
+            onClearVersion={(depId) => void clearVersionSelection(depId)}
+            onCopy={(link) => void handleCopy(link)}
+            getDownloadUrl={getDownloadUrl}
+            onUpload={(files) => void handleUpload(files)}
+          />
+
+          <ConflictsCard text={text} conflicts={conflicts} />
+
+          <ImportHistoryCard text={text} importHistory={importHistory} show={!currentTarget} />
+
+          <ImportLogCard
+            text={text}
+            format={format}
+            title={text.importLog}
+            description={logCardConfig.description}
+            log={logToShow}
+          />
+        </>
+      )}
+
+      <DependencyGraphDialog
+        open={Boolean(graphDialogRootKey)}
+        onOpenChange={(open) => {
+          if (!open) setGraphDialogRootKey(null);
+        }}
+        graph={graph}
+        rootKey={graphDialogRootKey}
+        title={text.graphTitle}
+        description={text.graphDescription}
+        labels={{
+          target: text.graphLegendTarget,
+          resolved: text.graphLegendResolved,
+          missing: text.graphLegendMissing,
+          add: text.graphAddDependency,
+          empty: text.graphEmpty,
+        }}
+        onResolveMissing={handleResolveMissing}
       />
-
-      <DependenciesCard
-        text={text}
-        format={format}
-        currentTarget={currentTarget}
-        allResolved={allResolved}
-        isTargetImported={isTargetImported}
-        missing={missing}
-        isUploading={isUploading}
-        versionDrafts={versionDrafts}
-        onDraftChange={(depId, value) =>
-          setVersionDrafts((prev) => ({
-            ...prev,
-            [depId]: value,
-          }))
-        }
-        onSetVersion={(depId, value) => void setVersionSelection(depId, value)}
-        onClearVersion={(depId) => void clearVersionSelection(depId)}
-        onCopy={(link) => void handleCopy(link)}
-        getDownloadUrl={getDownloadUrl}
-        onUpload={(files) => void handleUpload(files)}
-      />
-
-      <ImportHistoryCard text={text} importHistory={importHistory} show={!currentTarget} />
-
-      <ImportLogCard
-        text={text}
-        format={format}
-        title={text.importLog}
-        description={logCardConfig.description}
-        log={logToShow}
-      />
-
-      <ConflictsCard text={text} conflicts={conflicts} />
     </div>
   );
 };
