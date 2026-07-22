@@ -12,12 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GitBranch, MoreHorizontal, PencilRuler, Plus, Upload } from "lucide-react";
+import { Copy, GitBranch, MoreHorizontal, PencilRuler, Plus, Upload } from "lucide-react";
 import { formatText, formatTimestamp } from "@/components/overview/utils";
 import type { ProjectCardProps } from "@/components/overview/types";
 
 export const ProjectCard = ({
   project,
+  isAuthored = false,
   dependencyCount,
   datasets,
   text,
@@ -25,6 +26,7 @@ export const ProjectCard = ({
   onImportDataset,
   onOpenDependencyTree,
   onOpenInProjectEditor,
+  onDuplicateProject,
   onOpenExportDialog,
   onEditDatasetInfo,
   onDuplicateDataset,
@@ -44,9 +46,14 @@ export const ProjectCard = ({
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold text-foreground" title={title}>
-              {title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-lg font-semibold text-foreground" title={title}>
+                {title}
+              </h3>
+              <Badge variant={isAuthored ? "secondary" : "outline"} className="shrink-0">
+                {isAuthored ? text.projectSourceAuthored : text.projectSourceImported}
+              </Badge>
+            </div>
             <p className="truncate font-mono text-xs text-muted-foreground" title={project.key}>
               {project.key}
             </p>
@@ -70,10 +77,17 @@ export const ProjectCard = ({
                   <PencilRuler className="mr-2 size-4" />
                   {text.openInProjectEditor}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onOpenDependencyTree(project)}>
-                  <GitBranch className="mr-2 size-4" />
-                  {text.showDependencyTree}
-                </DropdownMenuItem>
+                {isAuthored ? (
+                  <DropdownMenuItem onClick={() => onDuplicateProject(project)}>
+                    <Copy className="mr-2 size-4" />
+                    {text.duplicateProjectAction}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => onOpenDependencyTree(project)}>
+                    <GitBranch className="mr-2 size-4" />
+                    {text.showDependencyTree}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onOpenExportDialog(project)}>
                   {text.exportProject}
                 </DropdownMenuItem>
@@ -97,16 +111,25 @@ export const ProjectCard = ({
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>{formatText(text.resourcesCount, { count: project.resourceCount })}</span>
+          {isAuthored ? null : (
+            <span>{formatText(text.resourcesCount, { count: project.resourceCount })}</span>
+          )}
           {typeof dependencyCount === "number" && dependencyCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => onOpenDependencyTree(project)}
-              className="inline-flex items-center gap-1 rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <GitBranch className="size-3.5" />
-              {formatText(text.dependencyCountLabel, { count: dependencyCount })}
-            </button>
+            isAuthored ? (
+              <span className="inline-flex items-center gap-1">
+                <GitBranch className="size-3.5" />
+                {formatText(text.dependencyCountLabel, { count: dependencyCount })}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onOpenDependencyTree(project)}
+                className="inline-flex items-center gap-1 rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <GitBranch className="size-3.5" />
+                {formatText(text.dependencyCountLabel, { count: dependencyCount })}
+              </button>
+            )
           ) : null}
           <span>
             {text.addedPrefix} {formatTimestamp(project.addedAt)}

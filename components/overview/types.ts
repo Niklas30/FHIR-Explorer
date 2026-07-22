@@ -15,6 +15,8 @@ export type ProjectCardKind = "Target" | "Dependency";
 export type ProjectCardProps = {
   kind: ProjectCardKind;
   project: PackageRecord;
+  /** True for user-authored projects (vs read-only imported packages). */
+  isAuthored?: boolean;
   dependencyCount?: number;
   owners?: string[];
   datasets: DatasetRecord[];
@@ -23,6 +25,7 @@ export type ProjectCardProps = {
   onImportDataset: (project: PackageRecord) => void;
   onOpenDependencyTree: (project: PackageRecord) => void;
   onOpenInProjectEditor: (project: PackageRecord) => void;
+  onDuplicateProject: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onEditDatasetInfo: (dataset: DatasetRecord) => void;

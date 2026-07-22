@@ -25,6 +25,7 @@ type Props = {
   dependenciesByTarget: Map<string, Set<string>>;
   dependencyOwners: Map<string, Set<string>>;
   datasetsByProject: Map<string, DatasetRecord[]>;
+  authoredKeys: Set<string>;
   currentTargetKey: string | null;
   currentTargetImportInProgress: boolean;
   isProjectDatasetSelectable: (projectKey: string) => boolean;
@@ -32,6 +33,7 @@ type Props = {
   onImportDataset: (project: PackageRecord) => void;
   onOpenDependencyTree: (project: PackageRecord) => void;
   onOpenInProjectEditor: (project: PackageRecord) => void;
+  onDuplicateProject: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onEditDatasetInfo: (dataset: DatasetRecord) => void;
@@ -49,6 +51,7 @@ export const ProjectsView = ({
   dependenciesByTarget,
   dependencyOwners,
   datasetsByProject,
+  authoredKeys,
   currentTargetKey,
   currentTargetImportInProgress,
   isProjectDatasetSelectable,
@@ -56,6 +59,7 @@ export const ProjectsView = ({
   onImportDataset,
   onOpenDependencyTree,
   onOpenInProjectEditor,
+  onDuplicateProject,
   onOpenExportDialog,
   onExportDataset,
   onEditDatasetInfo,
@@ -96,13 +100,19 @@ export const ProjectsView = ({
                   key={target.key}
                   kind="Target"
                   project={target.record}
+                  isAuthored={authoredKeys.has(target.key)}
                   text={text}
-                  dependencyCount={dependenciesByTarget.get(target.key)?.size ?? 0}
+                  dependencyCount={
+                    authoredKeys.has(target.key)
+                      ? Object.keys(target.record.manifest.dependencies ?? {}).length
+                      : dependenciesByTarget.get(target.key)?.size ?? 0
+                  }
                   datasets={datasetsByProject.get(target.key) ?? []}
                   onCreateDataset={onCreateDataset}
                   onImportDataset={onImportDataset}
                   onOpenDependencyTree={onOpenDependencyTree}
                   onOpenInProjectEditor={onOpenInProjectEditor}
+                  onDuplicateProject={onDuplicateProject}
                   onOpenExportDialog={onOpenExportDialog}
                   onExportDataset={onExportDataset}
                   onEditDatasetInfo={onEditDatasetInfo}

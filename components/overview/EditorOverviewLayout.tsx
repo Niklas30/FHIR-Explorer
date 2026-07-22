@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Database, LayoutGrid, Settings, Upload } from "lucide-react";
+import { Database, FolderPlus, LayoutGrid, Settings, Upload } from "lucide-react";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
@@ -36,6 +36,7 @@ type Props = {
 
   selectableProjectOptions: PackageRecord[];
   onCreateDatasetFromList: () => void;
+  onNewProject: () => void;
   onOpenSettings: () => void;
   onRefresh: () => void;
 
@@ -44,6 +45,7 @@ type Props = {
   datasets: DatasetRecord[];
   projectByKey: Map<string, PackageRecord>;
   datasetsByProject: Map<string, DatasetRecord[]>;
+  authoredKeys: Set<string>;
   dependenciesByTarget: Map<string, Set<string>>;
   dependencyOwners: Map<string, Set<string>>;
   currentTargetKey: string | null;
@@ -54,6 +56,7 @@ type Props = {
   onImportDataset: (project: PackageRecord) => void;
   onOpenDependencyTree: (project: PackageRecord) => void;
   onOpenInProjectEditor: (project: PackageRecord) => void;
+  onDuplicateProject: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onOpenDatasetInfo: (dataset: DatasetRecord) => void;
@@ -106,8 +109,6 @@ type Props = {
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onDeleteAllData: () => void;
-
-  authoredProjectsSlot?: ReactNode;
 };
 
 export const EditorOverviewLayout = ({
@@ -118,6 +119,7 @@ export const EditorOverviewLayout = ({
   onViewModeChange,
   selectableProjectOptions,
   onCreateDatasetFromList,
+  onNewProject,
   onOpenSettings,
   onRefresh,
   targets,
@@ -125,6 +127,7 @@ export const EditorOverviewLayout = ({
   datasets,
   projectByKey,
   datasetsByProject,
+  authoredKeys,
   dependenciesByTarget,
   dependencyOwners,
   currentTargetKey,
@@ -134,6 +137,7 @@ export const EditorOverviewLayout = ({
   onImportDataset,
   onOpenDependencyTree,
   onOpenInProjectEditor,
+  onDuplicateProject,
   onOpenExportDialog,
   onExportDataset,
   onOpenDatasetInfo,
@@ -181,7 +185,6 @@ export const EditorOverviewLayout = ({
   settingsOpen,
   onSettingsOpenChange,
   onDeleteAllData,
-  authoredProjectsSlot,
 }: Props) => {
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -197,7 +200,11 @@ export const EditorOverviewLayout = ({
             <h1 className="text-3xl font-semibold text-foreground">{text.pageTitle}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild size="sm">
+            <Button size="sm" onClick={onNewProject}>
+              <FolderPlus className="size-4" />
+              {text.newProject}
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link href="/importer">
                 <Upload className="size-4" />
                 {text.importProject}
@@ -261,43 +268,34 @@ export const EditorOverviewLayout = ({
       </div>
 
       {viewMode === "projects" ? (
-        <div className="grid gap-10">
-          {authoredProjectsSlot}
-
-          <section className="grid gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">
-                {text.importedPackagesTitle}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {text.importedPackagesDescription}
-              </p>
-            </div>
-            <ProjectsView
-              text={text}
-              targets={targets}
-              filteredDependencies={filteredDependencies}
-              dependenciesByTarget={dependenciesByTarget}
-              dependencyOwners={dependencyOwners}
-              datasetsByProject={datasetsByProject}
-              currentTargetKey={currentTargetKey}
-              currentTargetImportInProgress={currentTargetImportInProgress}
-              isProjectDatasetSelectable={isProjectDatasetSelectable}
-              onCreateDataset={onCreateDataset}
-              onImportDataset={onImportDataset}
-              onOpenDependencyTree={onOpenDependencyTree}
-              onOpenInProjectEditor={onOpenInProjectEditor}
-              onOpenExportDialog={onOpenExportDialog}
-              onExportDataset={onExportDataset}
-              onEditDatasetInfo={onOpenDatasetInfo}
-              onDuplicateDataset={onDuplicateDataset}
-              onDeleteDataset={onDeleteDataset}
-              onDeleteProject={onDeleteProject}
-              canDeleteProject={canDeleteProject}
-              deleteReasonFor={deleteReasonFor}
-            />
-          </section>
-        </div>
+        <section className="grid gap-4">
+          <p className="text-sm text-muted-foreground">{text.projectsSectionDescription}</p>
+          <ProjectsView
+            text={text}
+            targets={targets}
+            filteredDependencies={filteredDependencies}
+            dependenciesByTarget={dependenciesByTarget}
+            dependencyOwners={dependencyOwners}
+            datasetsByProject={datasetsByProject}
+            authoredKeys={authoredKeys}
+            currentTargetKey={currentTargetKey}
+            currentTargetImportInProgress={currentTargetImportInProgress}
+            isProjectDatasetSelectable={isProjectDatasetSelectable}
+            onCreateDataset={onCreateDataset}
+            onImportDataset={onImportDataset}
+            onOpenDependencyTree={onOpenDependencyTree}
+            onOpenInProjectEditor={onOpenInProjectEditor}
+            onDuplicateProject={onDuplicateProject}
+            onOpenExportDialog={onOpenExportDialog}
+            onExportDataset={onExportDataset}
+            onEditDatasetInfo={onOpenDatasetInfo}
+            onDuplicateDataset={onDuplicateDataset}
+            onDeleteDataset={onDeleteDataset}
+            onDeleteProject={onDeleteProject}
+            canDeleteProject={canDeleteProject}
+            deleteReasonFor={deleteReasonFor}
+          />
+        </section>
       ) : (
         <DatasetsView
           text={text}
