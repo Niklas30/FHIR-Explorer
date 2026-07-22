@@ -12,6 +12,13 @@ export type PackageManifest = {
   version: string;
   title?: string;
   description?: string;
+  author?: string;
+  fhirVersions?: string[];
+  canonical?: string;
+  url?: string;
+  jurisdiction?: string;
+  type?: string;
+  license?: string;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useImporter } from "@/components/importer/useImporter";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
@@ -11,6 +12,7 @@ import { byLocale } from "@/lib/i18n/select";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { EditorOverviewLayout } from "@/components/overview/EditorOverviewLayout";
+import { AuthoredProjectsSection } from "@/components/overview/AuthoredProjectsSection";
 import type { OverviewViewMode, OverviewText } from "@/components/overview/types";
 import {
   createDatasetAction,
@@ -48,6 +50,7 @@ const usePersistedViewMode = (storageKey: string) => {
 };
 
 export default function EditorOverviewPage() {
+  const router = useRouter();
   const { locale } = useI18n();
   const text = byLocale(locale, localizedOverviewText);
   const { snapshot, refresh, deletePackage, getResourcePayloadsByPackageKeys, clearAllData } = useImporter();
@@ -163,6 +166,10 @@ export default function EditorOverviewPage() {
 
   const openDependencyTree = (project: PackageRecord) => {
     setDependencyTreeRootKey(project.key);
+  };
+
+  const openProjectInEditor = (project: PackageRecord) => {
+    router.push(`/project/${encodeURIComponent(project.key)}`);
   };
 
   const handleOpenDatasetInfo = (dataset: DatasetRecord) => {
@@ -347,6 +354,7 @@ export default function EditorOverviewPage() {
       onCreateDataset={openDatasetDialog}
       onImportDataset={openImportDialog}
       onOpenDependencyTree={openDependencyTree}
+      onOpenInProjectEditor={openProjectInEditor}
       onOpenExportDialog={openExportDialog}
       onExportDataset={(dataset) => void handleExportDataset(dataset)}
       onOpenDatasetInfo={handleOpenDatasetInfo}
@@ -394,6 +402,9 @@ export default function EditorOverviewPage() {
       settingsOpen={settingsDialogOpen}
       onSettingsOpenChange={setSettingsDialogOpen}
       onDeleteAllData={() => void handleDeleteAllData()}
+      authoredProjectsSlot={
+        <AuthoredProjectsSection availablePackages={snapshot?.packages ?? []} />
+      }
     />
   );
 }

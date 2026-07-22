@@ -16,6 +16,16 @@ type OverviewTextBase = {
   usedByPrefix: string;
   datasetsSectionTitle: string;
   datasetsSectionDescription: string;
+  dependencyCountLabel: string;
+  datasetsWithCount: string;
+  newDataset: string;
+  datasetsEmptyHint: string;
+  dependencyPackagesCount: string;
+  graphTitle: string;
+  graphNodeTarget: string;
+  graphNodeResolved: string;
+  graphNodeMissing: string;
+  graphEmpty: string;
   createDatasetAria: string;
   importDatasetAria: string;
   importInProgress: string;
@@ -65,6 +75,8 @@ type OverviewTextBase = {
   filterPlaceholder: string;
   projectViewAria: string;
   datasetViewAria: string;
+  viewProjectsLabel: string;
+  viewDatasetsLabel: string;
   noTargetsTitle: string;
   noTargetsDescription: string;
   goToImporter: string;
@@ -121,6 +133,9 @@ type OverviewTextBase = {
   close: string;
   deleteAllLocalData: string;
   thisProject: string;
+  importedPackagesTitle: string;
+  importedPackagesDescription: string;
+  openInProjectEditor: string;
 };
 
 export type OverviewText = OverviewTextBase;
@@ -144,6 +159,16 @@ const overviewText = {
     usedByPrefix: "Verwendet von:",
     datasetsSectionTitle: "Datasets",
     datasetsSectionDescription: "Erstelle Datasets für dieses Projekt und öffne sie im Editor.",
+    dependencyCountLabel: "{count} Abhängigkeiten",
+    datasetsWithCount: "Datasets ({count})",
+    newDataset: "Neu",
+    datasetsEmptyHint: "Noch keine Datasets. Erstelle eines, um Ressourcen zu bearbeiten.",
+    dependencyPackagesCount: "Abhängigkeitspakete ({count})",
+    graphTitle: "Abhängigkeitsgraph",
+    graphNodeTarget: "Ziel",
+    graphNodeResolved: "Importiert",
+    graphNodeMissing: "Fehlt",
+    graphEmpty: "Keine Abhängigkeiten.",
     createDatasetAria: "Dataset erstellen",
     importDatasetAria: "Dataset importieren",
     importInProgress: "Import läuft",
@@ -195,6 +220,8 @@ const overviewText = {
     filterPlaceholder: "Filtern",
     projectViewAria: "Projektansicht",
     datasetViewAria: "Datasetansicht",
+    viewProjectsLabel: "Projekte",
+    viewDatasetsLabel: "Datasets",
     noTargetsTitle: "Noch keine Ziele",
     noTargetsDescription: "Importiere ein Zielpaket, um Datasets und Abhängigkeiten aufzubauen.",
     goToImporter: "Zum Importer",
@@ -255,6 +282,10 @@ const overviewText = {
     close: "Schließen",
     deleteAllLocalData: "Alle lokalen Daten löschen",
     thisProject: "dieses Projekt",
+    importedPackagesTitle: "Importierte Pakete",
+    importedPackagesDescription:
+      "Von anderen Autoren importierte FHIR-Pakete. Im Projekt-Editor ansehen oder als eigenes Projekt duplizieren.",
+    openInProjectEditor: "Im Projekt-Editor öffnen",
   },
   en: {
     pageBrowserTitle: "Projects",
@@ -274,6 +305,16 @@ const overviewText = {
     usedByPrefix: "Used by:",
     datasetsSectionTitle: "Datasets",
     datasetsSectionDescription: "Create datasets for this project and open them in the editor.",
+    dependencyCountLabel: "{count} dependencies",
+    datasetsWithCount: "Datasets ({count})",
+    newDataset: "New",
+    datasetsEmptyHint: "No datasets yet. Create one to start editing resources.",
+    dependencyPackagesCount: "Dependency packages ({count})",
+    graphTitle: "Dependency graph",
+    graphNodeTarget: "Target",
+    graphNodeResolved: "Imported",
+    graphNodeMissing: "Missing",
+    graphEmpty: "No dependencies.",
     createDatasetAria: "Create dataset",
     importDatasetAria: "Import dataset",
     importInProgress: "Import in progress",
@@ -325,6 +366,8 @@ const overviewText = {
     filterPlaceholder: "Filter",
     projectViewAria: "Project view",
     datasetViewAria: "Dataset view",
+    viewProjectsLabel: "Projects",
+    viewDatasetsLabel: "Datasets",
     noTargetsTitle: "No targets yet",
     noTargetsDescription: "Import a target package to start building datasets and dependencies.",
     goToImporter: "Go to Importer",
@@ -383,6 +426,10 @@ const overviewText = {
     close: "Close",
     deleteAllLocalData: "Delete all local data",
     thisProject: "this project",
+    importedPackagesTitle: "Imported packages",
+    importedPackagesDescription:
+      "FHIR packages imported from other authors. View them in the project editor or duplicate one into your own project.",
+    openInProjectEditor: "Open in project editor",
   },
 } satisfies Record<"de" | "en", OverviewText>;
 

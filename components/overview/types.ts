@@ -22,6 +22,7 @@ export type ProjectCardProps = {
   onCreateDataset: (project: PackageRecord) => void;
   onImportDataset: (project: PackageRecord) => void;
   onOpenDependencyTree: (project: PackageRecord) => void;
+  onOpenInProjectEditor: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onEditDatasetInfo: (dataset: DatasetRecord) => void;
