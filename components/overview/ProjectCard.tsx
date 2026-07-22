@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,50 +12,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GitBranch, MoreHorizontal, Plus, Upload } from "lucide-react";
+import { GitBranch, MoreHorizontal, PencilRuler, Plus, Upload } from "lucide-react";
 import { formatText, formatTimestamp } from "@/components/overview/utils";
 import type { ProjectCardProps } from "@/components/overview/types";
 
 export const ProjectCard = ({
-  kind,
   project,
   dependencyCount,
-  owners,
   datasets,
   text,
   onCreateDataset,
   onImportDataset,
   onOpenDependencyTree,
+  onOpenInProjectEditor,
   onOpenExportDialog,
-  onExportDataset,
   onEditDatasetInfo,
   onDuplicateDataset,
   onDeleteProject,
   onDeleteDataset,
+  onExportDataset,
   canDeleteProject,
   deleteReason,
   datasetActionsDisabled = false,
   datasetActionsDisabledReason,
 }: ProjectCardProps) => {
   const title = project.manifest.title ?? project.manifest.name ?? project.id;
-  const description = project.manifest.description ?? text.noDescriptionProvided;
+  const hasDatasets = datasets.length > 0;
 
   return (
     <Card className="border-foreground/10">
       <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <CardDescription>{project.key}</CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-lg font-semibold text-foreground" title={title}>
+              {title}
+            </h3>
+            <p className="truncate font-mono text-xs text-muted-foreground" title={project.key}>
+              {project.key}
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={kind === "Target" ? "secondary" : "outline"}>
-              {kind === "Target" ? text.kindTarget : text.kindDependency}
-            </Badge>
-            {datasetActionsDisabled ? <Badge variant="outline">{text.importInProgress}</Badge> : null}
-            <Badge variant="outline">
-              {formatText(text.resourcesCount, { count: project.resourceCount })}
-            </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            {datasetActionsDisabled ? (
+              <Badge variant="outline" className="text-amber-600">
+                {text.importInProgress}
+              </Badge>
+            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon-sm" variant="ghost" aria-label={text.projectActionsAria}>
@@ -65,6 +66,10 @@ export const ProjectCard = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{text.projectActions}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onOpenInProjectEditor(project)}>
+                  <PencilRuler className="mr-2 size-4" />
+                  {text.openInProjectEditor}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onOpenDependencyTree(project)}>
                   <GitBranch className="mr-2 size-4" />
                   {text.showDependencyTree}
@@ -72,6 +77,7 @@ export const ProjectCard = ({
                 <DropdownMenuItem onClick={() => onOpenExportDialog(project)}>
                   {text.exportProject}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
                   disabled={!canDeleteProject}
@@ -80,7 +86,7 @@ export const ProjectCard = ({
                   {text.deleteProject}
                 </DropdownMenuItem>
                 {!canDeleteProject && deleteReason ? (
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                     {deleteReason}
                   </DropdownMenuLabel>
                 ) : null}
@@ -90,40 +96,37 @@ export const ProjectCard = ({
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <p className="text-sm text-muted-foreground">{description}</p>
-        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>{formatText(text.resourcesCount, { count: project.resourceCount })}</span>
+          {typeof dependencyCount === "number" && dependencyCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => onOpenDependencyTree(project)}
+              className="inline-flex items-center gap-1 rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <GitBranch className="size-3.5" />
+              {formatText(text.dependencyCountLabel, { count: dependencyCount })}
+            </button>
+          ) : null}
           <span>
             {text.addedPrefix} {formatTimestamp(project.addedAt)}
           </span>
-          {typeof dependencyCount === "number" ? (
-            <span>
-              {text.dependenciesPrefix} {dependencyCount}
-            </span>
-          ) : null}
-          <span>
-            {text.datasetsPrefix} {datasets.length}
-          </span>
-          {owners && owners.length > 0 ? (
-            <span>
-              {text.usedByPrefix} {owners.join(", ")}
-            </span>
-          ) : null}
         </div>
-        <div className="rounded-lg border border-foreground/10 bg-muted/30 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">{text.datasetsSectionTitle}</p>
-              <p className="text-xs text-muted-foreground">{text.datasetsSectionDescription}</p>
-            </div>
+
+        <div className="rounded-lg border border-foreground/10 bg-muted/30 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              {formatText(text.datasetsWithCount, { count: datasets.length })}
+            </p>
             <div className="flex items-center gap-2">
               <Button
-                size="icon-sm"
+                size="sm"
                 variant="secondary"
                 disabled={datasetActionsDisabled}
                 onClick={() => onCreateDataset(project)}
-                aria-label={text.createDatasetAria}
               >
                 <Plus className="size-4" />
+                {text.newDataset}
               </Button>
               <Button
                 size="icon-sm"
@@ -131,30 +134,31 @@ export const ProjectCard = ({
                 disabled={datasetActionsDisabled}
                 onClick={() => onImportDataset(project)}
                 aria-label={text.importDatasetAria}
+                title={text.importDatasetAria}
               >
                 <Upload className="size-4" />
               </Button>
             </div>
           </div>
+
           {datasetActionsDisabled && datasetActionsDisabledReason ? (
             <p className="mt-2 text-xs text-muted-foreground">{datasetActionsDisabledReason}</p>
-          ) : null}
-          <div className="mt-3 grid gap-2">
-            {datasets.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{text.noDatasetsYet}</p>
-            ) : (
-              datasets.map((dataset) => (
+          ) : !hasDatasets ? (
+            <p className="mt-3 text-xs text-muted-foreground">{text.datasetsEmptyHint}</p>
+          ) : (
+            <div className="mt-3 grid gap-2">
+              {datasets.map((dataset) => (
                 <div
                   key={dataset.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-foreground/10 bg-background px-3 py-2 text-xs"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-foreground/10 bg-background px-3 py-2"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{dataset.name}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{dataset.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {text.createdPrefix} {formatTimestamp(dataset.createdAt)}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Button asChild size="sm" variant="secondary">
                       <Link href={`/${dataset.id}`}>{text.open}</Link>
                     </Button>
@@ -188,12 +192,11 @@ export const ProjectCard = ({
                     </DropdownMenu>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
-

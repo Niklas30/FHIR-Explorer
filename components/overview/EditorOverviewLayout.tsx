@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Database, LayoutGrid, Settings } from "lucide-react";
+import { Database, LayoutGrid, Settings, Upload } from "lucide-react";
 import type { PackageRecord } from "@/lib/fhir-importer/types";
 import type { DatasetRecord } from "@/lib/datasets/storage";
 import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import { DependencyTreeDialog } from "@/components/editor/DependencyTreeDialog";
+import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { DatasetInfoDialog } from "@/components/editor/DatasetInfoDialog";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import type { OverviewText, OverviewViewMode, ProjectEntry } from "@/components/overview/types";
@@ -53,6 +53,7 @@ type Props = {
   onCreateDataset: (project: PackageRecord) => void;
   onImportDataset: (project: PackageRecord) => void;
   onOpenDependencyTree: (project: PackageRecord) => void;
+  onOpenInProjectEditor: (project: PackageRecord) => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onExportDataset: (dataset: DatasetRecord) => void;
   onOpenDatasetInfo: (dataset: DatasetRecord) => void;
@@ -105,6 +106,8 @@ type Props = {
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onDeleteAllData: () => void;
+
+  authoredProjectsSlot?: ReactNode;
 };
 
 export const EditorOverviewLayout = ({
@@ -130,6 +133,7 @@ export const EditorOverviewLayout = ({
   onCreateDataset,
   onImportDataset,
   onOpenDependencyTree,
+  onOpenInProjectEditor,
   onOpenExportDialog,
   onExportDataset,
   onOpenDatasetInfo,
@@ -177,6 +181,7 @@ export const EditorOverviewLayout = ({
   settingsOpen,
   onSettingsOpenChange,
   onDeleteAllData,
+  authoredProjectsSlot,
 }: Props) => {
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -186,99 +191,113 @@ export const EditorOverviewLayout = ({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{text.editorEyebrow}</p>
             <h1 className="text-3xl font-semibold text-foreground">{text.pageTitle}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="ghost" onClick={onRefresh}>
-              {text.refresh}
+            <Button asChild size="sm">
+              <Link href="/importer">
+                <Upload className="size-4" />
+                {text.importProject}
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={selectableProjectOptions.length === 0}
+              onClick={onCreateDatasetFromList}
+            >
+              {text.createDataset}
+            </Button>
+            <Button size="icon-sm" variant="ghost" aria-label={text.settingsAria} onClick={onOpenSettings}>
+              <Settings className="size-4" />
             </Button>
           </div>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground">{text.pageDescription}</p>
       </header>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">
-            {viewMode === "projects" ? text.projectsOverviewTitle : text.datasetsOverviewTitle}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {viewMode === "projects" ? text.projectsOverviewDescription : text.datasetsOverviewDescription}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link href="/importer">{text.importProject}</Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          className="inline-flex items-center gap-1 rounded-lg border border-foreground/15 p-1"
+          role="tablist"
+          aria-label={text.projectViewAria}
+        >
+          <Button
+            size="sm"
+            role="tab"
+            aria-selected={viewMode === "projects"}
+            variant={viewMode === "projects" ? "secondary" : "ghost"}
+            onClick={() => onViewModeChange("projects")}
+          >
+            <LayoutGrid className="size-4" />
+            {text.viewProjectsLabel}
           </Button>
           <Button
             size="sm"
-            variant="secondary"
-            disabled={selectableProjectOptions.length === 0}
-            onClick={onCreateDatasetFromList}
-          >
-            {text.createDataset}
-          </Button>
-          <Button size="icon-sm" variant="outline" aria-label={text.settingsAria} onClick={onOpenSettings}>
-            <Settings className="size-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Input
-          id="project-filter"
-          value={filter}
-          onChange={(event) => onFilterChange(event.target.value)}
-          placeholder={text.filterPlaceholder}
-          className="h-8 max-w-xs"
-        />
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-px bg-border" />
-          <Button
-            size="icon-sm"
-            variant={viewMode === "projects" ? "secondary" : "outline"}
-            onClick={() => onViewModeChange("projects")}
-            aria-label={text.projectViewAria}
-          >
-            <LayoutGrid className="size-4" />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant={viewMode === "datasets" ? "secondary" : "outline"}
+            role="tab"
+            aria-selected={viewMode === "datasets"}
+            variant={viewMode === "datasets" ? "secondary" : "ghost"}
             onClick={() => onViewModeChange("datasets")}
-            aria-label={text.datasetViewAria}
           >
             <Database className="size-4" />
+            {text.viewDatasetsLabel}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            id="project-filter"
+            value={filter}
+            onChange={(event) => onFilterChange(event.target.value)}
+            placeholder={text.filterPlaceholder}
+            className="h-9 w-48 sm:w-64"
+          />
+          <Button variant="ghost" size="sm" onClick={onRefresh}>
+            {text.refresh}
           </Button>
         </div>
       </div>
 
       {viewMode === "projects" ? (
-        <ProjectsView
-          text={text}
-          targets={targets}
-          filteredDependencies={filteredDependencies}
-          dependenciesByTarget={dependenciesByTarget}
-          dependencyOwners={dependencyOwners}
-          datasetsByProject={datasetsByProject}
-          currentTargetKey={currentTargetKey}
-          currentTargetImportInProgress={currentTargetImportInProgress}
-          isProjectDatasetSelectable={isProjectDatasetSelectable}
-          onCreateDataset={onCreateDataset}
-          onImportDataset={onImportDataset}
-          onOpenDependencyTree={onOpenDependencyTree}
-          onOpenExportDialog={onOpenExportDialog}
-          onExportDataset={onExportDataset}
-          onEditDatasetInfo={onOpenDatasetInfo}
-          onDuplicateDataset={onDuplicateDataset}
-          onDeleteDataset={onDeleteDataset}
-          onDeleteProject={onDeleteProject}
-          canDeleteProject={canDeleteProject}
-          deleteReasonFor={deleteReasonFor}
-        />
+        <div className="grid gap-10">
+          {authoredProjectsSlot}
+
+          <section className="grid gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                {text.importedPackagesTitle}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {text.importedPackagesDescription}
+              </p>
+            </div>
+            <ProjectsView
+              text={text}
+              targets={targets}
+              filteredDependencies={filteredDependencies}
+              dependenciesByTarget={dependenciesByTarget}
+              dependencyOwners={dependencyOwners}
+              datasetsByProject={datasetsByProject}
+              currentTargetKey={currentTargetKey}
+              currentTargetImportInProgress={currentTargetImportInProgress}
+              isProjectDatasetSelectable={isProjectDatasetSelectable}
+              onCreateDataset={onCreateDataset}
+              onImportDataset={onImportDataset}
+              onOpenDependencyTree={onOpenDependencyTree}
+              onOpenInProjectEditor={onOpenInProjectEditor}
+              onOpenExportDialog={onOpenExportDialog}
+              onExportDataset={onExportDataset}
+              onEditDatasetInfo={onOpenDatasetInfo}
+              onDuplicateDataset={onDuplicateDataset}
+              onDeleteDataset={onDeleteDataset}
+              onDeleteProject={onDeleteProject}
+              canDeleteProject={canDeleteProject}
+              deleteReasonFor={deleteReasonFor}
+            />
+          </section>
+        </div>
       ) : (
         <DatasetsView
           text={text}
@@ -355,13 +374,21 @@ export const EditorOverviewLayout = ({
         onConfirm={onConfirmExport}
       />
 
-      <DependencyTreeDialog
+      <DependencyGraphDialog
         open={Boolean(dependencyTreeRootKey)}
         onOpenChange={(open) => {
           if (!open) onDependencyTreeRootKeyChange(null);
         }}
         graph={graph}
-        rootProjectKey={dependencyTreeRootKey}
+        rootKey={dependencyTreeRootKey}
+        title={text.graphTitle}
+        labels={{
+          target: text.graphNodeTarget,
+          resolved: text.graphNodeResolved,
+          missing: text.graphNodeMissing,
+          add: "",
+          empty: text.graphEmpty,
+        }}
       />
 
       <DatasetInfoDialog
