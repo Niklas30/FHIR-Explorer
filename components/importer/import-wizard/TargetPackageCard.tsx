@@ -87,42 +87,75 @@ export const TargetPackageCard = ({
           </>
         ) : (
           <>
-            <FileDropzone
-              label={text.uploadTargetOrCompose}
-              helperText={text.uploadTargetOrComposeHelper}
-              disabled={isUploading}
-              accept=".tgz,.tar.gz,.tar,.json,.zip,application/gzip,application/x-gzip,application/x-tar,application/json,application/zip"
-              hint={text.uploadTargetOrComposeHint}
-              onFiles={onTargetUpload}
-            />
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="package-id">{text.packageId}</Label>
-                <Input
-                  id="package-id"
-                  value={packageId}
-                  onChange={(event) => onPackageIdChange(event.target.value)}
-                  placeholder="de.gematik.fhir.directory"
-                />
+            <div className="rounded-lg border border-foreground/10 bg-muted/30 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">{text.howItWorksTitle}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{text.howItWorksBody}</p>
+            </div>
+
+            <div className="grid gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{text.newImportTitle}</p>
+                <p className="text-xs text-muted-foreground">{text.newImportDescription}</p>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="package-version">{text.version}</Label>
-                <Input
-                  id="package-version"
-                  value={version}
-                  onChange={(event) => onVersionChange(event.target.value)}
-                  placeholder="1.0.0"
-                />
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="package-id">{text.packageId}</Label>
+                  <Input
+                    id="package-id"
+                    value={packageId}
+                    onChange={(event) => onPackageIdChange(event.target.value)}
+                    placeholder="de.gematik.fhir.directory"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="package-version">{text.version}</Label>
+                  <Input
+                    id="package-version"
+                    value={version}
+                    onChange={(event) => onVersionChange(event.target.value)}
+                    placeholder="1.0.0"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    className="w-full"
+                    disabled={!trimmedPackageId || !trimmedVersion}
+                    onClick={() => onSetTarget(trimmedPackageId, trimmedVersion)}
+                  >
+                    {text.setTarget}
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-end">
-                <Button
-                  className="w-full"
-                  disabled={!trimmedPackageId || !trimmedVersion}
-                  onClick={() => onSetTarget(trimmedPackageId, trimmedVersion)}
-                >
-                  {text.setTarget}
-                </Button>
+              <FileDropzone
+                label={text.uploadTargetPackage}
+                helperText={text.uploadTargetOrComposeHelper}
+                disabled={isUploading}
+                accept=".tgz,.tar.gz,.tar,application/gzip,application/x-gzip,application/x-tar"
+                hint={text.uploadTargetHint}
+                onFiles={onTargetUpload}
+              />
+            </div>
+
+            <div className="flex items-center gap-3" role="separator" aria-hidden="true">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                {text.orDivider}
+              </span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <div className="grid gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{text.restoreTitle}</p>
+                <p className="text-xs text-muted-foreground">{text.restoreDescription}</p>
               </div>
+              <FileDropzone
+                label={text.restoreDropLabel}
+                disabled={isUploading}
+                accept=".json,.zip,application/json,application/zip"
+                hint={text.restoreDropHint}
+                onFiles={onTargetUpload}
+              />
             </div>
           </>
         )}

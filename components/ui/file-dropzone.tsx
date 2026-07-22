@@ -165,6 +165,9 @@ export const FileDropzone = ({
       onDrop={(event) => {
         if (disabled) return;
         event.preventDefault();
+        // Stop the drop from also bubbling to a page-level drop handler that
+        // would otherwise import the same file a second time.
+        event.stopPropagation();
         setIsDragging(false);
         handleFiles(event.dataTransfer.files);
       }}

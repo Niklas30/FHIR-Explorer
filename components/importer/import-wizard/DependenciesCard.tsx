@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { formatRequirement } from "@/components/importer/import-wizard/helpers";
 import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
@@ -17,6 +18,7 @@ export type DependenciesCardProps = {
   isTargetImported: boolean;
   missing: DependencyRequirement[];
   isUploading: boolean;
+  highlightDependencyId?: string | null;
   versionDrafts: Record<string, string>;
   onDraftChange: (depId: string, value: string) => void;
   onSetVersion: (depId: string, value: string) => void;
@@ -34,6 +36,7 @@ export const DependenciesCard = ({
   isTargetImported,
   missing,
   isUploading,
+  highlightDependencyId,
   versionDrafts,
   onDraftChange,
   onSetVersion,
@@ -72,7 +75,13 @@ export const DependenciesCard = ({
               return (
                 <div
                   key={dependency.id}
-                  className="rounded-xl border border-foreground/10 bg-background px-4 py-4"
+                  id={`dependency-${dependency.id}`}
+                  className={cn(
+                    "rounded-xl border bg-background px-4 py-4 transition-shadow",
+                    highlightDependencyId === dependency.id
+                      ? "border-destructive ring-2 ring-destructive/40"
+                      : "border-foreground/10"
+                  )}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
