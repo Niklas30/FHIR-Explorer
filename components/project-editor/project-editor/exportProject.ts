@@ -3,11 +3,7 @@
 import { downloadJson, toSafeFilename } from "@/components/overview/utils";
 import { loadDatasetResources } from "@/lib/datasets/content";
 import type { DatasetRecord } from "@/lib/datasets/storage";
-import {
-  collectDependencies,
-  type DependencyGraph,
-} from "@/lib/fhir-importer/dependency-graph";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
+import { type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
@@ -15,32 +11,7 @@ import type {
 } from "@/lib/fhir-importer/compose";
 import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
 import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-
-const resolveDependencyKeys = (
-  project: AuthoredProjectRecord,
-  graph: DependencyGraph
-): string[] => {
-  const dependencies = project.manifest.dependencies ?? {};
-  const keys = new Set<string>();
-  for (const [id, version] of Object.entries(dependencies)) {
-    const directKey = buildPackageKey(id, version);
-    let rootKey: string | undefined;
-    if (graph.byKey.get(directKey)) {
-      rootKey = directKey;
-    } else {
-      for (const record of graph.byKey.values()) {
-        if (record.id === id) {
-          rootKey = record.key;
-          break;
-        }
-      }
-    }
-    if (!rootKey) continue;
-    keys.add(rootKey);
-    for (const depKey of collectDependencies(rootKey, graph)) keys.add(depKey);
-  }
-  return Array.from(keys);
-};
+import { resolveDependencyPackageKeys } from "@/lib/projects/registry-resolution";
 
 /**
  * Export an authored project as a single `fhir-explorer-project` JSON file:
@@ -61,7 +32,7 @@ export const exportAuthoredProject = async ({
   graph: DependencyGraph;
   getResourcePayloadsByPackageKeys: (keys: string[]) => Promise<ResourcePayload[]>;
 }) => {
-  const dependencyKeys = resolveDependencyKeys(project, graph);
+  const dependencyKeys = resolveDependencyPackageKeys(project.manifest.dependencies, graph);
   const dependencyRecords = dependencyKeys
     .map((key) => graph.byKey.get(key))
     .filter((record): record is PackageRecord => Boolean(record));
