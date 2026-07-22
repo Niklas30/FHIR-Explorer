@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import mermaid from "mermaid";
+import { buildMermaidConfig } from "@/lib/mermaid-theme";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Download, Maximize2, RefreshCcw, ZoomIn, ZoomOut } from "lucide-react";
@@ -61,17 +62,7 @@ export const MermaidDiagramDialog = ({
     if (!open) return;
     let active = true;
 
-    mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: "strict",
-      theme: "neutral",
-      flowchart: {
-        htmlLabels: false,
-        nodeSpacing,
-        rankSpacing,
-        useMaxWidth: false,
-      },
-    });
+    mermaid.initialize(buildMermaidConfig({ nodeSpacing, rankSpacing }));
 
     const renderDiagram = async () => {
       try {
