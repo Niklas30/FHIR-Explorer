@@ -52,31 +52,31 @@ export const useImporter = (): UseImporterResult => {
       failedToLoadState: "Importer-Status konnte nicht geladen werden",
       importFailed: "Import fehlgeschlagen",
       clientNotReady: "Importer-Client ist noch nicht bereit.",
-      composeImportFailed: "Import der Compose-Projektdatei fehlgeschlagen",
+      composeImportFailed: "Import der Projektdatei fehlgeschlagen",
     },
     en: {
       failedToLoadState: "Failed to load importer state",
       importFailed: "Import failed",
       clientNotReady: "Importer client is not ready yet.",
-      composeImportFailed: "Compose project import failed",
+      composeImportFailed: "Project import failed",
     },
     fr: {
       failedToLoadState: "Impossible de charger l'état de l'importateur",
       importFailed: "Échec de l'import",
       clientNotReady: "Le client importateur n'est pas encore prêt.",
-      composeImportFailed: "Échec de l'import du projet compose",
+      composeImportFailed: "Échec de l'import du projet",
     },
     es: {
       failedToLoadState: "No se pudo cargar el estado del importador",
       importFailed: "Error de importación",
       clientNotReady: "El cliente importador aún no está listo.",
-      composeImportFailed: "Error al importar el proyecto compose",
+      composeImportFailed: "Error al importar el proyecto",
     },
     it: {
       failedToLoadState: "Impossibile caricare lo stato dell'importatore",
       importFailed: "Importazione non riuscita",
       clientNotReady: "Il client importatore non è ancora pronto.",
-      composeImportFailed: "Importazione progetto compose non riuscita",
+      composeImportFailed: "Importazione progetto non riuscita",
     },
   });
 

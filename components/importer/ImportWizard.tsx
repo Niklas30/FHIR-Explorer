@@ -309,7 +309,7 @@ export const ImportWizard = () => {
 
   // Route files dropped anywhere on the page to the right handler: while the
   // target is not imported yet they seed the target, otherwise they resolve
-  // dependencies. Both handlers also detect Health Compose project exports.
+  // dependencies. Both handlers also detect FHIR-Explorer project exports.
   const handleGlobalFiles = useCallback(
     (files: File[]) => {
       if (files.length === 0) return;

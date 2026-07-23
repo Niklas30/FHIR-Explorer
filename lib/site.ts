@@ -10,10 +10,9 @@ export const site = {
   name: "FHIR-Explorer",
   description:
     "FHIR-Ressourcen direkt im Browser importieren, verwalten und bearbeiten – mit profilgesteuerten Formularen, Live-Validierung und Abhängigkeitsgraphen. Local-first, ganz ohne Backend.",
-  // Produktions-URL des Editors (siehe fhir-compose/CLAUDE.md).
-  // Per Env überschreibbar, damit Preview-/Staging-Deployments korrekte
-  // absolute URLs (canonical, OG, sitemap) erzeugen.
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://editor.fhir-explorer.com",
+  // Produktions-URL. Per Env überschreibbar, damit Preview-/Staging-Deployments
+  // korrekte absolute URLs (canonical, OG, sitemap) erzeugen.
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://fhir-explorer.com",
   locale: "de_DE",
   keywords: [
     "FHIR",
