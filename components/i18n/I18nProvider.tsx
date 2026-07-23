@@ -10,6 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { isLocale, type Locale } from "@/lib/i18n/types";
+import { migrateLegacyLocalStorage } from "@/lib/legacy-migration";
+
+// Carry pre-rename localStorage (health-compose-*) forward. Runs when the client
+// bundle first evaluates this module — before any component effect reads storage.
+migrateLegacyLocalStorage();
 
 const LOCALE_STORAGE_KEY = "fhir-explorer-locale";
 type LocaleMode = Locale | "system";

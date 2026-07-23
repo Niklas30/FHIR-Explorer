@@ -1,5 +1,15 @@
 import type { PackageManifest } from "./types";
 
+/**
+ * Discriminator strings for exported project files. The current build writes
+ * the `fhir-explorer-*` variants; the `health-compose-*` variants are accepted
+ * on import so files exported by pre-rename builds still load.
+ */
+export const PROJECT_EXPORT_TYPE = "fhir-explorer-project";
+export const PROJECT_ARCHIVE_TYPE = "fhir-explorer-project-archive";
+const LEGACY_PROJECT_EXPORT_TYPE = "health-compose-project";
+const LEGACY_PROJECT_ARCHIVE_TYPE = "health-compose-project-archive";
+
 export type ComposeResourceExport = {
   resourceType?: string;
   id?: string;
@@ -33,9 +43,10 @@ export type ComposeProjectExport = {
 
 export const isComposeProjectExport = (value: unknown): value is ComposeProjectExport => {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as ComposeProjectExport;
+  const candidate = value as { type?: unknown; version?: unknown; packages?: unknown };
   return (
-    candidate.type === "fhir-explorer-project" &&
+    (candidate.type === PROJECT_EXPORT_TYPE ||
+      candidate.type === LEGACY_PROJECT_EXPORT_TYPE) &&
     candidate.version === 1 &&
     Array.isArray(candidate.packages)
   );
@@ -65,9 +76,10 @@ export const isComposeProjectArchive = (
   value: unknown
 ): value is ComposeProjectArchiveManifest => {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as ComposeProjectArchiveManifest;
+  const candidate = value as { type?: unknown; version?: unknown; packages?: unknown };
   return (
-    candidate.type === "fhir-explorer-project-archive" &&
+    (candidate.type === PROJECT_ARCHIVE_TYPE ||
+      candidate.type === LEGACY_PROJECT_ARCHIVE_TYPE) &&
     candidate.version === 1 &&
     Array.isArray(candidate.packages)
   );
