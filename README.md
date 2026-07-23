@@ -1,7 +1,7 @@
-# Health Compose Editor
+# FHIR-Explorer
 
 Local‑first FHIR R4 **package importer**, **project/dataset manager**, and **resource editor**.
-Health Compose Editor runs entirely in the browser: no backend required.
+FHIR-Explorer runs entirely in the browser: no backend required.
 
 > Status: work in progress (internal tooling). APIs and UX may change.
 

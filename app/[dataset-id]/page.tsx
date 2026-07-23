@@ -2,7 +2,9 @@ import { DatasetEditor } from "@/components/editor/DatasetEditor";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "FHIR Compose",
+  title: "Dataset-Editor",
+  // Enthält lokale Nutzerdaten – nicht indexieren.
+  robots: { index: false, follow: false },
 };
 
 export default async function DatasetEditorPage({

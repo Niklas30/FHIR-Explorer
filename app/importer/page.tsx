@@ -5,7 +5,10 @@ import { ImporterLoadingFallback } from "@/components/importer/ImporterLoadingFa
 import { ImportWizard } from "@/components/importer/ImportWizard";
 
 export const metadata: Metadata = {
-  title: "FHIR Compose",
+  title: "Importer",
+  description:
+    "FHIR-Packages inklusive Abhängigkeiten in den Browser importieren und als Projekt anlegen.",
+  alternates: { canonical: "/importer" },
 };
 
 export default function ImporterPage() {
