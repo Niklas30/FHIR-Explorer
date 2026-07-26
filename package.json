@@ -35,7 +35,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
     "mermaid": "^11.15.0",
-    "next": "16.2.4",
+    "next": "16.2.11",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
@@ -44,7 +44,7 @@
     "sonner": "^2.0.7",
     "svg-pan-zoom": "^3.6.2",
     "tailwind-merge": "^3.4.0",
-    "tar": "^7.5.11"
+    "tar": "^7.5.19"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -58,7 +58,7 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5",
-    "vite": "^8.0.10",
+    "vite": "^8.1.5",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^4.1.5"
   }
