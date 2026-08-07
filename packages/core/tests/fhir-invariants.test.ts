@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { collectInvariants, evaluateInvariants } from "@/lib/fhir-editor/schema";
+import { collectInvariants, evaluateInvariants } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   SURVEY_URL,
   createPatientProfileContext,
   createSchemaFixtureContext,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 
 describe("FHIRPath invariants", () => {
   it("collects profile invariants and skips base noise (ele-1/dom-*)", () => {

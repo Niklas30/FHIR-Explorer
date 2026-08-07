@@ -4,7 +4,7 @@ import { Download, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ImportSourceState } from "@/components/importer/import-wizard/useImportSource";
-import type { PackageRef } from "@/lib/fhir-importer/types";
+import type { PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 /**

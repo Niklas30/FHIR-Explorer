@@ -3,8 +3,8 @@ import {
   getCurrentTargetKey,
   isProjectSelectableForDatasets,
   isTargetImportInProgress,
-} from "@/lib/fhir-importer/target-status";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
+} from "@fhir-explorer/core/fhir-importer/target-status";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 
 const createInput = (overrides?: {
   packageKeys?: string[];

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { CodingOption } from "@/lib/fhir-editor/registry";
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
-import { expandValueSet, getTerminologyServerUrl } from "@/lib/fhir-editor/terminology";
+import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
+import { expandValueSet, getTerminologyServerUrl } from "@fhir-explorer/core/fhir-editor/terminology";
 import { useSchemaEditor } from "@/components/editor/resource-detail/schema-editor/context";
 import { getCodingOptionsForNode } from "@/components/editor/resource-detail/schema-editor/helpers";
 

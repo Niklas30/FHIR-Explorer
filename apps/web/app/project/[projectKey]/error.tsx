@@ -5,9 +5,9 @@ import { useEffect, useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { isDevModeEnabled } from "@/lib/dev-mode";
-import { logger } from "@/lib/logger";
+import { logger } from "@fhir-explorer/core/logger";
 
 export default function ProjectEditorError({
   error,

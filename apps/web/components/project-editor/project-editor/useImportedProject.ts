@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { importedResourceToAuthored } from "@/lib/projects/content";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
+import { importedResourceToAuthored } from "@fhir-explorer/core/projects/content";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
+import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 
 /**
  * Loads an imported package as a read-only project view: synthesizes an

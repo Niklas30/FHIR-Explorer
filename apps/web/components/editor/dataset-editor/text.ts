@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/types";
+import type { Locale } from "@fhir-explorer/core/i18n/types";
 
 const enText = {
   titleEditor: "Editor",

@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { ResourceDetailPanel } from "@/components/editor/ResourceDetailPanel";
 import { ResourceJsonPanel } from "@/components/editor/ResourceJsonPanel";
-import type { DatasetResource } from "@/lib/datasets/content";
-import type { SchemaContext, SchemaTree } from "@/lib/fhir-editor/schema";
-import type { StructureDefinition } from "@/lib/fhir-editor/registry";
-import type { AuthoredResource } from "@/lib/projects/types";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import type { SchemaContext, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema";
+import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { ReadOnlyResourcePanel } from "@/components/project-editor/ReadOnlyResourcePanel";
 import { ProfileConstraintsPanel } from "@/components/project-editor/ProfileConstraintsPanel";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";

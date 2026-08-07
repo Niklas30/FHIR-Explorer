@@ -10,7 +10,7 @@ import {
   type PopupSearchOption,
 } from "@/components/editor/resource-detail/PopupSearchSelect";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
-import { COMMON_UCUM_UNITS, UCUM_SYSTEM } from "@/lib/fhir-editor/ucum-units";
+import { COMMON_UCUM_UNITS, UCUM_SYSTEM } from "@fhir-explorer/core/fhir-editor/ucum-units";
 
 type QuantityFieldInputProps = {
   value: unknown;

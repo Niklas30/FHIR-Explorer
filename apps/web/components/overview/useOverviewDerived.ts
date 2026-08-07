@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import type { ImporterSnapshot, PackageRecord } from "@/lib/fhir-importer/types";
-import { buildDependencyGraph, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import type { ImporterSnapshot, PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import { buildDependencyGraph, type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import {
   getCurrentTargetKey,
   isProjectSelectableForDatasets,
   isTargetImportInProgress,
-} from "@/lib/fhir-importer/target-status";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+} from "@fhir-explorer/core/fhir-importer/target-status";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import { matchesFilter } from "@/components/overview/utils";
 import type { ProjectEntry } from "@/components/overview/types";
 

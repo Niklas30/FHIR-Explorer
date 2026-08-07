@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { analyzeProject, type CanonicalResolvers } from "@/lib/projects/analysis";
-import { buildProjectMermaid } from "@/lib/projects/project-mermaid";
-import type { AuthoredResource } from "@/lib/projects/types";
+import { analyzeProject, type CanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
+import { buildProjectMermaid } from "@fhir-explorer/core/projects/project-mermaid";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 
 const res = (partial: Partial<AuthoredResource> & Pick<AuthoredResource, "kind" | "resourceType" | "content">): AuthoredResource => ({
   id: partial.id ?? `${partial.resourceType}-${Math.round((partial.content.__i as number) ?? 0)}`,

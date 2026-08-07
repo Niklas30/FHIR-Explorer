@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parsePackage } from "@/lib/fhir-importer/parser";
-import type { ResourcePayload } from "@/lib/fhir-importer/types";
-import { buildRegistry } from "@/lib/fhir-editor/registry";
-import { resolveProfileForResource } from "@/lib/fhir-editor/profiles";
+import { parsePackage } from "@fhir-explorer/core/fhir-importer/parser";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import { buildRegistry } from "@fhir-explorer/core/fhir-editor/registry";
+import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles";
 import {
   buildSchemaTree,
   createSchemaContext,
   validateResource,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 
 /**
  * Programmatic end-to-end import of the de.gematik.fhir.directory 1.2.0

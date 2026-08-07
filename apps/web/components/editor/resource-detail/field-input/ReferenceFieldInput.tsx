@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { PopupSearchSelect, type PopupSearchOption } from "@/components/editor/resource-detail/PopupSearchSelect";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 import { extractReferenceString } from "@/components/editor/resource-detail/utils";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { parseLocalReference } from "@/lib/fhir-editor/references";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { parseLocalReference } from "@fhir-explorer/core/fhir-editor/references";
 
 export const ReferenceFieldInput = ({
   value,

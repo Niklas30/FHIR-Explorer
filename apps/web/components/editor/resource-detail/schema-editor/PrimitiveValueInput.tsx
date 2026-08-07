@@ -1,7 +1,7 @@
 "use client";
 
-import type { CodingOption } from "@/lib/fhir-editor/registry";
-import type { PrimitiveKind } from "@/lib/fhir-editor/schema";
+import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
+import type { PrimitiveKind } from "@fhir-explorer/core/fhir-editor/schema";
 import { Input } from "@/components/ui/input";
 import {
   PopupSearchSelect,

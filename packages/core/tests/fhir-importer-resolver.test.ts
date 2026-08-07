@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveDependencies } from "@/lib/fhir-importer/resolver";
-import type { ImportState, PackageRecord } from "@/lib/fhir-importer/types";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
+import { resolveDependencies } from "@fhir-explorer/core/fhir-importer/resolver";
+import type { ImportState, PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 
 const createPackage = (
   id: string,

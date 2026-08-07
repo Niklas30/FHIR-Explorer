@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
+import { getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
 import {
   createSchemaContext,
   matchChoiceRename,
   resolveSnapshotElements,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import {
   BIRTH_PLACE_URL,
   DIRECTORY_PROFILE_URL,
   PATIENT_PROFILE_URL,
   createFixtureRegistry,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 
 const buildContext = () => {
   const registry = createFixtureRegistry();

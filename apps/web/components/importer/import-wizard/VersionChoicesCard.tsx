@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DependencyRequirement } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 /**

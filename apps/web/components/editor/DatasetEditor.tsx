@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/resizable";
 import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import { upsertDataset } from "@/lib/datasets/storage";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { upsertDataset } from "@fhir-explorer/core/datasets/storage";
 import { isDevModeEnabled } from "@/lib/dev-mode";
-import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
-import { byLocale } from "@/lib/i18n/select";
+import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { toast } from "sonner";
 import { exportDatasetAction } from "@/components/overview/datasetActions";
 import { exportProject } from "@/components/overview/exportActions";

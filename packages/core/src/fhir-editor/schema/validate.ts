@@ -1,10 +1,10 @@
-import { normalizeCanonical, resolveValueSetOptions } from "@/lib/fhir-editor/registry";
-import { collectBrokenReferences } from "@/lib/fhir-editor/references";
-import { byLocale } from "@/lib/i18n/select";
-import type { Locale } from "@/lib/i18n/types";
-import type { SchemaContext, SchemaNode, SchemaTree } from "@/lib/fhir-editor/schema/types";
-import { getNodeChildren } from "@/lib/fhir-editor/schema/tree";
-import { resolveRenderKind } from "@/lib/fhir-editor/schema/render-kind";
+import { normalizeCanonical, resolveValueSetOptions } from "@fhir-explorer/core/fhir-editor/registry";
+import { collectBrokenReferences } from "@fhir-explorer/core/fhir-editor/references";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import type { Locale } from "@fhir-explorer/core/i18n/types";
+import type { SchemaContext, SchemaNode, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema/types";
+import { getNodeChildren } from "@fhir-explorer/core/fhir-editor/schema/tree";
+import { resolveRenderKind } from "@fhir-explorer/core/fhir-editor/schema/render-kind";
 import {
   asItems,
   detectChoiceType,
@@ -12,8 +12,8 @@ import {
   isRecord,
   matchesPattern,
   parseMaxCount,
-} from "@/lib/fhir-editor/schema/values";
-import { matchesSlice, partitionItemsBySlice } from "@/lib/fhir-editor/schema/slicing";
+} from "@fhir-explorer/core/fhir-editor/schema/values";
+import { matchesSlice, partitionItemsBySlice } from "@fhir-explorer/core/fhir-editor/schema/slicing";
 
 export type ValidationIssue = {
   severity: "error" | "warning";

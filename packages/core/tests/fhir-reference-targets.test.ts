@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getReferenceCreationTargets } from "@/lib/fhir-editor/reference-targets";
-import { createPatientProfileContext } from "@/tests/helpers/fhir-test-fixtures";
+import { getReferenceCreationTargets } from "@fhir-explorer/core/fhir-editor/reference-targets";
+import { createPatientProfileContext } from "./helpers/fhir-test-fixtures";
 
 describe("reference creation targets", () => {
   it("resolves targetProfiles to concrete resource types with profile urls", () => {

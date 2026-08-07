@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 
 export type GraphNodeKind = "target" | "package" | "missing";
 

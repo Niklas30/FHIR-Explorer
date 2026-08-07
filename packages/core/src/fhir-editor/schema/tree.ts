@@ -1,6 +1,6 @@
-import type { StructureDefinition } from "@/lib/fhir-editor/registry";
-import { getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
-import { resolveSnapshotElements } from "@/lib/fhir-editor/schema/snapshot";
+import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import { getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
+import { resolveSnapshotElements } from "@fhir-explorer/core/fhir-editor/schema/snapshot";
 import {
   FHIR_CORE_URL_PREFIX,
   getFixedValue,
@@ -11,7 +11,7 @@ import {
   type SchemaElementDefinition,
   type SchemaNode,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema/types";
+} from "@fhir-explorer/core/fhir-editor/schema/types";
 
 const CHOICE_SUFFIX = "[x]";
 

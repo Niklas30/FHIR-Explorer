@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { validateResource } from "@/lib/fhir-editor/schema";
+import { validateResource } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   createHealthcareServiceDirectoryContext,
   createPatientProfileContext,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 
 describe("schema validation", () => {
   it("reports cardinality-array when a repeating field is serialized as single value", () => {

@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ProjectIssue } from "@/lib/projects/analysis";
+import type { ProjectIssue } from "@fhir-explorer/core/projects/analysis";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 type Props = {

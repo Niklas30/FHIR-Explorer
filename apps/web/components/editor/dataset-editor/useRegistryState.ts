@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { buildRegistry, getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
 import {
   getProfileSummaries,
   resolveProfileForResource,
   type ProfileSummary,
-} from "@/lib/fhir-editor/profiles";
-import { buildSchemaTree, createSchemaContext } from "@/lib/fhir-editor/schema";
-import { type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
-import { getProject } from "@/lib/projects/storage";
-import { loadProjectResources } from "@/lib/projects/content";
-import type { AuthoredResource } from "@/lib/projects/types";
-import { resolveProjectPackageKeys, toPayloads } from "@/lib/projects/registry-resolution";
+} from "@fhir-explorer/core/fhir-editor/profiles";
+import { buildSchemaTree, createSchemaContext } from "@fhir-explorer/core/fhir-editor/schema";
+import { type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import { getProject } from "@fhir-explorer/core/projects/storage";
+import { loadProjectResources } from "@fhir-explorer/core/projects/content";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
+import { resolveProjectPackageKeys, toPayloads } from "@fhir-explorer/core/projects/registry-resolution";
 
 export const useDatasetEditorRegistryState = ({
   dataset,

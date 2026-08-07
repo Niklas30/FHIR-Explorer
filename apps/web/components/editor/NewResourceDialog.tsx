@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { byLocale } from "@/lib/i18n/select";
-import type { ProfileSummary } from "@/lib/fhir-editor/profiles";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import type { ProfileSummary } from "@fhir-explorer/core/fhir-editor/profiles";
 
 type NewResourceDialogProps = {
   open: boolean;

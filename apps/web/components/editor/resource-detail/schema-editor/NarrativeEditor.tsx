@@ -1,7 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { isRecord } from "@/lib/fhir-editor/schema";
+import { isRecord } from "@fhir-explorer/core/fhir-editor/schema";
 import { PopupSearchSelect } from "@/components/editor/resource-detail/PopupSearchSelect";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 

@@ -1,6 +1,6 @@
-import type { SchemaNode, SchemaTree } from "@/lib/fhir-editor/schema/types";
-import type { ValidationIssue } from "@/lib/fhir-editor/schema/validate";
-import { logger } from "@/lib/logger";
+import type { SchemaNode, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema/types";
+import type { ValidationIssue } from "@fhir-explorer/core/fhir-editor/schema/validate";
+import { logger } from "@fhir-explorer/core/logger";
 
 /**
  * FHIRPath invariant evaluation (ElementDefinition.constraint).

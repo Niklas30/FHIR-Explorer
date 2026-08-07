@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { setDevModeEnabled } from "@/lib/dev-mode";
 
 export default function DevModePage() {

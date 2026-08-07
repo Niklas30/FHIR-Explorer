@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, Download, Lock, Share2 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,22 +16,22 @@ import {
 } from "@/components/ui/resizable";
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
-import { getStructureDefinitionByCanonical, type StructureDefinition } from "@/lib/fhir-editor/registry";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import { upsertDataset } from "@/lib/datasets/storage";
-import { saveDatasetResources } from "@/lib/datasets/content";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import { getStructureDefinitionByCanonical, type StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { upsertDataset } from "@fhir-explorer/core/datasets/storage";
+import { saveDatasetResources } from "@fhir-explorer/core/datasets/content";
 import { createDatasetId } from "@/components/overview/utils";
 import type {
   AuthoredProjectRecord,
   AuthoredResource,
   AuthoredResourceKind,
-} from "@/lib/projects/types";
-import { resourceLabel } from "@/lib/projects/content";
-import { analyzeProject, type CanonicalResolvers } from "@/lib/projects/analysis";
-import { buildProjectMermaid } from "@/lib/projects/project-mermaid";
+} from "@fhir-explorer/core/projects/types";
+import { resourceLabel } from "@fhir-explorer/core/projects/content";
+import { analyzeProject, type CanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
+import { buildProjectMermaid } from "@fhir-explorer/core/projects/project-mermaid";
 import { projectEditorText } from "@/components/project-editor/project-editor/text";
 import type { ProjectNodeSelection } from "@/components/project-editor/project-editor/useProjectState";
 import { useProjectRegistryState } from "@/components/project-editor/project-editor/useProjectRegistryState";

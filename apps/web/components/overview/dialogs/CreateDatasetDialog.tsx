@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { OverviewText } from "@/components/overview/types";
 import { formatText } from "@/components/overview/utils";
 

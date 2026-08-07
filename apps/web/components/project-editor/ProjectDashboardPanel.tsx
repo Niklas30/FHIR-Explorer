@@ -18,9 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
-import type { AuthoredResourceKind } from "@/lib/projects/types";
-import type { ProjectAnalysis } from "@/lib/projects/analysis";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
+import type { AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
+import type { ProjectAnalysis } from "@fhir-explorer/core/projects/analysis";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 type Props = {

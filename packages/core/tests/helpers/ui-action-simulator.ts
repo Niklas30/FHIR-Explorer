@@ -9,7 +9,7 @@ import {
   type SchemaContext,
   type SchemaNode,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 
 /**
  * Simulates the editor's value operations: every UI interaction boils down

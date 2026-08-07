@@ -4,8 +4,8 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { byLocale } from "@/lib/i18n/select";
-import { logger } from "@/lib/logger";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import { logger } from "@fhir-explorer/core/logger";
 
 const defaultAccept =
   ".tgz,.tar.gz,.tar,.zip,.json,application/gzip,application/x-gzip,application/x-tar,application/zip,application/json";

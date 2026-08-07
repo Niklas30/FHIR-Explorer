@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { DatasetResource } from "@/lib/datasets/content";
-import type { SchemaContext, SchemaTree } from "@/lib/fhir-editor/schema";
-import type { ValidationIssue } from "@/lib/fhir-editor/schema";
-import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import type { SchemaContext, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema";
+import type { ValidationIssue } from "@fhir-explorer/core/fhir-editor/schema";
+import type { ReferenceCreationTarget } from "@fhir-explorer/core/fhir-editor/reference-targets";
 
 export type SchemaEditorContextValue = {
   ctx: SchemaContext;

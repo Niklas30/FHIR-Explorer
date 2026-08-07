@@ -4,7 +4,7 @@ import * as React from "react"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { useI18n } from "@/components/i18n/I18nProvider"
-import { byLocale } from "@/lib/i18n/select"
+import { byLocale } from "@fhir-explorer/core/i18n/select"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

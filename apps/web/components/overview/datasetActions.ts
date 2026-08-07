@@ -2,20 +2,20 @@
 
 import JSZip from "jszip";
 import { toast } from "sonner";
-import { logger } from "@/lib/logger";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
+import { logger } from "@fhir-explorer/core/logger";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import {
   removeDataset,
   removeDatasetsForProject,
   upsertDataset,
   type DatasetRecord,
-} from "@/lib/datasets/storage";
+} from "@fhir-explorer/core/datasets/storage";
 import {
   clearDatasetResources,
   hydrateDatasetResources,
   loadDatasetResources,
   saveDatasetResources,
-} from "@/lib/datasets/content";
+} from "@fhir-explorer/core/datasets/content";
 import type { OverviewText } from "@/components/overview/types";
 import {
   cloneJson,

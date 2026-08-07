@@ -1,4 +1,4 @@
-import { isUppercaseTypeCode } from "@/lib/fhir-editor/schema/types";
+import { isUppercaseTypeCode } from "@fhir-explorer/core/fhir-editor/schema/types";
 
 /** Primitive input widgets the editor knows how to render. */
 export type PrimitiveKind =

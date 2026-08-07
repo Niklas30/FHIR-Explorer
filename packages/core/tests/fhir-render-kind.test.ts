@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveRenderKind } from "@/lib/fhir-editor/schema";
+import { resolveRenderKind } from "@fhir-explorer/core/fhir-editor/schema";
 
 describe("render kind resolution", () => {
   it("maps primitives to typed inputs", () => {

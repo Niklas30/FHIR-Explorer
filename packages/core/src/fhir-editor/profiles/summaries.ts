@@ -1,5 +1,5 @@
-import type { FhirRegistry } from "@/lib/fhir-editor/registry";
-import type { ProfileSummary } from "@/lib/fhir-editor/profiles/types";
+import type { FhirRegistry } from "@fhir-explorer/core/fhir-editor/registry";
+import type { ProfileSummary } from "@fhir-explorer/core/fhir-editor/profiles/types";
 
 export const getProfileSummaries = (registry: FhirRegistry): ProfileSummary[] => {
   return registry.structureDefinitions

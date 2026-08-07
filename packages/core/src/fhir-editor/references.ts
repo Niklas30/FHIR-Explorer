@@ -1,4 +1,4 @@
-import type { DatasetResource } from "@/lib/datasets/content";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 
 export type BrokenReferenceIssue = {
   reference: string;

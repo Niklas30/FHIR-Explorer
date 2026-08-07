@@ -5,7 +5,7 @@ import {
   DependencyGraphView,
   type DependencyGraphLabels,
 } from "@/components/dependency-graph/DependencyGraphView";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 
 export type DependencyGraphDialogProps = {
   open: boolean;

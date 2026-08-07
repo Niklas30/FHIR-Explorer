@@ -1,5 +1,5 @@
-import type { FhirRegistry, StructureDefinition } from "@/lib/fhir-editor/registry";
-import { getStructureDefinitionByCanonical, normalizeCanonical } from "@/lib/fhir-editor/registry";
+import type { FhirRegistry, StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import { getStructureDefinitionByCanonical, normalizeCanonical } from "@fhir-explorer/core/fhir-editor/registry";
 
 export const resolveProfileForResource = (
   resource: Record<string, unknown>,

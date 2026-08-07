@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 type Props = {

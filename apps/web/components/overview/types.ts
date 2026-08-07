@@ -1,5 +1,5 @@
-import type { PackageRecord } from "@/lib/fhir-importer/types";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import type { OverviewText } from "@/components/overview/text";
 export type { OverviewText } from "@/components/overview/text";
 

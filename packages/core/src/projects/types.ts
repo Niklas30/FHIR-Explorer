@@ -1,4 +1,4 @@
-import type { PackageKey, PackageManifest } from "@/lib/fhir-importer/types";
+import type { PackageKey, PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 
 /**
  * The kind of building block an authored resource represents within a project.
@@ -13,7 +13,7 @@ export type AuthoredResourceKind =
 
 /**
  * A single authored building block of a project (a conformance resource or an
- * example instance). Mirrors {@link import("@/lib/datasets/content").DatasetResource}
+ * example instance). Mirrors {@link import("@fhir-explorer/core/datasets/content").DatasetResource}
  * but adds the {@link AuthoredResourceKind} so the explorer can group entries.
  */
 export type AuthoredResource = {
@@ -31,7 +31,7 @@ export type AuthoredResource = {
 
 /**
  * An editable project the user authors from scratch. Distinct from the
- * read-only {@link import("@/lib/fhir-importer/types").PackageRecord}s that the
+ * read-only {@link import("@fhir-explorer/core/fhir-importer/types").PackageRecord}s that the
  * importer stores. The record itself lives in localStorage; the authored
  * resources live in IndexedDB (see `lib/projects/content.ts`).
  */

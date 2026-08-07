@@ -1,4 +1,4 @@
-import type { SchemaNode } from "@/lib/fhir-editor/schema/types";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema/types";
 
 /**
  * Primitive extensions: FHIR serializes extensions on primitive values into

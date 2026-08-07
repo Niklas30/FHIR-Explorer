@@ -5,9 +5,9 @@ import {
   createDatasetResourceId,
   removeDatasetResource,
   type DatasetResource,
-} from "@/lib/datasets/content";
-import type { StructureDefinition } from "@/lib/fhir-editor/registry";
-import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
+} from "@fhir-explorer/core/datasets/content";
+import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import type { ReferenceCreationTarget } from "@fhir-explorer/core/fhir-editor/reference-targets";
 import { formatTemplate } from "@/components/editor/resource-detail/utils";
 
 const downloadJson = (filename: string, payload: unknown) => {

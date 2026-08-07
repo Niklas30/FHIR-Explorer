@@ -1,7 +1,7 @@
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
-import { collectDependencies, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { PackageManifest, ResourcePayload } from "@/lib/fhir-importer/types";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
+import { collectDependencies, type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { PackageManifest, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
 
 /**
  * Map a project's authored resources to registry payloads so its own profiles,

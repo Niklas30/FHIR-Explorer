@@ -4,8 +4,8 @@ import {
   getPrimitiveCompanionKey,
   isEmptyCompanion,
   validateResource,
-} from "@/lib/fhir-editor/schema";
-import { createPatientProfileContext } from "@/tests/helpers/fhir-test-fixtures";
+} from "@fhir-explorer/core/fhir-editor/schema";
+import { createPatientProfileContext } from "./helpers/fhir-test-fixtures";
 
 describe("primitive extensions", () => {
   it("derives companion keys and a synthetic extension node", () => {

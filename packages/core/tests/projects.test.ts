@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildProjectKey, createProjectRecord } from "@/lib/projects/storage";
+import { buildProjectKey, createProjectRecord } from "@fhir-explorer/core/projects/storage";
 import {
   buildConformanceSkeleton,
   classifyResourceKind,
   cloneAuthoredResources,
   importedResourceToAuthored,
-} from "@/lib/projects/content";
-import type { AuthoredResource } from "@/lib/projects/types";
+} from "@fhir-explorer/core/projects/content";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 
 describe("projects storage helpers", () => {
   it("builds an id@version key", () => {

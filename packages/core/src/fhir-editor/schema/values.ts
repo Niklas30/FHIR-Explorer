@@ -1,5 +1,5 @@
-import type { ElementDefinitionType } from "@/lib/fhir-editor/registry";
-import { isUppercaseTypeCode, type SchemaNode } from "@/lib/fhir-editor/schema/types";
+import type { ElementDefinitionType } from "@fhir-explorer/core/fhir-editor/registry";
+import { isUppercaseTypeCode, type SchemaNode } from "@fhir-explorer/core/fhir-editor/schema/types";
 
 const capitalize = (value: string) =>
   value.length > 0 ? value[0].toUpperCase() + value.slice(1) : value;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareVersions, isPrerelease, sortVersionsForPicking } from "@/lib/fhir-importer/version";
+import { compareVersions, isPrerelease, sortVersionsForPicking } from "@fhir-explorer/core/fhir-importer/version";
 
 describe("version ordering", () => {
   it("orders by numeric component, not by string", () => {

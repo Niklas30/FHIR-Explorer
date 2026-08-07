@@ -2,17 +2,17 @@
 
 import JSZip from "jszip";
 import { toast } from "sonner";
-import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import { collectDependencies } from "@/lib/fhir-importer/dependency-graph";
+import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import { collectDependencies } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
   ComposeProjectArchiveManifest,
   ComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import { loadDatasetResources } from "@/lib/datasets/content";
+} from "@fhir-explorer/core/fhir-importer/compose";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { loadDatasetResources } from "@fhir-explorer/core/datasets/content";
 import type { OverviewText } from "@/components/overview/types";
 import { downloadBlob, downloadJson, toSafeFilename } from "@/components/overview/utils";
 

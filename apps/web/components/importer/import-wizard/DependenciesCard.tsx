@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatRequirement } from "@/components/importer/import-wizard/helpers";
 import { DependencySourceList } from "@/components/importer/import-wizard/DependencySourceList";
 import type { DependencySources } from "@/components/importer/import-wizard/useDependencySources";
-import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement, PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 export type DependenciesCardProps = {

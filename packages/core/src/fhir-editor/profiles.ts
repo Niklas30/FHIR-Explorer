@@ -1,3 +1,3 @@
-export type { ProfileSummary } from "@/lib/fhir-editor/profiles/types";
-export { getProfileSummaries } from "@/lib/fhir-editor/profiles/summaries";
-export { resolveProfileForResource, resolveProfileType } from "@/lib/fhir-editor/profiles/resolve";
+export type { ProfileSummary } from "@fhir-explorer/core/fhir-editor/profiles/types";
+export { getProfileSummaries } from "@fhir-explorer/core/fhir-editor/profiles/summaries";
+export { resolveProfileForResource, resolveProfileType } from "@fhir-explorer/core/fhir-editor/profiles/resolve";

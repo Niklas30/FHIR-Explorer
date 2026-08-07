@@ -5,7 +5,7 @@ import {
   evaluateInvariants,
   type SchemaTree,
   type ValidationIssue,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 
 const DEBOUNCE_MS = 400;
 

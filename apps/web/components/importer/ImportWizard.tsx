@@ -28,8 +28,8 @@ import { useRegistryImport } from "@/components/importer/import-wizard/useRegist
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { useDownloadLinks } from "@/components/importer/useDownloadLinks";
 import { useImporter } from "@/components/importer/useImporter";
-import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { DependencyRequirement, PackageRecord } from "@/lib/fhir-importer/types";
+import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { DependencyRequirement, PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 
 type ImportSummary = {
   targetKey: string;

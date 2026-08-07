@@ -17,7 +17,7 @@ import {
   toShortcutArray,
 } from "@/components/editor/commands/shortcut-utils";
 import type { EditorCommand } from "@/components/editor/commands/types";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type EditorCommandPaletteProps = {
   open: boolean;

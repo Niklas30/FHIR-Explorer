@@ -1,6 +1,6 @@
-import type { SchemaContext, SchemaNode } from "@/lib/fhir-editor/schema/types";
-import { getExtensionUrl } from "@/lib/fhir-editor/schema/tree";
-import { isRecord, matchesPattern } from "@/lib/fhir-editor/schema/values";
+import type { SchemaContext, SchemaNode } from "@fhir-explorer/core/fhir-editor/schema/types";
+import { getExtensionUrl } from "@fhir-explorer/core/fhir-editor/schema/tree";
+import { isRecord, matchesPattern } from "@fhir-explorer/core/fhir-editor/schema/values";
 
 /**
  * Derives the discriminating pattern of a named slice: the fixed/pattern

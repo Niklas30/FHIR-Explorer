@@ -25,7 +25,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type EditorHeaderProps = {
   datasetName: string;

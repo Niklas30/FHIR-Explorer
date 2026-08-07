@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { byLocale } from "@/lib/i18n/select";
-import { createAuthoredResource } from "@/lib/projects/content";
-import type { AuthoredResource, AuthoredResourceKind } from "@/lib/projects/types";
-import type { ProfileSummary } from "@/lib/fhir-editor/profiles";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import { createAuthoredResource } from "@fhir-explorer/core/projects/content";
+import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
+import type { ProfileSummary } from "@fhir-explorer/core/fhir-editor/profiles";
 import { projectEditorText } from "@/components/project-editor/project-editor/text";
 
 type Props = {

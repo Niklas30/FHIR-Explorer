@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   getStructureDefinitionByCanonical,
   resolveValueSetOptions,
-} from "@/lib/fhir-editor/registry";
+} from "@fhir-explorer/core/fhir-editor/registry";
 import {
   DIRECTORY_PROFILE_URL,
   createFixtureRegistry,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 
 describe("FHIR registry resolution", () => {
   it("resolves structure definitions by canonical URL variants", () => {

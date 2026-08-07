@@ -1,6 +1,6 @@
 import { openDB, type IDBPDatabase } from "idb";
-import { logger } from "@/lib/logger";
-import type { AuthoredResource, AuthoredResourceKind } from "@/lib/projects/types";
+import { logger } from "@fhir-explorer/core/logger";
+import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
 
 const DB_NAME = "fhir-explorer-projects";
 // Database written by pre-rename builds. Its resources are copied into DB_NAME

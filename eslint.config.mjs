@@ -9,11 +9,16 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
+    "**/.next/**",
+    "**/out/**",
+    "**/build/**",
+    "**/next-env.d.ts",
   ]),
+  {
+    // The Next app is one workspace among several, so the plugin cannot infer
+    // its root from the repository root.
+    settings: { next: { rootDir: "apps/web" } },
+  },
   {
     plugins: {
       sonarjs,
@@ -35,7 +40,7 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["tests/**/*.{ts,tsx}"],
+    files: ["**/tests/**/*.{ts,tsx}"],
     rules: {
       "max-lines-per-function": "off",
     },

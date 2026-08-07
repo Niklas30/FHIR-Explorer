@@ -3,7 +3,7 @@
 import { AlertTriangle, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   PopupSearchSelect,
 } from "@/components/editor/resource-detail/PopupSearchSelect";

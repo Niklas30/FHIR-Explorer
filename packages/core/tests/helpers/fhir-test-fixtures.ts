@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { ResourcePayload } from "@/lib/fhir-importer/types";
-import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import { buildRegistry, getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
 import {
   buildSchemaTree,
   createSchemaContext,
   type SchemaContext,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 
 export const DIRECTORY_PROFILE_URL =
   "https://example.org/fhir/StructureDefinition/HealthcareServiceDirectory";

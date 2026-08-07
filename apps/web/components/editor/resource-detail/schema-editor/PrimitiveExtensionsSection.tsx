@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   createPrimitiveExtensionNode,
   getPrimitiveCompanionKey,
   isEmptyCompanion,
   isRecord,
   setChildValue,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 import { formatTemplate } from "@/components/editor/resource-detail/utils";
 import { ElementEditor } from "@/components/editor/resource-detail/schema-editor/ElementEditor";

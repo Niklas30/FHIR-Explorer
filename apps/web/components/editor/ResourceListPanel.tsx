@@ -10,19 +10,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { byLocale } from "@/lib/i18n/select";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { cn } from "@/lib/utils";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { resolveProfileForResource } from "@/lib/fhir-editor/profiles";
-import type { FhirRegistry } from "@/lib/fhir-editor/registry";
-import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles";
+import type { FhirRegistry } from "@fhir-explorer/core/fhir-editor/registry";
+import { buildDatasetReferenceIndex } from "@fhir-explorer/core/fhir-editor/references";
 import {
   buildSchemaTree,
   createSchemaContext,
   validateResource,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema";
-import { logger } from "@/lib/logger";
+} from "@fhir-explorer/core/fhir-editor/schema";
+import { logger } from "@fhir-explorer/core/logger";
 
 type ResourceListPanelProps = {
   resources: DatasetResource[];

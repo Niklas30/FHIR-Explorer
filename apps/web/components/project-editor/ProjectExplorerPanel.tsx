@@ -19,9 +19,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { AuthoredResource, AuthoredResourceKind } from "@/lib/projects/types";
-import { resourceLabel } from "@/lib/projects/content";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
+import { resourceLabel } from "@fhir-explorer/core/projects/content";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import type { ProjectNodeSelection } from "@/components/project-editor/project-editor/useProjectState";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 

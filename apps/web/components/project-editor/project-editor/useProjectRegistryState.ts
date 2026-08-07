@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
+import { buildRegistry, getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
 import {
   getProfileSummaries,
   resolveProfileForResource,
   type ProfileSummary,
-} from "@/lib/fhir-editor/profiles";
-import { buildSchemaTree, createSchemaContext } from "@/lib/fhir-editor/schema";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { ResourcePayload } from "@/lib/fhir-importer/types";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
+} from "@fhir-explorer/core/fhir-editor/profiles";
+import { buildSchemaTree, createSchemaContext } from "@fhir-explorer/core/fhir-editor/schema";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
 import {
   resolveProjectPackageKeys,
   toPayloads,
-} from "@/lib/projects/registry-resolution";
+} from "@fhir-explorer/core/projects/registry-resolution";
 
 export const useProjectRegistryState = ({
   project,

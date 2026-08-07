@@ -1,13 +1,13 @@
 import JSZip from "jszip";
-import { hydrateDatasetResources, saveDatasetResources } from "@/lib/datasets/content";
-import { upsertDataset, type DatasetRecord } from "@/lib/datasets/storage";
-import { logger } from "@/lib/logger";
+import { hydrateDatasetResources, saveDatasetResources } from "@fhir-explorer/core/datasets/content";
+import { upsertDataset, type DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { logger } from "@fhir-explorer/core/logger";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
   ComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
-import { isComposeProjectArchive, isComposeProjectExport } from "@/lib/fhir-importer/compose";
+} from "@fhir-explorer/core/fhir-importer/compose";
+import { isComposeProjectArchive, isComposeProjectExport } from "@fhir-explorer/core/fhir-importer/compose";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 const createDatasetId = () =>

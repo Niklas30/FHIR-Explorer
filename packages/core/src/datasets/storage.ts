@@ -1,4 +1,4 @@
-import { logger } from "@/lib/logger";
+import { logger } from "@fhir-explorer/core/logger";
 
 export type DatasetRecord = {
   id: string;

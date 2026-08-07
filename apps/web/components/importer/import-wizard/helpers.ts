@@ -1,5 +1,5 @@
-import { collectDependencies, type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { DependencyRequirement } from "@/lib/fhir-importer/types";
+import { collectDependencies, type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { DependencyRequirement } from "@fhir-explorer/core/fhir-importer/types";
 
 export const formatRequirement = (dependency: DependencyRequirement) => {
   if (dependency.exactVersion) {

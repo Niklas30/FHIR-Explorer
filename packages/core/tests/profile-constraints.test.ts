@@ -5,7 +5,7 @@ import {
   hasConstraint,
   readConstraint,
   writeConstraint,
-} from "@/lib/projects/profile-constraints";
+} from "@fhir-explorer/core/projects/profile-constraints";
 
 describe("formatCardinality", () => {
   it("formats min..max with defaults", () => {

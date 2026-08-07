@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultValue, validateResource } from "@/lib/fhir-editor/schema";
-import { getSliceDiscriminatorPattern } from "@/lib/fhir-editor/schema/slicing";
+import { createDefaultValue, validateResource } from "@fhir-explorer/core/fhir-editor/schema";
+import { getSliceDiscriminatorPattern } from "@fhir-explorer/core/fhir-editor/schema/slicing";
 import {
   HEALTHCARE_SERVICE_EXAMPLE_PATH,
   createHealthcareServiceDirectoryContext,
   createPatientProfileContext,
   loadFixtureJson,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 import {
   addElement,
   addItem,
@@ -19,7 +19,7 @@ import {
   setElement,
   updateItem,
   withItem,
-} from "@/tests/helpers/ui-action-simulator";
+} from "./helpers/ui-action-simulator";
 
 describe("FHIR UI action simulation", () => {
   it("simulates add/remove/re-add for required nested fields", () => {

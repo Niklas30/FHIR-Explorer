@@ -1,7 +1,7 @@
-import { logger } from "@/lib/logger";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
-import type { AuthoredProjectRecord } from "@/lib/projects/types";
+import { logger } from "@fhir-explorer/core/logger";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
+import type { AuthoredProjectRecord } from "@fhir-explorer/core/projects/types";
 
 const STORAGE_KEY = "fhir-explorer-projects";
 

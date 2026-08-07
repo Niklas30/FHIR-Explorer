@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import type { ImporterSnapshot, ImportResult, PackageRef } from "@/lib/fhir-importer/types";
+import type { ImporterSnapshot, ImportResult, PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 /**

@@ -1,17 +1,17 @@
 "use client";
 
 import { downloadJson, toSafeFilename } from "@/components/overview/utils";
-import { loadDatasetResources } from "@/lib/datasets/content";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import { type DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import { loadDatasetResources } from "@fhir-explorer/core/datasets/content";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type {
   ComposeDatasetExport,
   ComposePackageExport,
   ComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
-import type { PackageRecord, ResourcePayload } from "@/lib/fhir-importer/types";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-import { resolveDependencyPackageKeys } from "@/lib/projects/registry-resolution";
+} from "@fhir-explorer/core/fhir-importer/compose";
+import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
+import { resolveDependencyPackageKeys } from "@fhir-explorer/core/projects/registry-resolution";
 
 /**
  * Export an authored project as a single `fhir-explorer-project` JSON file:

@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import { buildDependencyMermaid } from "@/lib/fhir-importer/dependency-mermaid";
-import { byLocale } from "@/lib/i18n/select";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import { buildDependencyMermaid } from "@fhir-explorer/core/fhir-importer/dependency-mermaid";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type DependencyTreeDialogProps = {
   open: boolean;

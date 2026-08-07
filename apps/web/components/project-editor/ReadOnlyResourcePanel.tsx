@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { AuthoredResource } from "@/lib/projects/types";
-import { resourceLabel } from "@/lib/projects/content";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
+import { resourceLabel } from "@fhir-explorer/core/projects/content";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 type Props = {

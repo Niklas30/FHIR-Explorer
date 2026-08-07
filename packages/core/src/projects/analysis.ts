@@ -1,6 +1,6 @@
-import type { AuthoredResource, AuthoredResourceKind } from "@/lib/projects/types";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
-import { resourceLabel } from "@/lib/projects/content";
+import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
+import { resourceLabel } from "@fhir-explorer/core/projects/content";
 
 export type ProjectNodeKind = AuthoredResourceKind | "external";
 

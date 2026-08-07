@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { resolveImportUrl, type ResolvedSource } from "@/lib/fhir-importer/registry";
-import type { PackageRef } from "@/lib/fhir-importer/types";
+import { resolveImportUrl, type ResolvedSource } from "@fhir-explorer/core/fhir-importer/registry";
+import type { PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 
 /**
  * Where the browser would fetch a package from, looked up before it does.

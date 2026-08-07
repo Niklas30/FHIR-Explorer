@@ -17,8 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { byLocale } from "@/lib/i18n/select";
-import type { Locale } from "@/lib/i18n/types";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import type { Locale } from "@fhir-explorer/core/i18n/types";
 import { cn } from "@/lib/utils";
 
 type LanguageSwitcherProps = {

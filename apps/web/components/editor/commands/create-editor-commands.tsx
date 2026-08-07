@@ -12,8 +12,8 @@ import {
   ZoomOut,
 } from "lucide-react";
 import type { EditorCommand } from "@/components/editor/commands/types";
-import { byLocale } from "@/lib/i18n/select";
-import type { Locale } from "@/lib/i18n/types";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import type { Locale } from "@fhir-explorer/core/i18n/types";
 
 type CreateEditorCommandsOptions = {
   openPalette: () => void;

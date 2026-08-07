@@ -4,14 +4,14 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   getExtensionDefinitionTree,
   getExtensionUrl,
   getSchemaTreeByCanonical,
   isRecord,
   setChildValue,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import {
   PopupSearchSelect,
   type PopupSearchOption,

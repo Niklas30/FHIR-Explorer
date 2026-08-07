@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getProject, upsertProject } from "@/lib/projects/storage";
-import { loadProjectResources, saveProjectResources } from "@/lib/projects/content";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
+import { getProject, upsertProject } from "@fhir-explorer/core/projects/storage";
+import { loadProjectResources, saveProjectResources } from "@fhir-explorer/core/projects/content";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 
 export type ProjectNodeSelection =
   | { kind: "dashboard" }

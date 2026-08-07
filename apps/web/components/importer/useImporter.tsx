@@ -7,11 +7,11 @@ import type {
   ImporterSnapshot,
   ImportResult,
   ResourcePayload,
-} from "@/lib/fhir-importer/types";
-import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
-import { ImporterClient } from "@/lib/fhir-importer/client";
-import { registryStrategies, resolveImportUrl } from "@/lib/fhir-importer/registry";
-import { byLocale } from "@/lib/i18n/select";
+} from "@fhir-explorer/core/fhir-importer/types";
+import type { ComposeProjectExport } from "@fhir-explorer/core/fhir-importer/compose";
+import { ImporterClient } from "@fhir-explorer/core/fhir-importer/client";
+import { registryStrategies, resolveImportUrl } from "@fhir-explorer/core/fhir-importer/registry";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type UseImporterResult = {
   snapshot: ImporterSnapshot | null;

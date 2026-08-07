@@ -3,12 +3,12 @@
 import { useCallback } from "react";
 import { maybeImportComposeProject } from "@/components/importer/import-wizard/composeProjectImport";
 import { parsePackageKey } from "@/components/importer/import-wizard/helpers";
-import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
+import type { ComposeProjectExport } from "@fhir-explorer/core/fhir-importer/compose";
 import type {
   DependencyRequirement,
   ImportResult,
   PackageRef,
-} from "@/lib/fhir-importer/types";
+} from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 /**

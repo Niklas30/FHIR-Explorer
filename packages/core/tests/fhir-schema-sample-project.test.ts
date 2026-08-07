@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildRegistry, getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
-import type { ResourcePayload } from "@/lib/fhir-importer/types";
+import { buildRegistry, getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 import {
   buildSchemaTree,
   createSchemaContext,
   getNodeChildren,
   resolveSnapshotElements,
   validateResource,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 
 // Integration test against the real gematik directory sample project. It is
 // skipped automatically when the sample data is not checked out next to the

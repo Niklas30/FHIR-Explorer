@@ -1,6 +1,6 @@
-import { getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
-import { getProfileSummaries } from "@/lib/fhir-editor/profiles";
-import type { SchemaContext, SchemaNode } from "@/lib/fhir-editor/schema";
+import { getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
+import { getProfileSummaries } from "@fhir-explorer/core/fhir-editor/profiles";
+import type { SchemaContext, SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 
 /** A resource type/profile a new reference target can be created as. */
 export type ReferenceCreationTarget = {

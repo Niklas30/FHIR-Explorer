@@ -3,7 +3,7 @@ import type {
   ElementDefinitionType,
   FhirRegistry,
   StructureDefinition,
-} from "@/lib/fhir-editor/registry";
+} from "@fhir-explorer/core/fhir-editor/registry";
 
 /**
  * ElementDefinition properties that the schema engine relies on beyond the

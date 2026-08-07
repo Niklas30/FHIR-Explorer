@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { DatasetResource } from "@/lib/datasets/content";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 import {
   createDefaultFieldValue,
   getChoiceKeys,
@@ -33,9 +33,9 @@ import {
   type SchemaContext,
   type SchemaNode,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema";
-import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
-import type { ReferenceCreationTarget } from "@/lib/fhir-editor/reference-targets";
+} from "@fhir-explorer/core/fhir-editor/schema";
+import { buildDatasetReferenceIndex } from "@fhir-explorer/core/fhir-editor/references";
+import type { ReferenceCreationTarget } from "@fhir-explorer/core/fhir-editor/reference-targets";
 import { useInvariantIssues } from "@/components/editor/dataset-editor/useInvariantIssues";
 import { ElementEditor } from "@/components/editor/resource-detail/schema-editor/ElementEditor";
 import { SchemaEditorProvider } from "@/components/editor/resource-detail/schema-editor/context";

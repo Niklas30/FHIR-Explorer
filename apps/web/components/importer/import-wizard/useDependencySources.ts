@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listSourcesFor, type PackageSource } from "@/lib/fhir-importer/registry";
-import type { PackageRef } from "@/lib/fhir-importer/types";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
+import { listSourcesFor, type PackageSource } from "@fhir-explorer/core/fhir-importer/registry";
+import type { PackageRef } from "@fhir-explorer/core/fhir-importer/types";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 
 /**
  * Which registries carry each of these packages.

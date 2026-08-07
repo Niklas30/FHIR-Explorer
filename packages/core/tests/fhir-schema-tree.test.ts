@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { resolveValueSetOptions } from "@/lib/fhir-editor/registry";
+import { resolveValueSetOptions } from "@fhir-explorer/core/fhir-editor/registry";
 import {
   getExtensionDefinitionTree,
   getExtensionUrl,
   getNodeChildren,
   getReferenceTargetTypes,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import {
   getSliceDiscriminatorPattern,
   partitionItemsBySlice,
-} from "@/lib/fhir-editor/schema/slicing";
+} from "@fhir-explorer/core/fhir-editor/schema/slicing";
 import {
   BIRTH_PLACE_URL,
   SURVEY_URL,
   createHealthcareServiceDirectoryContext,
   createPatientProfileContext,
   createSchemaFixtureContext,
-} from "@/tests/helpers/fhir-test-fixtures";
+} from "./helpers/fhir-test-fixtures";
 
 describe("schema tree", () => {
   it("exposes backbone element children inline", () => {

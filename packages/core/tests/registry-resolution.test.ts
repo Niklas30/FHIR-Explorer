@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
+import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import {
   resolveDependencyPackageKeys,
   resolveProjectPackageKeys,
   toPayloads,
-} from "@/lib/projects/registry-resolution";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
+} from "@fhir-explorer/core/projects/registry-resolution";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
 
 const pkg = (
   id: string,

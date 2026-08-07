@@ -2,7 +2,7 @@ import type {
   ProjectAnalysis,
   ProjectEdgeKind,
   ProjectNodeKind,
-} from "@/lib/projects/analysis";
+} from "@fhir-explorer/core/projects/analysis";
 
 export type ProjectMermaidText = {
   empty: string;

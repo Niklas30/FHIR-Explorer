@@ -1,8 +1,8 @@
-import type { CodingOption } from "@/lib/fhir-editor/registry";
-import { resolveValueSetOptions } from "@/lib/fhir-editor/registry";
-import type { SchemaContext, SchemaNode } from "@/lib/fhir-editor/schema";
-import { getNodeChildren, isRecord } from "@/lib/fhir-editor/schema";
-import { getSliceDiscriminatorPattern } from "@/lib/fhir-editor/schema/slicing";
+import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
+import { resolveValueSetOptions } from "@fhir-explorer/core/fhir-editor/registry";
+import type { SchemaContext, SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
+import { getNodeChildren, isRecord } from "@fhir-explorer/core/fhir-editor/schema";
+import { getSliceDiscriminatorPattern } from "@fhir-explorer/core/fhir-editor/schema/slicing";
 
 const uniqueOptions = (options: CodingOption[]) => {
   const unique = new Map<string, CodingOption>();

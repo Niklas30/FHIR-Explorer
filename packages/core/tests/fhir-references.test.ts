@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectBrokenReferences, parseLocalReference } from "@/lib/fhir-editor/references";
+import { collectBrokenReferences, parseLocalReference } from "@fhir-explorer/core/fhir-editor/references";
 
 describe("FHIR references", () => {
   it("normalizes supported local reference variants", () => {

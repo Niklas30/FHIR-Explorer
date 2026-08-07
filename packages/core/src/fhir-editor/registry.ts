@@ -1,4 +1,4 @@
-import type { ResourcePayload } from "@/lib/fhir-importer/types";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 
 export type FhirResource = Record<string, unknown> & {
   resourceType: string;

@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import type { OverviewText, ProjectEntry } from "@/components/overview/types";
 import { ProjectCard } from "@/components/overview/ProjectCard";
 import { formatText } from "@/components/overview/utils";

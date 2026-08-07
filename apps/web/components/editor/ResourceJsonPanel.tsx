@@ -7,14 +7,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { byLocale } from "@/lib/i18n/select";
-import { buildDatasetReferenceIndex } from "@/lib/fhir-editor/references";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import { buildDatasetReferenceIndex } from "@fhir-explorer/core/fhir-editor/references";
 import {
   validateResource,
   type SchemaContext,
   type SchemaTree,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import { useInvariantIssues } from "@/components/editor/dataset-editor/useInvariantIssues";
 
 type ResourceJsonPanelProps = {

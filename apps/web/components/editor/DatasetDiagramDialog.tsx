@@ -6,9 +6,9 @@ import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SlidersHorizontal } from "lucide-react";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { parseLocalReference } from "@/lib/fhir-editor/references";
-import { byLocale } from "@/lib/i18n/select";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { parseLocalReference } from "@fhir-explorer/core/fhir-editor/references";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type DatasetDiagramDialogProps = {
   open: boolean;

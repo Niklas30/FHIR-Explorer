@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 import {
   asItems,
   createDefaultFieldValue,
@@ -29,13 +29,13 @@ import {
   parseMaxCount,
   resolveRenderKind,
   setChildValue,
-} from "@/lib/fhir-editor/schema";
+} from "@fhir-explorer/core/fhir-editor/schema";
 import {
   getSliceDiscriminatorPattern,
   matchesSlice,
-} from "@/lib/fhir-editor/schema/slicing";
-import { getReferenceCreationTargets } from "@/lib/fhir-editor/reference-targets";
-import { isBrokenLocalReference } from "@/lib/fhir-editor/references";
+} from "@fhir-explorer/core/fhir-editor/schema/slicing";
+import { getReferenceCreationTargets } from "@fhir-explorer/core/fhir-editor/reference-targets";
+import { isBrokenLocalReference } from "@fhir-explorer/core/fhir-editor/references";
 import { PopupSearchSelect } from "@/components/editor/resource-detail/PopupSearchSelect";
 import { useResourceDetailText } from "@/components/editor/resource-detail/text";
 import {

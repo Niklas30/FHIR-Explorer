@@ -4,18 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useImporter } from "@/components/importer/useImporter";
-import type { PackageRecord } from "@/lib/fhir-importer/types";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import {
   clearDatasets,
   loadDatasets,
   removeDatasetsForProject,
   upsertDataset,
-} from "@/lib/datasets/storage";
-import { clearAllDatasetResources, clearDatasetResources } from "@/lib/datasets/content";
-import { byLocale } from "@/lib/i18n/select";
+} from "@fhir-explorer/core/datasets/storage";
+import { clearAllDatasetResources, clearDatasetResources } from "@fhir-explorer/core/datasets/content";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { toast } from "sonner";
-import { logger } from "@/lib/logger";
+import { logger } from "@fhir-explorer/core/logger";
 import { EditorOverviewLayout } from "@/components/overview/EditorOverviewLayout";
 import { NewProjectDialog } from "@/components/overview/dialogs/NewProjectDialog";
 import type { OverviewViewMode, OverviewText } from "@/components/overview/types";
@@ -32,10 +32,10 @@ import { formatText } from "@/components/overview/utils";
 import { localizedOverviewText } from "@/components/overview/text";
 import { useOverviewDerived } from "@/components/overview/useOverviewDerived";
 import { useAuthoredProjects } from "@/components/overview/useAuthoredProjects";
-import { removeProject } from "@/lib/projects/storage";
-import { clearProjectResources, loadProjectResources } from "@/lib/projects/content";
+import { removeProject } from "@fhir-explorer/core/projects/storage";
+import { clearProjectResources, loadProjectResources } from "@fhir-explorer/core/projects/content";
 import { exportAuthoredProject } from "@/components/project-editor/project-editor/exportProject";
-import type { AuthoredProjectRecord } from "@/lib/projects/types";
+import type { AuthoredProjectRecord } from "@fhir-explorer/core/projects/types";
 
 const usePersistedViewMode = (storageKey: string) => {
   const [viewMode, setViewMode] = useState<OverviewViewMode>("projects");

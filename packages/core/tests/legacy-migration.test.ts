@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { migrateLegacyStorageKeys } from "@/lib/legacy-migration";
+import { migrateLegacyStorageKeys } from "@fhir-explorer/core/legacy-migration";
 import {
   isComposeProjectArchive,
   isComposeProjectExport,
-} from "@/lib/fhir-importer/compose";
+} from "@fhir-explorer/core/fhir-importer/compose";
 
 /** Minimal in-memory Storage for exercising the migration without a browser. */
 const createStorage = (initial: Record<string, string> = {}): Storage => {

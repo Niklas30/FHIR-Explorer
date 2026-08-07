@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { detectArchiveFormat } from "@/lib/fhir-importer/archive";
-import { parsePackage } from "@/lib/fhir-importer/parser";
+import { detectArchiveFormat } from "@fhir-explorer/core/fhir-importer/archive";
+import { parsePackage } from "@fhir-explorer/core/fhir-importer/parser";
 import {
   buildTar,
   buildTgz,
   buildZip,
   dummyPackageFiles,
   toArrayBuffer,
-} from "@/tests/helpers/package-archive-builder";
+} from "./helpers/package-archive-builder";
 
 const expectDummyPackage = (parsed: Awaited<ReturnType<typeof parsePackage>>) => {
   expect(parsed.id).toBe("dummy.fhir.package");

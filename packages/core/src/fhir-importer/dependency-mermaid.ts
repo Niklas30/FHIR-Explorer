@@ -1,4 +1,4 @@
-import type { DependencyGraph } from "@/lib/fhir-importer/dependency-graph";
+import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 
 export type DependencyMermaidText = {
   noProjectSelected: string;

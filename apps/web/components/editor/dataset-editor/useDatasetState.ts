@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DatasetRecord } from "@/lib/datasets/storage";
-import { loadDatasets } from "@/lib/datasets/storage";
-import type { DatasetResource } from "@/lib/datasets/content";
-import { loadDatasetResources, saveDatasetResources } from "@/lib/datasets/content";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { loadDatasets } from "@fhir-explorer/core/datasets/storage";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import { loadDatasetResources, saveDatasetResources } from "@fhir-explorer/core/datasets/content";
 
 type ResourceNavigationState = {
   history: string[];

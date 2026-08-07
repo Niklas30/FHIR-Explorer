@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { resolveDownloadUrl } from "@/lib/fhir-importer/registry";
-import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
-import { buildPackageKey } from "@/lib/fhir-importer/utils";
+import { resolveDownloadUrl } from "@fhir-explorer/core/fhir-importer/registry";
+import type { DependencyRequirement, PackageRef } from "@fhir-explorer/core/fhir-importer/types";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 
 /**
  * Turns package references into download links that actually resolve.

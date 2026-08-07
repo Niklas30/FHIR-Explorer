@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { byLocale } from "@/lib/i18n/select";
-import type { DatasetRecord } from "@/lib/datasets/storage";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import { toast } from "sonner";
 
 export type DatasetProjectSuggestion = {

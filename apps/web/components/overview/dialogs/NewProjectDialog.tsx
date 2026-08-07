@@ -16,9 +16,9 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { byLocale } from "@/lib/i18n/select";
-import { buildProjectKey } from "@/lib/projects/storage";
-import type { PackageManifest, PackageRecord } from "@/lib/fhir-importer/types";
+import { byLocale } from "@fhir-explorer/core/i18n/select";
+import { buildProjectKey } from "@fhir-explorer/core/projects/storage";
+import type { PackageManifest, PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import { projectEditorText } from "@/components/project-editor/project-editor/text";
 import { toast } from "sonner";
 

@@ -7,11 +7,11 @@ import {
   createProjectRecord,
   loadProjects,
   upsertProject,
-} from "@/lib/projects/storage";
-import { loadProjectResources, saveProjectResources } from "@/lib/projects/content";
+} from "@fhir-explorer/core/projects/storage";
+import { loadProjectResources, saveProjectResources } from "@fhir-explorer/core/projects/content";
 import { duplicateProject } from "@/components/project-editor/project-editor/duplicateProject";
-import type { AuthoredProjectRecord, AuthoredResource } from "@/lib/projects/types";
-import type { PackageManifest } from "@/lib/fhir-importer/types";
+import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
+import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 
 type DuplicateSource = { manifest: PackageManifest; resources: AuthoredResource[] };
 

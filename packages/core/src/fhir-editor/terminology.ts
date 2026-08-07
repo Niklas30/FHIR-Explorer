@@ -1,5 +1,5 @@
-import type { CodingOption } from "@/lib/fhir-editor/registry";
-import { logger } from "@/lib/logger";
+import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
+import { logger } from "@fhir-explorer/core/logger";
 
 /**
  * Optional terminology server integration. When configured, ValueSets that

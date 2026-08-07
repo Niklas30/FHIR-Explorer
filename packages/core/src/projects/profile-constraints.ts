@@ -1,4 +1,4 @@
-import type { SchemaNode } from "@/lib/fhir-editor/schema";
+import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
 
 export type BindingStrength = "required" | "extensible" | "preferred" | "example";
 

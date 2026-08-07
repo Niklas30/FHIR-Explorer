@@ -1,6 +1,6 @@
-import type { StructureDefinition } from "@/lib/fhir-editor/registry";
-import { getStructureDefinitionByCanonical } from "@/lib/fhir-editor/registry";
-import type { SchemaContext, SchemaElementDefinition } from "@/lib/fhir-editor/schema/types";
+import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import { getStructureDefinitionByCanonical } from "@fhir-explorer/core/fhir-editor/registry";
+import type { SchemaContext, SchemaElementDefinition } from "@fhir-explorer/core/fhir-editor/schema/types";
 
 /**
  * Snapshot resolution.

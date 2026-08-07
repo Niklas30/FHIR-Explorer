@@ -6,7 +6,7 @@ import {
   listSourcesFor,
   resolveDownloadUrl,
   resolveImportUrl,
-} from "@/lib/fhir-importer/registry";
+} from "@fhir-explorer/core/fhir-importer/registry";
 
 /**
  * The two registries the chain exists for, in miniature: a mirror carrying

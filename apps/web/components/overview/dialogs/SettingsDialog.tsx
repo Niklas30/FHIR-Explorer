@@ -16,7 +16,7 @@ import type { OverviewText } from "@/components/overview/types";
 import {
   getTerminologyServerUrl,
   setTerminologyServerUrl,
-} from "@/lib/fhir-editor/terminology";
+} from "@fhir-explorer/core/fhir-editor/terminology";
 
 type Props = {
   open: boolean;

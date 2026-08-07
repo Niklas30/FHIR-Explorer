@@ -11,9 +11,9 @@ import {
   getNodeChildren,
   type SchemaContext,
   type SchemaNode,
-} from "@/lib/fhir-editor/schema";
-import type { StructureDefinition } from "@/lib/fhir-editor/registry";
-import type { AuthoredResource } from "@/lib/projects/types";
+} from "@fhir-explorer/core/fhir-editor/schema";
+import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
+import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import {
   countConstraints,
   formatCardinality,
@@ -22,7 +22,7 @@ import {
   writeConstraint,
   type BindingStrength,
   type ConstraintPatch,
-} from "@/lib/projects/profile-constraints";
+} from "@fhir-explorer/core/projects/profile-constraints";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 const STRENGTHS: BindingStrength[] = ["required", "extensible", "preferred", "example"];

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearExpansionCacheForTests,
   expandValueSet,
-} from "@/lib/fhir-editor/terminology";
+} from "@fhir-explorer/core/fhir-editor/terminology";
 
 const SERVER = "https://tx.example.org/r4";
 const VALUE_SET = "http://example.org/fhir/ValueSet/specialty";

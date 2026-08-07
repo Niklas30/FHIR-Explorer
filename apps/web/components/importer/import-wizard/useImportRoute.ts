@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDependencySources } from "@/components/importer/import-wizard/useDependencySources";
-import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement, PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 
 /**
  * Which route the user took through the import, and what it needs to know.

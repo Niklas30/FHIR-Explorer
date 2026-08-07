@@ -1,5 +1,5 @@
-import type { PackageRecord } from "@/lib/fhir-importer/types";
-import { buildPackageKey, isExactVersion } from "@/lib/fhir-importer/utils";
+import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
+import { buildPackageKey, isExactVersion } from "@fhir-explorer/core/fhir-importer/utils";
 
 export type DependencyEdge = {
   fromKey: string;
