@@ -11,7 +11,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command";
+} from "@fhir-explorer/ui/ui/command";
 import {
   formatShortcut,
   toShortcutArray,

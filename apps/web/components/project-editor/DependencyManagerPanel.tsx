@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { GitFork, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 

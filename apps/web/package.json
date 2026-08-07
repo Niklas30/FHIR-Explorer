@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fhir-explorer/core": "*",
+    "@fhir-explorer/ui": "*",
     "@medplum/core": "^5.0.10",
     "@medplum/definitions": "^5.0.10",
     "@radix-ui/react-avatar": "^1.1.11",

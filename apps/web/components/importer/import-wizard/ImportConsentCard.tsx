@@ -1,8 +1,8 @@
 "use client";
 
 import { Download, Loader2, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import type { ImportSourceState } from "@/components/importer/import-wizard/useImportSource";
 import type { PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";

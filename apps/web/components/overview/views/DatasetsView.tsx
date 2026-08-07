@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import type { OverviewText } from "@/components/overview/types";

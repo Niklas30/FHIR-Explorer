@@ -1,3 +1,3 @@
 "use client";
 
-export { FileDropzone } from "@/components/ui/file-dropzone";
+export { FileDropzone } from "@fhir-explorer/ui/ui/file-dropzone";

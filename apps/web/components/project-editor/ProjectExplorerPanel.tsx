@@ -16,9 +16,9 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
 import { resourceLabel } from "@fhir-explorer/core/projects/content";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";

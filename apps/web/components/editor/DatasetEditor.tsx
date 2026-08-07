@@ -17,16 +17,16 @@ import { NewResourceDialog } from "@/components/editor/NewResourceDialog";
 import {
   ResourceDetailPanel,
   type ResourceDetailPanelHandle,
-} from "@/components/editor/ResourceDetailPanel";
+} from "@fhir-explorer/ui/editor/ResourceDetailPanel";
 import { ResourceJsonPanel } from "@/components/editor/ResourceJsonPanel";
 import { ResourceListPanel } from "@/components/editor/ResourceListPanel";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "@fhir-explorer/ui/ui/resizable";
 import type { Layout } from "react-resizable-panels";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import { isDevModeEnabled } from "@/lib/dev-mode";
 import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";

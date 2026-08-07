@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
 import { SlidersHorizontal } from "lucide-react";
 import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 import { parseLocalReference } from "@fhir-explorer/core/fhir-editor/references";

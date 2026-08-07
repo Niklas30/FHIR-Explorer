@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   readCoding,
   writeCoding,
-} from "@/components/editor/resource-detail/field-input/utils";
+} from "@fhir-explorer/ui/editor/resource-detail/field-input/utils";
 
 describe("coding field read/write", () => {
   it("edits Coding elements flat, never wrapped in a coding array", () => {

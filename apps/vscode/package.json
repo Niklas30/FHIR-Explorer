@@ -82,6 +82,12 @@
         "command": "fhirExplorer.revealInExplorer",
         "title": "Reveal in Explorer View",
         "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.openInFormEditor",
+        "title": "Open in FHIR Form Editor",
+        "category": "FHIR Explorer",
+        "icon": "$(preview)"
       }
     ],
     "menus": {
@@ -117,6 +123,11 @@
           "command": "fhirExplorer.revealInExplorer",
           "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
           "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
@@ -131,6 +142,17 @@
         {
           "command": "fhirExplorer.revealInExplorer",
           "when": "false"
+        },
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "resourceExtname == .json"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "resourceExtname == .json && resourceDirname =~ /input\\\\/(profiles|extensions|vocabulary|examples)$/",
+          "group": "navigation"
         }
       ]
     },
@@ -153,22 +175,53 @@
           "markdownDescription": "Optional terminology server used to `$expand` value sets that the imported packages cannot expand. Leave empty to disable."
         }
       }
-    }
+    },
+    "customEditors": [
+      {
+        "viewType": "fhirExplorer.formEditor",
+        "displayName": "FHIR Form Editor",
+        "selector": [
+          {
+            "filenamePattern": "**/input/profiles/*.json"
+          },
+          {
+            "filenamePattern": "**/input/extensions/*.json"
+          },
+          {
+            "filenamePattern": "**/input/vocabulary/*.json"
+          },
+          {
+            "filenamePattern": "**/input/examples/*.json"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
   },
   "scripts": {
-    "build": "node build.mjs --production",
+    "build": "node build.mjs --production && vite build",
     "watch": "node build.mjs --watch",
     "package": "vsce package --no-dependencies",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:webview": "vite build"
   },
   "dependencies": {
     "@fhir-explorer/core": "*",
-    "jsonc-parser": "^3.3.1"
+    "@fhir-explorer/ui": "*",
+    "jsonc-parser": "^3.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@types/vscode": "^1.96.0",
+    "@vitejs/plugin-react": "^5",
     "esbuild": "^0.25.0",
+    "tailwindcss": "^4",
+    "vite": "^8.0.10",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^4.1.5"
   }

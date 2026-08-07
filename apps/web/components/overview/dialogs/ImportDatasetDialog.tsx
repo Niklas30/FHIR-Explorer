@@ -1,11 +1,11 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FileDropzone } from "@/components/ui/file-dropzone";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@fhir-explorer/ui/ui/dialog";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { Label } from "@fhir-explorer/ui/ui/label";
+import { FileDropzone } from "@fhir-explorer/ui/ui/file-dropzone";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { OverviewText } from "@/components/overview/types";
 import { formatText } from "@/components/overview/utils";

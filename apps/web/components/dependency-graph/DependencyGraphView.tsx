@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 
 export type GraphNodeKind = "target" | "package" | "missing";

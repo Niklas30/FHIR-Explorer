@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { Label } from "@fhir-explorer/ui/ui/label";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 

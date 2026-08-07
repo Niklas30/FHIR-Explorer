@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@fhir-explorer/ui/ui/dialog";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { Label } from "@fhir-explorer/ui/ui/label";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import { toast } from "sonner";

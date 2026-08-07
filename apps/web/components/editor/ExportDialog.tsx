@@ -1,9 +1,9 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@fhir-explorer/ui/ui/dialog";
+import { Label } from "@fhir-explorer/ui/ui/label";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 export type ExportScope = "dataset" | "project";

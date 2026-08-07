@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { FloatingLanguageSwitcher } from "@/components/i18n/FloatingLanguageSwitcher";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
-import { Toaster } from "@/components/ui/sonner";
+import { TerminologyBridge } from "@/components/terminology/TerminologyBridge";
+import { Toaster } from "@fhir-explorer/ui/ui/sonner";
 
 export const metadata: Metadata = {
   title: "FHIR-Explorer",
@@ -23,13 +24,15 @@ export default function RootLayout({
     <html lang="de">
       <body className="min-h-screen antialiased">
         <I18nProvider>
-          {children}
-          <footer className="px-4 pb-3 text-center text-[11px] text-muted-foreground/80">
-            FHIR® is a registered trademark of Health Level Seven International (HL7). Use of this
-            trademark does not constitute endorsement by HL7.
-          </footer>
-          <FloatingLanguageSwitcher />
-          <Toaster />
+          <TerminologyBridge>
+            {children}
+            <footer className="px-4 pb-3 text-center text-[11px] text-muted-foreground/80">
+              FHIR® is a registered trademark of Health Level Seven International (HL7). Use of this
+              trademark does not constitute endorsement by HL7.
+            </footer>
+            <FloatingLanguageSwitcher />
+            <Toaster />
+          </TerminologyBridge>
         </I18nProvider>
       </body>
     </html>

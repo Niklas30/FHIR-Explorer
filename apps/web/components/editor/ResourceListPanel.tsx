@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ChevronRight, MoreVertical, Plus, Search } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Button } from "@/components/ui/button";
+import { Button } from "@fhir-explorer/ui/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
+import { Input } from "@fhir-explorer/ui/ui/input";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
-import { cn } from "@/lib/utils";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles";
 import type { FhirRegistry } from "@fhir-explorer/core/fhir-editor/registry";

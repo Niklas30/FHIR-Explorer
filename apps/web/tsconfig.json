@@ -8,9 +8,21 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@fhir-explorer/core": ["../../packages/core/src/index.ts"],
-      "@fhir-explorer/core/*": ["../../packages/core/src/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@fhir-explorer/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@fhir-explorer/core/*": [
+        "../../packages/core/src/*"
+      ],
+      "@fhir-explorer/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@fhir-explorer/ui/*": [
+        "../../packages/ui/src/*"
+      ]
     }
   },
   "include": [
@@ -21,5 +33,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

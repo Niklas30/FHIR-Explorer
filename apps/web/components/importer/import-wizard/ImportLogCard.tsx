@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 export type ImportLogCardProps = {

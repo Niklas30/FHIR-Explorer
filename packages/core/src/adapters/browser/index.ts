@@ -39,6 +39,7 @@ export {
 export {
   getTerminologyServerUrl,
   setTerminologyServerUrl,
+  subscribeTerminologyServerUrl,
 } from "@fhir-explorer/core/adapters/browser/local-settings";
 export {
   migrateLegacyLocalStorage,

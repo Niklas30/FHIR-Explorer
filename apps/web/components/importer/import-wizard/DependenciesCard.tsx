@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileDropzone } from "@/components/ui/file-dropzone";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
+import { FileDropzone } from "@fhir-explorer/ui/ui/file-dropzone";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { Label } from "@fhir-explorer/ui/ui/label";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import { formatRequirement } from "@/components/importer/import-wizard/helpers";
 import { DependencySourceList } from "@/components/importer/import-wizard/DependencySourceList";
 import type { DependencySources } from "@/components/importer/import-wizard/useDependencySources";

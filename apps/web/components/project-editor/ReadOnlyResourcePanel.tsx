@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { resourceLabel } from "@fhir-explorer/core/projects/content";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";

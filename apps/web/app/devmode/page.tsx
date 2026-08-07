@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { setDevModeEnabled } from "@/lib/dev-mode";
 

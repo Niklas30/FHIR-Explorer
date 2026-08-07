@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Globe, Languages, MonitorSmartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@fhir-explorer/ui/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,11 +15,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import type { Locale } from "@fhir-explorer/core/i18n/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 
 type LanguageSwitcherProps = {
   className?: string;

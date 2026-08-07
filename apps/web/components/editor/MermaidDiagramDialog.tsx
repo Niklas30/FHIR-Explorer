@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import mermaid from "mermaid";
 import { buildMermaidConfig } from "@/lib/mermaid-theme";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@fhir-explorer/ui/ui/dialog";
 import { Download, Maximize2, RefreshCcw, ZoomIn, ZoomOut } from "lucide-react";
 
 type PanZoomInstance = {

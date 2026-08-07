@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["node"],
+    "paths": {
+      "@fhir-explorer/ui/*": ["./src/*"],
+      "@fhir-explorer/core": ["../core/src/index.ts"],
+      "@fhir-explorer/core/*": ["../core/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

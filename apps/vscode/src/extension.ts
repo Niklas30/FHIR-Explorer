@@ -4,6 +4,7 @@ import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { createProjectCommand } from "@/commands/create-project";
 import { importPackageCommand } from "@/commands/import-package";
 import { newResourceCommand } from "@/commands/new-resource";
+import { FormEditorProvider } from "@/editor/form-editor";
 import { createCompletionProvider } from "@/language/completion";
 import { createDefinitionProvider } from "@/language/definition";
 import { FhirDiagnostics } from "@/language/diagnostics";
@@ -93,6 +94,30 @@ export const activate = (context: vscode.ExtensionContext): void => {
     view,
     watcher,
     diagnostics,
+    vscode.window.registerCustomEditorProvider(
+      FormEditorProvider.viewType,
+      new FormEditorProvider(context, index),
+      // The document is shared with any text editor showing the same file, and
+      // keeping the webview alive preserves scroll position between tab switches.
+      { webviewOptions: { retainContextWhenHidden: true }, supportsMultipleEditorsPerDocument: true }
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.openInFormEditor",
+      async (target?: ResourceNode | vscode.Uri) => {
+        const uri =
+          target instanceof vscode.Uri
+            ? target
+            : target
+              ? resourceUri(target)
+              : vscode.window.activeTextEditor?.document.uri;
+        if (!uri) return;
+        await vscode.commands.executeCommand(
+          "vscode.openWith",
+          uri,
+          FormEditorProvider.viewType
+        );
+      }
+    ),
     vscode.languages.registerHoverProvider(documentSelector, createHoverProvider(index)),
     vscode.languages.registerDefinitionProvider(
       documentSelector,

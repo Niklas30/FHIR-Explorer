@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { Check, Copy, Download, Lock, Share2 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Badge } from "@fhir-explorer/ui/ui/badge";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "@fhir-explorer/ui/ui/resizable";
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { MermaidDiagramDialog } from "@/components/editor/MermaidDiagramDialog";
 import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";

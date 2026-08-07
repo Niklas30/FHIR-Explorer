@@ -1,32 +1,19 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
 import { migrateLegacyLocalStorage } from "@fhir-explorer/core/adapters/browser/legacy-migration";
+import {
+  I18nContextProvider,
+  type I18nContextValue,
+  type LocaleMode,
+} from "@fhir-explorer/ui";
 
 // Carry pre-rename localStorage (health-compose-*) forward. Runs when the client
 // bundle first evaluates this module — before any component effect reads storage.
 migrateLegacyLocalStorage();
 
 const LOCALE_STORAGE_KEY = "fhir-explorer-locale";
-type LocaleMode = Locale | "system";
-
-type I18nContextValue = {
-  locale: Locale;
-  localeMode: LocaleMode;
-  setLocale: (locale: Locale) => void;
-  setLocaleMode: (mode: LocaleMode) => void;
-};
-
-const I18nContext = createContext<I18nContextValue | null>(null);
 
 const detectSystemLocale = (): Locale => {
   if (typeof navigator === "undefined") return "de";
@@ -42,6 +29,11 @@ type I18nProviderProps = {
   children: ReactNode;
 };
 
+/**
+ * Browser-side locale resolution. The shared components only consume the
+ * resulting value; where it comes from — localStorage and `navigator` here,
+ * `vscode.env.language` in the extension — is the host's business.
+ */
 export const I18nProvider = ({ children }: I18nProviderProps) => {
   const [localeMode, setLocaleModeState] = useState<LocaleMode>("system");
   const [systemLocale, setSystemLocale] = useState<Locale>(detectSystemLocale);
@@ -82,22 +74,12 @@ export const I18nProvider = ({ children }: I18nProviderProps) => {
   }, []);
 
   const value = useMemo<I18nContextValue>(
-    () => ({
-      locale,
-      localeMode,
-      setLocale,
-      setLocaleMode,
-    }),
+    () => ({ locale, localeMode, setLocale, setLocaleMode }),
     [locale, localeMode, setLocale, setLocaleMode]
   );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  return <I18nContextProvider value={value}>{children}</I18nContextProvider>;
 };
 
-export const useI18n = () => {
-  const context = useContext(I18nContext);
-  if (!context) {
-    throw new Error("useI18n must be used within an I18nProvider");
-  }
-  return context;
-};
+// Re-exported so the app's own components keep importing the hook from here.
+export { useI18n } from "@fhir-explorer/ui";

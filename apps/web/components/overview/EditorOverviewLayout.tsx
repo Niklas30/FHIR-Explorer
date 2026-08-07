@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Input } from "@fhir-explorer/ui/ui/input";
 import { Database, FolderPlus, LayoutGrid, Settings, Upload } from "lucide-react";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";

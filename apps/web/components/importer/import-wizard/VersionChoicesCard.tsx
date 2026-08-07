@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
 import type { DependencyRequirement } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 

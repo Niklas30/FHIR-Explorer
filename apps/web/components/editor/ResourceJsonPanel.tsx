@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "@fhir-explorer/ui/ui/resizable";
 import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { buildDatasetReferenceIndex } from "@fhir-explorer/core/fhir-editor/references";
@@ -15,7 +15,7 @@ import {
   type SchemaContext,
   type SchemaTree,
 } from "@fhir-explorer/core/fhir-editor/schema";
-import { useInvariantIssues } from "@/components/editor/dataset-editor/useInvariantIssues";
+import { useInvariantIssues } from "@fhir-explorer/ui/editor/useInvariantIssues";
 
 type ResourceJsonPanelProps = {
   resource: DatasetResource | null;

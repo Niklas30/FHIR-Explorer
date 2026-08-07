@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight, ChevronDown, Link2, Star } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@fhir-explorer/ui/ui/scroll-area";
+import { Badge } from "@fhir-explorer/ui/ui/badge";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import {
   buildSchemaTree,
   getNodeChildren,

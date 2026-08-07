@@ -64,7 +64,8 @@ This is an npm workspace:
 | --- | --- | --- |
 | `packages/core` | `@fhir-explorer/core` | Framework-agnostic domain logic: FHIR schema/snapshot handling, validation, the package importer, project and dataset models. No React, no framework. |
 | `apps/web` | `@fhir-explorer/web` | The Next.js application: UI components, routing, styling. |
-| `apps/vscode` | `fhir-explorer` | The VS Code extension. |
+| `packages/ui` | `@fhir-explorer/ui` | Shared React components, above all the profile-driven form generated from a `StructureDefinition`. |
+| `apps/vscode` | `fhir-explorer` | The VS Code extension: extension host plus the form webview. |
 
 `core` reaches its host environment only through the types in
 `packages/core/src/ports` — HTTP, package persistence, resource persistence and
@@ -133,6 +134,15 @@ without opening anything FHIR-specific:
 - **Go to definition** jumps from a canonical or a `ResourceType/id` reference
   to the file that defines it.
 - **Completion** offers the codes of the bound value set inside `code` fields.
+
+**Form editor.** *Open in FHIR Form Editor* shows the same profile-driven form
+the web app has, as an editor tab over the file. The text document stays the
+single source of truth, so undo, dirty state, hot exit, *Reopen with… Text
+Editor* and a live text editor in a split pane all behave normally. Writes go
+back as minimal edits, leaving every untouched line byte-identical.
+
+`packages/ui` is shared verbatim between the two apps; the hosts differ only in
+the two contexts they fill in — the locale and the optional terminology server.
 
 ## Docker
 

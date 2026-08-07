@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ResourceDetailPanel } from "@/components/editor/ResourceDetailPanel";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { ResourceDetailPanel } from "@fhir-explorer/ui/editor/ResourceDetailPanel";
 import { ResourceJsonPanel } from "@/components/editor/ResourceJsonPanel";
 import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
 import type { SchemaContext, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema";

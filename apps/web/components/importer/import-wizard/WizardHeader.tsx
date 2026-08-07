@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@fhir-explorer/ui/ui/button";
 import { StepProgress } from "@/components/importer/import-wizard/StepProgress";
 import type { PackageRef } from "@fhir-explorer/core/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";

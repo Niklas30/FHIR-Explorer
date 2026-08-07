@@ -96,7 +96,11 @@ export const createVscodeStub = () => {
       showTextDocument: async () => undefined,
       showWorkspaceFolderPick: async () => undefined,
       withProgress: async () => undefined,
+      registerCustomEditorProvider: () => disposable,
+      visibleTextEditors: [] as unknown[],
+      activeTextEditor: undefined as unknown,
     },
+    env: { language: "en" },
     workspace: {
       fs: {
         readFile: async () => new Uint8Array(),

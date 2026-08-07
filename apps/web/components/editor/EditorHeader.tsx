@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LanguageMenuSub } from "@/components/i18n/LanguageSwitcher";
-import { Button } from "@/components/ui/button";
+import { Button } from "@fhir-explorer/ui/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
 import {
   ChevronLeft,
   ChevronRight,

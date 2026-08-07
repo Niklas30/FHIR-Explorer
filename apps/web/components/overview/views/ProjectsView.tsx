@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { GitBranch, MoreHorizontal, PackagePlus, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent } from "@fhir-explorer/ui/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import type { OverviewText, ProjectEntry } from "@/components/overview/types";

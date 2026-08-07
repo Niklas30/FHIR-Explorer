@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@fhir-explorer/ui/ui/badge";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent, CardHeader } from "@fhir-explorer/ui/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@fhir-explorer/ui/ui/dropdown-menu";
 import { Copy, GitBranch, MoreHorizontal, PencilRuler, Plus, Upload } from "lucide-react";
 import { formatText, formatTimestamp } from "@/components/overview/utils";
 import type { ProjectCardProps } from "@/components/overview/types";

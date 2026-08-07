@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Card, CardContent } from "@fhir-explorer/ui/ui/card";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 export type ImportSuccessCardProps = {

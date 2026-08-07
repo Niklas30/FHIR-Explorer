@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@fhir-explorer/ui/ui/dialog";
 import {
   DependencyGraphView,
   type DependencyGraphLabels,

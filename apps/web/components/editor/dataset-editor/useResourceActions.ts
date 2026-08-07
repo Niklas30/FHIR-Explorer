@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { createDatasetResourceId, type DatasetResource } from "@fhir-explorer/core/datasets/content";
 import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
 import type { ReferenceCreationTarget } from "@fhir-explorer/core/fhir-editor/reference-targets";
-import { formatTemplate } from "@/components/editor/resource-detail/utils";
+import { formatTemplate } from "@fhir-explorer/ui/editor/resource-detail/utils";
 import { removeDatasetResource } from "@fhir-explorer/core/adapters/browser";
 
 const downloadJson = (filename: string, payload: unknown) => {

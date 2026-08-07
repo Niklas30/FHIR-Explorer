@@ -8,10 +8,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@fhir-explorer/ui/ui/dialog";
+import { Button } from "@fhir-explorer/ui/ui/button";
+import { Input } from "@fhir-explorer/ui/ui/input";
+import { Label } from "@fhir-explorer/ui/ui/label";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { createAuthoredResource } from "@fhir-explorer/core/projects/content";

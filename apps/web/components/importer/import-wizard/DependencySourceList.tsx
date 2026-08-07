@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@fhir-explorer/ui/ui/button";
 import type { PackageSource } from "@fhir-explorer/core/fhir-importer/registry";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
