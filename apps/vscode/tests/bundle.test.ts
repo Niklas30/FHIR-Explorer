@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Module from "node:module";
@@ -52,19 +52,16 @@ describe("extension bundle", () => {
       const subscriptions: unknown[] = [];
       extension.activate({ subscriptions, globalStorageUri: { path: outDir } });
 
-      // Everything the package manifest promises has to actually be there,
-      // otherwise the command shows up in the palette and then fails.
-      expect(stub.registeredCommands).toEqual(
-        expect.arrayContaining([
-          "fhirExplorer.refresh",
-          "fhirExplorer.createProject",
-          "fhirExplorer.importPackage",
-          "fhirExplorer.newResource",
-          "fhirExplorer.openResource",
-          "fhirExplorer.deleteResource",
-          "fhirExplorer.revealInExplorer",
-        ])
-      );
+      // Every command the manifest declares has to actually be registered.
+      // A declared-but-unregistered command still appears in the palette and
+      // then fails when invoked, which no type check can catch.
+      const manifest = JSON.parse(
+        readFileSync(new URL("../package.json", import.meta.url), "utf8")
+      ) as { contributes: { commands: { command: string }[] } };
+      const declared = manifest.contributes.commands.map((entry) => entry.command);
+
+      expect(declared.length).toBeGreaterThan(0);
+      expect([...stub.registeredCommands].sort()).toEqual([...declared].sort());
       expect(subscriptions.length).toBeGreaterThan(0);
 
       extension.deactivate();

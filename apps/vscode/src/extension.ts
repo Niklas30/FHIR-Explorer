@@ -2,7 +2,12 @@ import * as vscode from "vscode";
 import { createFsResourceStore } from "@/adapters/fs-resource-store";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { createProjectCommand } from "@/commands/create-project";
-import { importPackageCommand } from "@/commands/import-package";
+import { addDependencyCommand } from "@/commands/add-dependency";
+import { importPackageFileCommand } from "@/commands/import-package-file";
+import {
+  installDependenciesCommand,
+  offerMissingDependencies,
+} from "@/commands/install-dependencies";
 import { newResourceCommand } from "@/commands/new-resource";
 import { FormEditorProvider } from "@/editor/form-editor";
 import { createCompletionProvider } from "@/language/completion";
@@ -63,6 +68,13 @@ export const activate = (context: vscode.ExtensionContext): void => {
     }
   };
   index.onDidChange(revalidateOpen);
+
+  const afterPackagesChanged = () => {
+    tree.refresh();
+    // New packages change what every resource validates against.
+    index.invalidatePackages();
+    void diagnostics.validateWorkspace();
+  };
 
   const projectOf = (node: TreeNode | undefined) => {
     if (node) return node.project;
@@ -146,13 +158,28 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.commands.registerCommand("fhirExplorer.createProject", () =>
       createProjectCommand(refresh)
     ),
-    vscode.commands.registerCommand("fhirExplorer.importPackage", () =>
-      importPackageCommand(context, () => {
-        tree.refresh();
-        // A new package changes what every resource validates against.
-        index.invalidatePackages();
-        void diagnostics.validateWorkspace();
-      })
+    vscode.commands.registerCommand("fhirExplorer.addDependency", async () => {
+      const projects = tree.knownProjects();
+      const project =
+        projects.length <= 1
+          ? projects[0]
+          : (
+              await vscode.window.showQuickPick(
+                projects.map((candidate) => ({
+                  label: candidate.manifest.name,
+                  description: candidate.manifest.version,
+                  project: candidate,
+                })),
+                { title: "Which project should declare the dependency?" }
+              )
+            )?.project;
+      await addDependencyCommand(context, project, afterPackagesChanged);
+    }),
+    vscode.commands.registerCommand("fhirExplorer.installDependencies", () =>
+      installDependenciesCommand(context, tree.knownProjects(), afterPackagesChanged)
+    ),
+    vscode.commands.registerCommand("fhirExplorer.importPackageFile", () =>
+      importPackageFileCommand(context, afterPackagesChanged)
     ),
     vscode.commands.registerCommand(
       "fhirExplorer.newResource",
@@ -190,6 +217,13 @@ export const activate = (context: vscode.ExtensionContext): void => {
   // First pass over the whole workspace, so Problems is populated before the
   // user opens anything.
   void diagnostics.validateWorkspace();
+
+  // A fresh clone declares dependencies it does not have yet. Offer to fetch
+  // them once the tree knows which projects exist.
+  void (async () => {
+    await tree.getChildren();
+    await offerMissingDependencies(context, tree.knownProjects(), afterPackagesChanged);
+  })();
 };
 
 export const deactivate = (): void => {

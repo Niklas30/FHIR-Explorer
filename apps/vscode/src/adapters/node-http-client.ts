@@ -1,4 +1,4 @@
-import type { HttpClient } from "@fhir-explorer/core/ports";
+import { HttpError, type HttpClient } from "@fhir-explorer/core/ports";
 
 /**
  * {@link HttpClient} in the extension host.
@@ -13,7 +13,7 @@ import type { HttpClient } from "@fhir-explorer/core/ports";
  */
 
 const failed = (url: string, status: number) =>
-  new Error(`Request to ${url} failed with status ${status}`);
+  new HttpError(`Request to ${url} failed with status ${status}`, status);
 
 export const nodeHttpClient: HttpClient = {
   getArrayBuffer: async (url) => {

@@ -1,4 +1,4 @@
-import type { HttpClient } from "@fhir-explorer/core/ports";
+import { HttpError, type HttpClient } from "@fhir-explorer/core/ports";
 
 /**
  * {@link HttpClient} on the platform `fetch`. Subject to CORS — the extension
@@ -8,14 +8,14 @@ export const fetchHttpClient: HttpClient = {
   getArrayBuffer: async (url) => {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      throw new HttpError(`Request failed with status ${response.status}`, response.status);
     }
     return await response.arrayBuffer();
   },
   getJson: async <T>(url: string, headers?: Record<string, string>) => {
     const response = await fetch(url, { headers });
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      throw new HttpError(`Request failed with status ${response.status}`, response.status);
     }
     return (await response.json()) as T;
   },

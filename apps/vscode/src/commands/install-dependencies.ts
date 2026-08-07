@@ -1,0 +1,90 @@
+import * as vscode from "vscode";
+import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
+import { resolveAndInstall } from "@/commands/add-dependency";
+import { readManifestDependencies } from "@/registry/installer";
+import type { PlanRequest } from "@/registry/plan";
+import { createImportSession } from "@/registry/session";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
+
+/**
+ * The `npm install` of this extension: bring the workspace in line with what
+ * the project manifests declare.
+ *
+ * This is the command that makes a fresh clone work. Nothing about the install
+ * lives in extension state — the `package.json` files are the input.
+ */
+
+const rootsOf = async (projects: WorkspaceProject[]): Promise<PlanRequest[]> => {
+  const roots = new Map<string, string>();
+  for (const project of projects) {
+    const dependencies = await readManifestDependencies(
+      vscode.Uri.joinPath(project.root, "package.json")
+    );
+    for (const [id, version] of Object.entries(dependencies)) {
+      roots.set(id, version);
+    }
+  }
+  return [...roots.entries()].map(([id, version]) => ({ id, version }));
+};
+
+export const installDependenciesCommand = async (
+  context: vscode.ExtensionContext,
+  projects: WorkspaceProject[],
+  onInstalled: () => void
+): Promise<void> => {
+  const roots = await rootsOf(projects);
+  if (roots.length === 0) {
+    vscode.window.showInformationMessage(
+      "No dependencies declared. Use FHIR Explorer: Add Dependency to add one."
+    );
+    return;
+  }
+
+  const session = await createImportSession(context);
+  const changed = await resolveAndInstall(
+    session,
+    roots,
+    "Install declared dependencies"
+  );
+  if (changed) onInstalled();
+};
+
+/**
+ * Offer to install on activation when a project declares dependencies that are
+ * not there.
+ *
+ * A notification, never a modal: opening a repository should not block on a
+ * download, and the command is one palette entry away if the user says no.
+ */
+export const offerMissingDependencies = async (
+  context: vscode.ExtensionContext,
+  projects: WorkspaceProject[],
+  onInstalled: () => void
+): Promise<void> => {
+  const roots = await rootsOf(projects);
+  if (roots.length === 0) return;
+
+  const session = await createImportSession(context);
+  const missing = roots.filter(
+    (root) => !session.available.has(buildPackageKey(root.id, root.version))
+  );
+  if (missing.length === 0) return;
+
+  // Resolving first would mean network round trips before the user has shown
+  // any interest, so this counts only the direct declarations.
+  const answer = await vscode.window.showInformationMessage(
+    missing.length === 1
+      ? `The FHIR dependency ${missing[0].id} is not installed.`
+      : `${missing.length} FHIR dependencies are not installed.`,
+    "Install",
+    "Not now"
+  );
+  if (answer !== "Install") return;
+
+  const changed = await resolveAndInstall(
+    session,
+    roots,
+    "Install declared dependencies"
+  );
+  if (changed) onInstalled();
+};

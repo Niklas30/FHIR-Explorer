@@ -38,15 +38,22 @@ search, the IG Publisher and Sushi all keep working on the same files.
   an editor tab. The file stays the source of truth: undo, dirty state and
   *Reopen with… Text Editor* behave normally, and writes are minimal edits, so
   untouched lines stay byte-identical.
-- **Package import** — reads the shared `~/.fhir/packages` cache first, and
-  downloads through the extension host otherwise (no CORS, proxy settings
-  apply).
+- **Dependencies, resolved for you** — *Add Dependency* searches the registry,
+  lists the published versions and works out the whole dependency tree from
+  registry metadata *before* downloading anything. You confirm one plan; version
+  conflicts are surfaced with a choice instead of failing later. The direct
+  dependency is written to your `package.json`, so *Install Dependencies*
+  reproduces the whole set on a fresh clone.
+- **Shared package cache** — downloads are read from and written to
+  `~/.fhir/packages`, so the IG Publisher, Sushi and this extension reuse each
+  other's work.
 
 ## Getting started
 
 1. Open a folder.
-2. **FHIR Explorer: Import FHIR Package** — start with `hl7.fhir.r4.core@4.0.1`.
-   Without it there is no `StructureDefinition` to validate against.
+2. **FHIR Explorer: Add Dependency** — start with `hl7.fhir.r4.core`. Without it
+   there is no `StructureDefinition` to validate against. Anything it depends on
+   comes along automatically.
 3. **FHIR Explorer: Create FHIR Project**, then add resources from the tree in
    the activity bar.
 
@@ -54,8 +61,9 @@ search, the IG Publisher and Sushi all keep working on the same files.
 
 | Setting | Purpose |
 | --- | --- |
-| `fhirExplorer.registry.baseUrl` | Package registry used for downloads. |
-| `fhirExplorer.packageCache.useFhirHome` | Also read `~/.fhir/packages`. |
+| `fhirExplorer.registry.baseUrl` | Registry serving package metadata. Must publish each version's `dependencies`. |
+| `fhirExplorer.registry.searchUrl` | Registry serving `/catalog?op=find`. Optional — without it you type package ids. |
+| `fhirExplorer.packageCache.useFhirHome` | Share downloads through `~/.fhir/packages`. |
 | `fhirExplorer.terminologyServer.url` | Optional `$expand` server for value sets the imported packages cannot expand. |
 
 ## Privacy

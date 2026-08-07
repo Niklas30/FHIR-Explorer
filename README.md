@@ -120,9 +120,12 @@ Run it from the repository root:
    and an Extension Development Host opens.
 3. Open a folder in the new window and run **FHIR Explorer: Create FHIR Project**.
 
-Imported packages are read from the shared `~/.fhir/packages` cache when they
-are already there, and downloaded through the extension host otherwise — no
-CORS restriction, and VS Code's proxy settings apply.
+Dependencies are resolved the way a package manager should: *Add Dependency*
+searches the registry, then walks the whole dependency tree from registry
+metadata before downloading a single byte, so the user confirms one plan instead
+of discovering missing packages one at a time. The browser build cannot do this
+— CORS stops it downloading at all. Packages are shared through
+`~/.fhir/packages`, so the IG Publisher and Sushi reuse the same files.
 
 Because the resources are ordinary JSON files, the editor features work on them
 without opening anything FHIR-specific:

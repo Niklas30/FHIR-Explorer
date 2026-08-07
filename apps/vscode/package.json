@@ -39,7 +39,7 @@
     "viewsWelcome": [
       {
         "view": "fhirExplorer.projects",
-        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a package.json that carries a FHIR manifest (fhirVersions, canonical or type fhir.ig).\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Import FHIR package](command:fhirExplorer.importPackage)"
+        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a package.json that carries a FHIR manifest (fhirVersions, canonical or type fhir.ig).\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Add FHIR dependency](command:fhirExplorer.addDependency)"
       }
     ],
     "commands": [
@@ -54,12 +54,6 @@
         "title": "Create FHIR Project",
         "category": "FHIR Explorer",
         "icon": "$(new-folder)"
-      },
-      {
-        "command": "fhirExplorer.importPackage",
-        "title": "Import FHIR Package",
-        "category": "FHIR Explorer",
-        "icon": "$(cloud-download)"
       },
       {
         "command": "fhirExplorer.newResource",
@@ -88,12 +82,30 @@
         "title": "Open in FHIR Form Editor",
         "category": "FHIR Explorer",
         "icon": "$(preview)"
+      },
+      {
+        "command": "fhirExplorer.addDependency",
+        "title": "Add Dependency",
+        "category": "FHIR Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "fhirExplorer.installDependencies",
+        "title": "Install Dependencies",
+        "category": "FHIR Explorer",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "fhirExplorer.importPackageFile",
+        "title": "Import Package from File",
+        "category": "FHIR Explorer",
+        "icon": "$(file-zip)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "fhirExplorer.importPackage",
+          "command": "fhirExplorer.addDependency",
           "when": "view == fhirExplorer.projects",
           "group": "navigation@1"
         },
@@ -106,6 +118,16 @@
           "command": "fhirExplorer.refresh",
           "when": "view == fhirExplorer.projects",
           "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.installDependencies",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
+        },
+        {
+          "command": "fhirExplorer.importPackageFile",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
         }
       ],
       "view/item/context": [
@@ -159,15 +181,20 @@
     "configuration": {
       "title": "FHIR Explorer",
       "properties": {
-        "fhirExplorer.registry.baseUrl": {
-          "type": "string",
-          "default": "https://packages2.fhir.org/packages",
-          "markdownDescription": "Base URL of the FHIR package registry used by **Import FHIR Package**."
-        },
         "fhirExplorer.packageCache.useFhirHome": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Also read packages from the shared `~/.fhir/packages` cache that the IG Publisher and Firely tooling populate."
+          "markdownDescription": "Read from and write to the shared `~/.fhir/packages` cache, so the IG Publisher, Sushi and this extension reuse each other's downloads."
+        },
+        "fhirExplorer.registry.baseUrl": {
+          "type": "string",
+          "default": "https://packages2.fhir.org/packages",
+          "markdownDescription": "Registry serving npm-style package metadata at `/{id}`. It must publish each version's `dependencies` \u2014 that is what lets the extension resolve the whole dependency tree before downloading anything."
+        },
+        "fhirExplorer.registry.searchUrl": {
+          "type": "string",
+          "default": "https://packages.fhir.org",
+          "markdownDescription": "Registry serving `/catalog?op=find` for package search. Optional: without it, **Add Dependency** takes a package id typed by hand."
         },
         "fhirExplorer.terminologyServer.url": {
           "type": "string",

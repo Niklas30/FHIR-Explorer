@@ -7,6 +7,7 @@
  * the workspace file system and the extension host.
  */
 export type { HttpClient } from "@fhir-explorer/core/ports/http-client";
+export { HttpError } from "@fhir-explorer/core/ports/http-client";
 export type { PackageParser } from "@fhir-explorer/core/ports/package-parser";
 export type { PackageStore } from "@fhir-explorer/core/ports/package-store";
 export type { ResourceStore } from "@fhir-explorer/core/ports/resource-store";

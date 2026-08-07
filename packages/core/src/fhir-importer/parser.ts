@@ -149,6 +149,32 @@ const buildPackageFromEntries = (
 };
 
 /**
+ * Every file in the archive, verbatim.
+ *
+ * Used when the archive has to be written back out — the shared
+ * `~/.fhir/packages` cache is read by the IG Publisher and Sushi, so an entry
+ * we place there has to be the whole package, not just the resources this
+ * parser understands.
+ */
+export const extractArchiveEntries = async (
+  buffer: ArrayBuffer
+): Promise<{ path: string; data: Uint8Array }[]> => {
+  const bytes = new Uint8Array(buffer);
+  switch (detectArchiveFormat(bytes)) {
+    case "gzip":
+      return collectTarEntries(await gunzip(bytes));
+    case "tar":
+      return collectTarEntries(bytes);
+    case "zip":
+      return await collectZipEntries(bytes);
+    default:
+      throw new Error(
+        "Unsupported file format: expected a FHIR package as .tgz/.tar.gz, .tar or .zip archive."
+      );
+  }
+};
+
+/**
  * Parses a FHIR package archive in any of the common containers:
  * gzipped tar (.tgz/.tar.gz), plain tar (browsers transparently decompress
  * gzip downloads and keep the .tgz name) and zip. The container is detected
