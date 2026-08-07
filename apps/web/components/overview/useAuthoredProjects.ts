@@ -3,15 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  createProjectRecord,
-  loadProjects,
-  upsertProject,
-} from "@fhir-explorer/core/projects/storage";
-import { loadProjectResources, saveProjectResources } from "@fhir-explorer/core/projects/content";
+import { createProjectRecord } from "@fhir-explorer/core/projects/storage";
 import { duplicateProject } from "@/components/project-editor/project-editor/duplicateProject";
 import type { AuthoredProjectRecord, AuthoredResource } from "@fhir-explorer/core/projects/types";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
+import { loadProjectResources, loadProjects, saveProjectResources, upsertProject } from "@fhir-explorer/core/adapters/browser";
 
 type DuplicateSource = { manifest: PackageManifest; resources: AuthoredResource[] };
 

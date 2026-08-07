@@ -4,18 +4,8 @@ import JSZip from "jszip";
 import { toast } from "sonner";
 import { logger } from "@fhir-explorer/core/logger";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
-import {
-  removeDataset,
-  removeDatasetsForProject,
-  upsertDataset,
-  type DatasetRecord,
-} from "@fhir-explorer/core/datasets/storage";
-import {
-  clearDatasetResources,
-  hydrateDatasetResources,
-  loadDatasetResources,
-  saveDatasetResources,
-} from "@fhir-explorer/core/datasets/content";
+import { type DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { hydrateDatasetResources } from "@fhir-explorer/core/datasets/content";
 import type { OverviewText } from "@/components/overview/types";
 import {
   cloneJson,
@@ -27,6 +17,7 @@ import {
   toSafeFilename,
 } from "@/components/overview/utils";
 import { extractImportedDatasetPayload, parseJsonOrZipFile } from "@/components/overview/actions";
+import { clearDatasetResources, loadDatasetResources, removeDataset, removeDatasetsForProject, saveDatasetResources, upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
 type DatasetListSetter = (next: DatasetRecord[]) => void;
 

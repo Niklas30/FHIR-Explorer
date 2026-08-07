@@ -1,5 +1,6 @@
 import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
 import { logger } from "@fhir-explorer/core/logger";
+import type { HttpClient } from "@fhir-explorer/core/ports";
 
 /**
  * Optional terminology server integration. When configured, ValueSets that
@@ -8,27 +9,18 @@ import { logger } from "@fhir-explorer/core/logger";
  * degrade to free-text entry, never block the editor.
  */
 
-const STORAGE_KEY = "fhir-explorer-terminology-server";
+export const TERMINOLOGY_SERVER_STORAGE_KEY = "fhir-explorer-terminology-server";
 
 /** Upper bound for expansion size — larger sets are searched via free text. */
 const EXPANSION_COUNT = 200;
 
-export const getTerminologyServerUrl = (): string | null => {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+/** Trim a user-entered server url down to its canonical form, or null. */
+export const normalizeTerminologyServerUrl = (
+  raw: string | null | undefined
+): string | null => {
   if (!raw) return null;
   const trimmed = raw.trim().replace(/\/+$/, "");
   return trimmed.length > 0 ? trimmed : null;
-};
-
-export const setTerminologyServerUrl = (url: string | null) => {
-  if (typeof window === "undefined") return;
-  const trimmed = url?.trim() ?? "";
-  if (trimmed.length === 0) {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return;
-  }
-  window.localStorage.setItem(STORAGE_KEY, trimmed);
 };
 
 type ExpansionContains = {
@@ -53,6 +45,7 @@ const flattenContains = (entries: ExpansionContains[], target: CodingOption[]) =
 const expansionCache = new Map<string, Promise<CodingOption[]>>();
 
 const fetchExpansion = async (
+  http: HttpClient,
   serverUrl: string,
   canonical: string
 ): Promise<CodingOption[]> => {
@@ -60,15 +53,10 @@ const fetchExpansion = async (
   url.searchParams.set("url", canonical);
   url.searchParams.set("count", String(EXPANSION_COUNT));
 
-  const response = await fetch(url.toString(), {
-    headers: { Accept: "application/fhir+json" },
-  });
-  if (!response.ok) {
-    throw new Error(`$expand failed with status ${response.status}`);
-  }
-  const body = (await response.json()) as {
+  const body = await http.getJson<{
     expansion?: { contains?: ExpansionContains[] };
-  };
+  }>(url.toString(), { Accept: "application/fhir+json" });
+
   return flattenContains(body.expansion?.contains ?? [], []);
 };
 
@@ -78,6 +66,7 @@ const fetchExpansion = async (
  * re-renders never re-issue requests.
  */
 export const expandValueSet = (
+  http: HttpClient,
   serverUrl: string,
   canonical: string
 ): Promise<CodingOption[]> => {
@@ -85,7 +74,7 @@ export const expandValueSet = (
   const cached = expansionCache.get(cacheKey);
   if (cached) return cached;
 
-  const request = fetchExpansion(serverUrl, canonical).catch((error) => {
+  const request = fetchExpansion(http, serverUrl, canonical).catch((error) => {
     logger.error("Terminology server expansion failed", { error, canonical });
     return [] as CodingOption[];
   });

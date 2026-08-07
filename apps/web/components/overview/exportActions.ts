@@ -12,9 +12,9 @@ import type {
   ComposeProjectExport,
 } from "@fhir-explorer/core/fhir-importer/compose";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
-import { loadDatasetResources } from "@fhir-explorer/core/datasets/content";
 import type { OverviewText } from "@/components/overview/types";
 import { downloadBlob, downloadJson, toSafeFilename } from "@/components/overview/utils";
+import { loadDatasetResources } from "@fhir-explorer/core/adapters/browser";
 
 type ProjectExportText = Pick<OverviewText, "noPackagesToExport" | "projectExported">;
 

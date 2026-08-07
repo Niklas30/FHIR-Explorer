@@ -56,6 +56,26 @@ expand on their own.
 - Mermaid for dependency graph visualization
 - IndexedDB / LocalStorage (local persistence)
 
+## Repository layout
+
+This is an npm workspace:
+
+| Path | Package | Contents |
+| --- | --- | --- |
+| `packages/core` | `@fhir-explorer/core` | Framework-agnostic domain logic: FHIR schema/snapshot handling, validation, the package importer, project and dataset models. No React, no framework. |
+| `apps/web` | `@fhir-explorer/web` | The Next.js application: UI components, routing, styling. |
+
+`core` reaches its host environment only through the types in
+`packages/core/src/ports` — HTTP, package persistence, resource persistence and
+archive parsing. `packages/core/src/adapters/browser` implements those against
+IndexedDB, localStorage, `fetch` and Web Workers. A different host (for example
+a VS Code extension backed by the workspace file system) supplies its own
+adapters and reuses the domain logic unchanged.
+
+Inside `core`, modules import each other by package name
+(`@fhir-explorer/core/fhir-editor/schema`) so a single alias resolves in every
+bundler. `apps/web` keeps `@/*` for its own files.
+
 ## Getting started
 
 ### Prerequisites
@@ -112,13 +132,16 @@ docker compose --profile dev up --build dev
 
 ## Scripts
 
+Run from the repository root; they fan out over the workspaces.
+
 - `npm run dev` – start dev server (Webpack)
-- `npm run dev:turbo` – start dev server (Turbo)
-- `npm run build` – production build (Webpack)
-- `npm run build:turbo` – production build (Turbo)
+- `npm run build` – production build of every workspace
 - `npm run start` – run production server
-- `npm run lint` – ESLint
+- `npm run lint` – ESLint over the whole repository
+- `npm run typecheck` – `tsc --noEmit` per workspace
 - `npm test` – unit tests (Vitest)
+
+Turbo-mode variants live on the web app: `npm run dev:turbo -w @fhir-explorer/web`.
 
 ## Testing
 

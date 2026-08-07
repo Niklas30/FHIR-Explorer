@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { migrateLegacyStorageKeys } from "@fhir-explorer/core/legacy-migration";
+import { migrateLegacyStorageKeys } from "@fhir-explorer/core/adapters/browser/legacy-migration";
 import {
   isComposeProjectArchive,
   isComposeProjectExport,

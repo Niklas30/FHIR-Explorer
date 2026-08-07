@@ -1,10 +1,11 @@
 import { openDB, type IDBPDatabase } from "idb";
+import type { PackageStore } from "@fhir-explorer/core/ports";
 import type {
   ImportState,
   PackageRecord,
   ResourceIndexEntry,
   ResourcePayload,
-} from "./types";
+} from "@fhir-explorer/core/fhir-importer/types";
 
 const DB_NAME = "fhir-importer";
 const DB_VERSION = 1;
@@ -34,7 +35,8 @@ const openImporterDb = () => {
   });
 };
 
-export class ImporterStorage {
+/** IndexedDB-backed {@link PackageStore} for the browser. */
+export class IdbPackageStore implements PackageStore {
   private dbPromise: Promise<ImporterDb>;
 
   constructor() {

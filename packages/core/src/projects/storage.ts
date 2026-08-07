@@ -1,17 +1,18 @@
-import { logger } from "@fhir-explorer/core/logger";
 import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 import type { AuthoredProjectRecord } from "@fhir-explorer/core/projects/types";
 
-const STORAGE_KEY = "fhir-explorer-projects";
+export const PROJECTS_STORAGE_KEY = "fhir-explorer-projects";
 
-const sortByNewest = (a: AuthoredProjectRecord, b: AuthoredProjectRecord) =>
-  b.updatedAt - a.updatedAt;
+export const sortProjectsByNewest = (
+  a: AuthoredProjectRecord,
+  b: AuthoredProjectRecord
+) => b.updatedAt - a.updatedAt;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value));
 
-const isProjectRecord = (entry: unknown): entry is AuthoredProjectRecord =>
+export const isProjectRecord = (entry: unknown): entry is AuthoredProjectRecord =>
   isRecord(entry) &&
   typeof entry.key === "string" &&
   typeof entry.id === "string" &&
@@ -27,61 +28,9 @@ const isProjectRecord = (entry: unknown): entry is AuthoredProjectRecord =>
  */
 export const buildProjectKey = buildPackageKey;
 
-export const loadProjects = (): AuthoredProjectRecord[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isProjectRecord).sort(sortByNewest);
-  } catch (error) {
-    logger.error("Failed to load projects", { error });
-    return [];
-  }
-};
-
-export const saveProjects = (projects: AuthoredProjectRecord[]) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-  } catch (error) {
-    logger.error("Failed to save projects", { error });
-  }
-};
-
-export const getProject = (key: string): AuthoredProjectRecord | undefined =>
-  loadProjects().find((entry) => entry.key === key);
-
-export const upsertProject = (
-  project: AuthoredProjectRecord
-): AuthoredProjectRecord[] => {
-  const existing = loadProjects().filter((entry) => entry.key !== project.key);
-  const next = [project, ...existing].sort(sortByNewest);
-  saveProjects(next);
-  return next;
-};
-
-export const removeProject = (key: string): AuthoredProjectRecord[] => {
-  const next = loadProjects()
-    .filter((entry) => entry.key !== key)
-    .sort(sortByNewest);
-  saveProjects(next);
-  return next;
-};
-
-export const clearProjects = () => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch (error) {
-    logger.error("Failed to clear projects", { error });
-  }
-};
-
 /**
- * Pure factory for a fresh project record. Kept side-effect free (caller
- * persists via {@link upsertProject}) so it is unit-testable in a node env.
+ * Pure factory for a fresh project record. Kept side-effect free (the caller
+ * persists it) so it is unit-testable in a node env.
  */
 export const createProjectRecord = (
   manifest: PackageManifest,

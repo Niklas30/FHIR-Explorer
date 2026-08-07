@@ -7,7 +7,7 @@ import { logger } from "@fhir-explorer/core/logger";
  * projects, datasets and settings, and can still load legacy export files.
  *
  * The localStorage part is a one-time key rename. IndexedDB migration lives in
- * `lib/projects/content.ts` (it needs the project database handle).
+ * `idb-project-resource-store.ts` (it needs the project database handle).
  */
 
 const LEGACY_PREFIX = "health-compose-";

@@ -1,6 +1,6 @@
 import JSZip from "jszip";
-import { hydrateDatasetResources, saveDatasetResources } from "@fhir-explorer/core/datasets/content";
-import { upsertDataset, type DatasetRecord } from "@fhir-explorer/core/datasets/storage";
+import { hydrateDatasetResources } from "@fhir-explorer/core/datasets/content";
+import { type DatasetRecord } from "@fhir-explorer/core/datasets/storage";
 import { logger } from "@fhir-explorer/core/logger";
 import type {
   ComposeDatasetExport,
@@ -9,6 +9,7 @@ import type {
 } from "@fhir-explorer/core/fhir-importer/compose";
 import { isComposeProjectArchive, isComposeProjectExport } from "@fhir-explorer/core/fhir-importer/compose";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
+import { saveDatasetResources, upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
 const createDatasetId = () =>
   `dataset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

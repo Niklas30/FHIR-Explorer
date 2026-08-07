@@ -11,6 +11,11 @@ import type {
 import type { ComposeProjectExport } from "@fhir-explorer/core/fhir-importer/compose";
 import { ImporterClient } from "@fhir-explorer/core/fhir-importer/client";
 import { registryStrategies, resolveImportUrl } from "@fhir-explorer/core/fhir-importer/registry";
+import {
+  IdbPackageStore,
+  inlinePackageParser,
+  workerPackageParser,
+} from "@fhir-explorer/core/adapters/browser";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 
 type UseImporterResult = {
@@ -118,8 +123,10 @@ export const useImporter = (): UseImporterResult => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const nextClient = new ImporterClient({
+      store: new IdbPackageStore(),
+      parser:
+        typeof Worker === "undefined" ? inlinePackageParser : workerPackageParser,
       registry: registryStrategies.packages2,
-      useWorker: true,
       storeResourcePayloads: true,
     });
     setClient(nextClient);

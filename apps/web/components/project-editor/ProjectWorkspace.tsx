@@ -21,8 +21,6 @@ import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependen
 import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 import { getStructureDefinitionByCanonical, type StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
-import { upsertDataset } from "@fhir-explorer/core/datasets/storage";
-import { saveDatasetResources } from "@fhir-explorer/core/datasets/content";
 import { createDatasetId } from "@/components/overview/utils";
 import type {
   AuthoredProjectRecord,
@@ -42,6 +40,7 @@ import { NewConformanceDialog } from "@/components/project-editor/NewConformance
 import { ProjectDashboardPanel } from "@/components/project-editor/ProjectDashboardPanel";
 import { ProjectIssuesPanel } from "@/components/project-editor/ProjectIssuesPanel";
 import { ResourceDetailArea, type DetailMode } from "@/components/project-editor/ResourceDetailArea";
+import { saveDatasetResources, upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
 const CORE_PATIENT = "http://hl7.org/fhir/StructureDefinition/Patient";
 

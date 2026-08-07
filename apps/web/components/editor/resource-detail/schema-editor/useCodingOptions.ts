@@ -3,9 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CodingOption } from "@fhir-explorer/core/fhir-editor/registry";
 import type { SchemaNode } from "@fhir-explorer/core/fhir-editor/schema";
-import { expandValueSet, getTerminologyServerUrl } from "@fhir-explorer/core/fhir-editor/terminology";
+import { expandValueSet } from "@fhir-explorer/core/fhir-editor/terminology";
 import { useSchemaEditor } from "@/components/editor/resource-detail/schema-editor/context";
 import { getCodingOptionsForNode } from "@/components/editor/resource-detail/schema-editor/helpers";
+import {
+  fetchHttpClient,
+  getTerminologyServerUrl,
+} from "@fhir-explorer/core/adapters/browser";
 
 const NO_OPTIONS: CodingOption[] = [];
 
@@ -28,7 +32,7 @@ export const useCodingOptions = (node: SchemaNode): CodingOption[] => {
     if (!serverUrl) return;
 
     let active = true;
-    expandValueSet(serverUrl, valueSet).then((options) => {
+    expandValueSet(fetchHttpClient, serverUrl, valueSet).then((options) => {
       if (active) setRemoteOptions(options);
     });
     return () => {

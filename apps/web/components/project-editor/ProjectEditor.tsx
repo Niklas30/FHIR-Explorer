@@ -13,8 +13,6 @@ import { useImporter } from "@/components/importer/useImporter";
 import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type { PackageManifest, PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
-import { loadDatasets } from "@fhir-explorer/core/datasets/storage";
-import { loadProjects } from "@fhir-explorer/core/projects/storage";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { projectEditorText } from "@/components/project-editor/project-editor/text";
 import { useProjectState } from "@/components/project-editor/project-editor/useProjectState";
@@ -23,6 +21,7 @@ import { exportAuthoredProject } from "@/components/project-editor/project-edito
 import { duplicateProject } from "@/components/project-editor/project-editor/duplicateProject";
 import { ProjectWorkspace } from "@/components/project-editor/ProjectWorkspace";
 import { NewProjectDialog } from "@/components/overview/dialogs/NewProjectDialog";
+import { loadDatasets, loadProjects } from "@fhir-explorer/core/adapters/browser";
 
 const EMPTY_PACKAGES: PackageRecord[] = [];
 const NOOP = () => {};

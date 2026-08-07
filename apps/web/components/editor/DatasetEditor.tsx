@@ -28,7 +28,6 @@ import {
 import type { Layout } from "react-resizable-panels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
-import { upsertDataset } from "@fhir-explorer/core/datasets/storage";
 import { isDevModeEnabled } from "@/lib/dev-mode";
 import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
@@ -41,6 +40,7 @@ import { useDatasetEditorViewSettings } from "@/components/editor/dataset-editor
 import { useDatasetEditorDatasetState } from "@/components/editor/dataset-editor/useDatasetState";
 import { useDatasetEditorRegistryState } from "@/components/editor/dataset-editor/useRegistryState";
 import { useDatasetResourceActions } from "@/components/editor/dataset-editor/useResourceActions";
+import { upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
 type DatasetEditorProps = {
   datasetId: string;

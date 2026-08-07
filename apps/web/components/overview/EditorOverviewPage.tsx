@@ -6,13 +6,6 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { useImporter } from "@/components/importer/useImporter";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import type { DatasetRecord } from "@fhir-explorer/core/datasets/storage";
-import {
-  clearDatasets,
-  loadDatasets,
-  removeDatasetsForProject,
-  upsertDataset,
-} from "@fhir-explorer/core/datasets/storage";
-import { clearAllDatasetResources, clearDatasetResources } from "@fhir-explorer/core/datasets/content";
 import { byLocale } from "@fhir-explorer/core/i18n/select";
 import { toast } from "sonner";
 import { logger } from "@fhir-explorer/core/logger";
@@ -32,10 +25,9 @@ import { formatText } from "@/components/overview/utils";
 import { localizedOverviewText } from "@/components/overview/text";
 import { useOverviewDerived } from "@/components/overview/useOverviewDerived";
 import { useAuthoredProjects } from "@/components/overview/useAuthoredProjects";
-import { removeProject } from "@fhir-explorer/core/projects/storage";
-import { clearProjectResources, loadProjectResources } from "@fhir-explorer/core/projects/content";
 import { exportAuthoredProject } from "@/components/project-editor/project-editor/exportProject";
 import type { AuthoredProjectRecord } from "@fhir-explorer/core/projects/types";
+import { clearAllDatasetResources, clearDatasetResources, clearDatasets, clearProjectResources, loadDatasets, loadProjectResources, removeDatasetsForProject, removeProject, upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
 const usePersistedViewMode = (storageKey: string) => {
   const [viewMode, setViewMode] = useState<OverviewViewMode>("projects");

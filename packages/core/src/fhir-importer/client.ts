@@ -7,32 +7,33 @@ import type {
   ResourcePayload,
 } from "./types";
 import { buildResourceIndexEntries } from "./indexer";
-import { parsePackage as parsePackageArchive } from "./parser";
 import { resolveDependencies } from "./resolver";
-import { ImporterStorage } from "./storage";
 import { buildPackageKey } from "./utils";
 import type { RegistryStrategy } from "./registry";
 import { defaultRegistry } from "./registry";
-import { parsePackageInWorker } from "./worker-client";
 import type { ComposeProjectExport } from "./compose";
+import type { PackageParser, PackageStore } from "@fhir-explorer/core/ports";
 
 export type ImporterClientOptions = {
+  /** Where imported packages are persisted. */
+  store: PackageStore;
+  /** How package archives are turned into resources. */
+  parser: PackageParser;
   registry?: RegistryStrategy;
   storeResourcePayloads?: boolean;
-  useWorker?: boolean;
 };
 
 export class ImporterClient {
   private registry: RegistryStrategy;
-  private storage: ImporterStorage;
+  private storage: PackageStore;
+  private parser: PackageParser;
   private storeResourcePayloads: boolean;
-  private useWorker: boolean;
 
-  constructor(options: ImporterClientOptions = {}) {
+  constructor(options: ImporterClientOptions) {
     this.registry = options.registry ?? defaultRegistry;
-    this.storage = new ImporterStorage();
+    this.storage = options.store;
+    this.parser = options.parser;
     this.storeResourcePayloads = options.storeResourcePayloads ?? true;
-    this.useWorker = options.useWorker ?? true;
   }
 
   async loadSnapshot(): Promise<ImporterSnapshot> {
@@ -266,11 +267,7 @@ export class ImporterClient {
     buffer: ArrayBuffer,
     onProgress?: (progress: number) => void
   ): Promise<ParsedPackage> {
-    if (this.useWorker && typeof Worker !== "undefined") {
-      return await parsePackageInWorker(buffer, onProgress);
-    }
-
-    return await parsePackageArchive(buffer, { onProgress });
+    return await this.parser.parse(buffer, onProgress);
   }
 
   private async importParsedPackage(

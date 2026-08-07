@@ -1,9 +1,10 @@
 "use client";
 
-import { createProjectRecord, upsertProject } from "@fhir-explorer/core/projects/storage";
-import { cloneAuthoredResources, saveProjectResources } from "@fhir-explorer/core/projects/content";
+import { createProjectRecord } from "@fhir-explorer/core/projects/storage";
+import { cloneAuthoredResources } from "@fhir-explorer/core/projects/content";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
+import { saveProjectResources, upsertProject } from "@fhir-explorer/core/adapters/browser";
 
 /**
  * Create a new editable authored project from a source manifest + resources.

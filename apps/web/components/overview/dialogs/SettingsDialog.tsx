@@ -13,10 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OverviewText } from "@/components/overview/types";
-import {
-  getTerminologyServerUrl,
-  setTerminologyServerUrl,
-} from "@fhir-explorer/core/fhir-editor/terminology";
+import { getTerminologyServerUrl, setTerminologyServerUrl } from "@fhir-explorer/core/adapters/browser";
 
 type Props = {
   open: boolean;

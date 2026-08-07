@@ -1,9 +1,13 @@
-import type { ParsedPackage } from "./types";
+import { parsePackage } from "@fhir-explorer/core/fhir-importer/parser";
+import type { PackageParser } from "@fhir-explorer/core/ports";
+import type { ParsedPackage } from "@fhir-explorer/core/fhir-importer/types";
 
 const createWorker = () =>
-  new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
+  new Worker(new URL("./package-parser.worker.ts", import.meta.url), {
+    type: "module",
+  });
 
-export const parsePackageInWorker = (
+const parsePackageInWorker = (
   buffer: ArrayBuffer,
   onProgress?: (progress: number) => void
 ): Promise<ParsedPackage> => {
@@ -43,4 +47,14 @@ export const parsePackageInWorker = (
 
     worker.postMessage({ id, buffer }, [buffer]);
   });
+};
+
+/** Parses off the main thread, so a large IG does not freeze the UI. */
+export const workerPackageParser: PackageParser = {
+  parse: parsePackageInWorker,
+};
+
+/** Parses on the calling thread. Used when workers are unavailable. */
+export const inlinePackageParser: PackageParser = {
+  parse: (buffer, onProgress) => parsePackage(buffer, { onProgress }),
 };

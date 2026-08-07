@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
-import { migrateLegacyLocalStorage } from "@fhir-explorer/core/legacy-migration";
+import { migrateLegacyLocalStorage } from "@fhir-explorer/core/adapters/browser/legacy-migration";
 
 // Carry pre-rename localStorage (health-compose-*) forward. Runs when the client
 // bundle first evaluates this module — before any component effect reads storage.

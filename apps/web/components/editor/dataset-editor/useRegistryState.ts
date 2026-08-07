@@ -12,10 +12,9 @@ import {
 import { buildSchemaTree, createSchemaContext } from "@fhir-explorer/core/fhir-editor/schema";
 import { type DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type { PackageRecord, ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
-import { getProject } from "@fhir-explorer/core/projects/storage";
-import { loadProjectResources } from "@fhir-explorer/core/projects/content";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { resolveProjectPackageKeys, toPayloads } from "@fhir-explorer/core/projects/registry-resolution";
+import { getProject, loadProjectResources } from "@fhir-explorer/core/adapters/browser";
 
 export const useDatasetEditorRegistryState = ({
   dataset,

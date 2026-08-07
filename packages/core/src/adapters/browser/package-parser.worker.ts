@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { parsePackage } from "./parser";
+import { parsePackage } from "@fhir-explorer/core/fhir-importer/parser";
 
 type WorkerRequest = {
   id: string;
