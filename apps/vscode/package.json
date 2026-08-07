@@ -224,5 +224,21 @@
     "vite": "^8.0.10",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^4.1.5"
-  }
+  },
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Niklas30/FHIR-Explorer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Niklas30/FHIR-Explorer/issues"
+  },
+  "homepage": "https://github.com/Niklas30/FHIR-Explorer#readme",
+  "keywords": [
+    "fhir",
+    "hl7",
+    "healthcare",
+    "structuredefinition",
+    "implementation guide"
+  ]
 }
