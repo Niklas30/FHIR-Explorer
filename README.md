@@ -138,6 +138,12 @@ without opening anything FHIR-specific:
   to the file that defines it.
 - **Completion** offers the codes of the bound value set inside `code` fields.
 
+The dependency closure shows up twice, because the two views answer different
+questions: a tree in the activity bar for "what pulls this in, and what is
+missing", and a graph panel for the shape of the whole thing. Both are built
+from the same `buildDependencyGraph`, and in both a missing package is one
+click from being installed.
+
 **Form editor.** *Open in FHIR Form Editor* shows the same profile-driven form
 the web app has, as an editor tab over the file. The text document stays the
 single source of truth, so undo, dirty state, hot exit, *Reopen with… Text

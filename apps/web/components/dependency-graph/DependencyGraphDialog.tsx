@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import {
   DependencyGraphView,
   type DependencyGraphLabels,
-} from "@/components/dependency-graph/DependencyGraphView";
+} from "@fhir-explorer/ui/graph/DependencyGraphView";
 import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 
 export type DependencyGraphDialogProps = {

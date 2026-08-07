@@ -47,6 +47,9 @@ search, the IG Publisher and Sushi all keep working on the same files.
 - **Shared package cache** — downloads are read from and written to
   `~/.fhir/packages`, so the IG Publisher, Sushi and this extension reuse each
   other's work.
+- **Dependency view** — the closure as a tree in the activity bar, unmet
+  entries first, each with an install action. *Show Dependency Graph* opens the
+  same closure as a diagram whose missing nodes are clickable.
 
 ## Getting started
 

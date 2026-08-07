@@ -26,11 +26,18 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
-      input: fileURLToPath(new URL("./webview/src/main.tsx", import.meta.url)),
+      // One entry per webview surface. They share the theme and the React
+      // runtime through the common chunks rollup extracts.
+      input: {
+        main: fileURLToPath(new URL("./webview/src/main.tsx", import.meta.url)),
+        graph: fileURLToPath(new URL("./webview/src/graph.tsx", import.meta.url)),
+      },
       output: {
-        entryFileNames: "main.js",
+        entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
-        assetFileNames: "main.[ext]",
+        // Deterministic, because the HTML shell links it by name. Both
+        // entries share one stylesheet; WEBVIEW_STYLESHEET must match.
+        assetFileNames: "styles.[ext]",
       },
     },
   },

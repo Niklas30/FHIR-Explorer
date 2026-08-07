@@ -6,8 +6,15 @@ import { addDependencyCommand } from "@/commands/add-dependency";
 import { importPackageFileCommand } from "@/commands/import-package-file";
 import {
   installDependenciesCommand,
+  installMissingDependency,
   offerMissingDependencies,
 } from "@/commands/install-dependencies";
+import { DependencyGraphPanel } from "@/graph/dependency-graph-panel";
+import {
+  DependencyTreeProvider,
+  missingRequirement,
+  type DependencyTreeNode,
+} from "@/tree/dependency-tree";
 import { newResourceCommand } from "@/commands/new-resource";
 import { FormEditorProvider } from "@/editor/form-editor";
 import { createCompletionProvider } from "@/language/completion";
@@ -43,8 +50,14 @@ export const activate = (context: vscode.ExtensionContext): void => {
     index.invalidateWorkspace();
   };
 
+  const dependencyTree = new DependencyTreeProvider(packageStore);
+
   const view = vscode.window.createTreeView("fhirExplorer.projects", {
     treeDataProvider: tree,
+    showCollapseAll: true,
+  });
+  const dependencyView = vscode.window.createTreeView("fhirExplorer.dependencies", {
+    treeDataProvider: dependencyTree,
     showCollapseAll: true,
   });
 
@@ -53,7 +66,11 @@ export const activate = (context: vscode.ExtensionContext): void => {
   // and re-run validation.
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.json");
   watcher.onDidCreate(refresh);
-  watcher.onDidChange(refresh);
+  watcher.onDidChange((uri) => {
+    refresh();
+    // A manifest edit changes the declared dependencies.
+    if (uri.path.endsWith("/package.json")) dependencyTree.refresh();
+  });
   watcher.onDidDelete((uri) => {
     diagnostics.forget(uri);
     refresh();
@@ -71,6 +88,8 @@ export const activate = (context: vscode.ExtensionContext): void => {
 
   const afterPackagesChanged = () => {
     tree.refresh();
+    dependencyTree.refresh();
+    DependencyGraphPanel.refresh();
     // New packages change what every resource validates against.
     index.invalidatePackages();
     void diagnostics.validateWorkspace();
@@ -180,6 +199,30 @@ export const activate = (context: vscode.ExtensionContext): void => {
     ),
     vscode.commands.registerCommand("fhirExplorer.importPackageFile", () =>
       importPackageFileCommand(context, afterPackagesChanged)
+    ),
+    dependencyView,
+    vscode.commands.registerCommand(
+      "fhirExplorer.showDependencyGraph",
+      async (node?: DependencyTreeNode) => {
+        const project = node?.project ?? (await requireProject(undefined));
+        if (!project) return;
+        DependencyGraphPanel.show(context, project, (id, requirement) =>
+          void installMissingDependency(context, id, requirement, afterPackagesChanged)
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.installMissingDependency",
+      async (node: DependencyTreeNode) => {
+        const missing = missingRequirement(node);
+        if (!missing) return;
+        await installMissingDependency(
+          context,
+          missing.id,
+          missing.version,
+          afterPackagesChanged
+        );
+      }
     ),
     vscode.commands.registerCommand(
       "fhirExplorer.newResource",

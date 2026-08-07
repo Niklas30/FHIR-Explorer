@@ -4,6 +4,7 @@ import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profi
 import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
 import { nodeHttpClient } from "@/adapters/node-http-client";
 import type { FhirIndex } from "@/language/fhir-index";
+import { renderWebviewHtml } from "@/webview/html";
 import { applyChanges, collectChanges, narrowReplacement } from "@/editor/json-diff";
 
 /**
@@ -54,15 +55,6 @@ const formattingFor = (document: vscode.TextDocument) => {
   };
 };
 
-const nonce = (): string => {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let value = "";
-  for (const byte of crypto.getRandomValues(new Uint8Array(32))) {
-    value += alphabet[byte % alphabet.length];
-  }
-  return value;
-};
-
 export class FormEditorProvider implements vscode.CustomTextEditorProvider {
   static readonly viewType = VIEW_TYPE;
 
@@ -70,40 +62,6 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly context: vscode.ExtensionContext,
     private readonly index: FhirIndex
   ) {}
-
-  private html(webview: vscode.Webview): string {
-    const asset = (...parts: string[]) =>
-      webview.asWebviewUri(
-        vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview", ...parts)
-      );
-    const scriptNonce = nonce();
-
-    // No remote origins at all: styles and scripts come from the bundle, and
-    // the only network access the form needs goes through the host.
-    const csp = [
-      "default-src 'none'",
-      `img-src ${webview.cspSource} data:`,
-      `style-src ${webview.cspSource} 'unsafe-inline'`,
-      `font-src ${webview.cspSource}`,
-      // 'strict-dynamic' so the nonced entry module may pull in its own
-      // chunks — the fhirpath engine used for invariants is loaded lazily.
-      `script-src 'nonce-${scriptNonce}' 'strict-dynamic'`,
-    ].join("; ");
-
-    return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="${csp}" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="${asset("main.css")}" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" nonce="${scriptNonce}" src="${asset("main.js")}"></script>
-  </body>
-</html>`;
-  }
 
   async resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -113,7 +71,12 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
       enableScripts: true,
       localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "dist")],
     };
-    panel.webview.html = this.html(panel.webview);
+    panel.webview.html = renderWebviewHtml(
+      panel.webview,
+      this.context.extensionUri,
+      "main",
+      "FHIR Form Editor"
+    );
 
     const sendInit = async () => {
       const snapshot = await this.index.get();

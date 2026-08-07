@@ -3,7 +3,7 @@
 import { Maximize2 } from "lucide-react";
 import { Button } from "@fhir-explorer/ui/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fhir-explorer/ui/ui/card";
-import { DependencyGraphView } from "@/components/dependency-graph/DependencyGraphView";
+import { DependencyGraphView } from "@fhir-explorer/ui/graph/DependencyGraphView";
 import type { DependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 

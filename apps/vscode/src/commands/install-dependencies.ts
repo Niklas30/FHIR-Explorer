@@ -88,3 +88,18 @@ export const offerMissingDependencies = async (
   );
   if (changed) onInstalled();
 };
+
+/**
+ * Install one dependency the user pointed at — a missing node in the tree or
+ * the graph. Its own dependencies come along, same as anywhere else.
+ */
+export const installMissingDependency = async (
+  context: vscode.ExtensionContext,
+  id: string,
+  version: string,
+  onInstalled: () => void
+): Promise<void> => {
+  const session = await createImportSession(context);
+  const changed = await resolveAndInstall(session, [{ id, version }], `Install ${id}`);
+  if (changed) onInstalled();
+};

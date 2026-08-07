@@ -33,6 +33,11 @@
           "id": "fhirExplorer.projects",
           "name": "Projects",
           "icon": "media/activity-bar.svg"
+        },
+        {
+          "id": "fhirExplorer.dependencies",
+          "name": "Dependencies",
+          "icon": "media/activity-bar.svg"
         }
       ]
     },
@@ -40,6 +45,10 @@
       {
         "view": "fhirExplorer.projects",
         "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a package.json that carries a FHIR manifest (fhirVersions, canonical or type fhir.ig).\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Add FHIR dependency](command:fhirExplorer.addDependency)"
+      },
+      {
+        "view": "fhirExplorer.dependencies",
+        "contents": "No FHIR project found in this workspace.\n\n[Create FHIR project](command:fhirExplorer.createProject)"
       }
     ],
     "commands": [
@@ -100,6 +109,18 @@
         "title": "Import Package from File",
         "category": "FHIR Explorer",
         "icon": "$(file-zip)"
+      },
+      {
+        "command": "fhirExplorer.showDependencyGraph",
+        "title": "Show Dependency Graph",
+        "category": "FHIR Explorer",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "fhirExplorer.installMissingDependency",
+        "title": "Install This Dependency",
+        "category": "FHIR Explorer",
+        "icon": "$(cloud-download)"
       }
     ],
     "menus": {
@@ -128,6 +149,21 @@
           "command": "fhirExplorer.importPackageFile",
           "when": "view == fhirExplorer.projects",
           "group": "1_install"
+        },
+        {
+          "command": "fhirExplorer.showDependencyGraph",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fhirExplorer.addDependency",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fhirExplorer.installDependencies",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -150,6 +186,16 @@
           "command": "fhirExplorer.openInFormEditor",
           "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
           "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.installMissingDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.missingDependency",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.showDependencyGraph",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
+          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -168,6 +214,10 @@
         {
           "command": "fhirExplorer.openInFormEditor",
           "when": "resourceExtname == .json"
+        },
+        {
+          "command": "fhirExplorer.installMissingDependency",
+          "when": "false"
         }
       ],
       "editor/title": [
