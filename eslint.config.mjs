@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "**/out/**",
     "**/build/**",
     "**/next-env.d.ts",
+    // Extension bundle produced by esbuild.
+    "**/dist/**",
   ]),
   {
     // The Next app is one workspace among several, so the plugin cannot infer

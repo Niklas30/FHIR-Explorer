@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext"],
+    "types": ["node", "vscode"],
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@fhir-explorer/core": ["../../packages/core/src/index.ts"],
+      "@fhir-explorer/core/*": ["../../packages/core/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "esbuild.mjs"],
+  "exclude": ["node_modules", "dist"]
+}

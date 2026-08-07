@@ -64,13 +64,14 @@ This is an npm workspace:
 | --- | --- | --- |
 | `packages/core` | `@fhir-explorer/core` | Framework-agnostic domain logic: FHIR schema/snapshot handling, validation, the package importer, project and dataset models. No React, no framework. |
 | `apps/web` | `@fhir-explorer/web` | The Next.js application: UI components, routing, styling. |
+| `apps/vscode` | `fhir-explorer` | The VS Code extension. |
 
 `core` reaches its host environment only through the types in
 `packages/core/src/ports` — HTTP, package persistence, resource persistence and
 archive parsing. `packages/core/src/adapters/browser` implements those against
-IndexedDB, localStorage, `fetch` and Web Workers. A different host (for example
-a VS Code extension backed by the workspace file system) supplies its own
-adapters and reuses the domain logic unchanged.
+IndexedDB, localStorage, `fetch` and Web Workers; `apps/vscode/src/adapters`
+implements the same ports against the workspace file system and the extension
+host. The domain logic itself is shared verbatim.
 
 Inside `core`, modules import each other by package name
 (`@fhir-explorer/core/fhir-editor/schema`) so a single alias resolves in every
@@ -102,6 +103,25 @@ Tip: There are alternate scripts using Turbo mode:
 ```bash
 npm run dev:turbo
 ```
+
+## VS Code extension
+
+The extension in `apps/vscode` treats the **workspace as the database**: a
+project is a folder with a FHIR `package.json`, and every resource is a `.json`
+file below `input/` in the IG Publisher layout. Nothing is hidden in an
+extension-private store, so git, the file explorer, the IG Publisher and Sushi
+all keep working on the same files.
+
+Run it from the repository root:
+
+1. `npm install`
+2. Press <kbd>F5</kbd> (*Run FHIR Explorer Extension*) — the watch build starts
+   and an Extension Development Host opens.
+3. Open a folder in the new window and run **FHIR Explorer: Create FHIR Project**.
+
+Imported packages are read from the shared `~/.fhir/packages` cache when they
+are already there, and downloaded through the extension host otherwise — no
+CORS restriction, and VS Code's proxy settings apply.
 
 ## Docker
 

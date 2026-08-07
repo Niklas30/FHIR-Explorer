@@ -20,6 +20,10 @@ out/
 # production
 build
 
+# vs code extension bundle / package
+dist
+*.vsix
+
 # misc
 .DS_Store
 *.pem

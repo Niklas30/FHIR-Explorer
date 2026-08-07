@@ -25,13 +25,21 @@ const parseOctal = (value: string) => {
 
 export const gunzip = async (buffer: ArrayBuffer | Uint8Array): Promise<Uint8Array> => {
   if (typeof DecompressionStream === "undefined") {
-    throw new Error("This browser does not support gzip decompression.");
+    throw new Error("gzip decompression is not available in this environment.");
   }
 
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  const stream = new DecompressionStream("gzip");
-  const decompressedStream = new Blob([bytes as BlobPart]).stream().pipeThrough(stream);
-  const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
+  // Fed through a stream rather than a Blob: Blob's element type is spelled
+  // differently in the DOM and Node type definitions, and core has to compile
+  // against both (browser bundle and VS Code extension host).
+  const source = new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+  const decompressed = source.pipeThrough(new DecompressionStream("gzip"));
+  const decompressedBuffer = await new Response(decompressed).arrayBuffer();
   return new Uint8Array(decompressedBuffer);
 };
 

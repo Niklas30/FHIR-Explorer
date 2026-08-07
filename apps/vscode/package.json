@@ -1,0 +1,174 @@
+{
+  "name": "fhir-explorer",
+  "displayName": "FHIR Explorer",
+  "description": "Author FHIR profiles, value sets and examples directly in your workspace.",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "publisher": "fhir-explorer",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/package.json"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fhirExplorer",
+          "title": "FHIR Explorer",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "fhirExplorer": [
+        {
+          "id": "fhirExplorer.projects",
+          "name": "Projects",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "fhirExplorer.projects",
+        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a package.json that carries a FHIR manifest (fhirVersions, canonical or type fhir.ig).\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Import FHIR package](command:fhirExplorer.importPackage)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "fhirExplorer.refresh",
+        "title": "Refresh",
+        "category": "FHIR Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fhirExplorer.createProject",
+        "title": "Create FHIR Project",
+        "category": "FHIR Explorer",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "fhirExplorer.importPackage",
+        "title": "Import FHIR Package",
+        "category": "FHIR Explorer",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "fhirExplorer.newResource",
+        "title": "New Resource",
+        "category": "FHIR Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "fhirExplorer.openResource",
+        "title": "Open Resource",
+        "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.deleteResource",
+        "title": "Delete Resource",
+        "category": "FHIR Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "fhirExplorer.revealInExplorer",
+        "title": "Reveal in Explorer View",
+        "category": "FHIR Explorer"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fhirExplorer.importPackage",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fhirExplorer.createProject",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fhirExplorer.refresh",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "fhirExplorer.newResource",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.category",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.deleteResource",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.revealInExplorer",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fhirExplorer.openResource",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.deleteResource",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.revealInExplorer",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FHIR Explorer",
+      "properties": {
+        "fhirExplorer.registry.baseUrl": {
+          "type": "string",
+          "default": "https://packages2.fhir.org/packages",
+          "markdownDescription": "Base URL of the FHIR package registry used by **Import FHIR Package**."
+        },
+        "fhirExplorer.packageCache.useFhirHome": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Also read packages from the shared `~/.fhir/packages` cache that the IG Publisher and Firely tooling populate."
+        },
+        "fhirExplorer.terminologyServer.url": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional terminology server used to `$expand` value sets that the imported packages cannot expand. Leave empty to disable."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "package": "vsce package --no-dependencies",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fhir-explorer/core": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0",
+    "esbuild": "^0.25.0",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^4.1.5"
+  }
+}

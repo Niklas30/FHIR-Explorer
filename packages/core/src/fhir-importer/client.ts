@@ -123,6 +123,18 @@ export class ImporterClient {
     return await this.importPackageBuffer(await file.arrayBuffer(), onProgress);
   }
 
+  /**
+   * Import a package that was parsed elsewhere — the extension reads extracted
+   * folders out of the shared `~/.fhir/packages` cache, which never go through
+   * the archive parser.
+   */
+  async importParsed(
+    parsed: ParsedPackage,
+    onProgress?: (progress: ImportProgress) => void
+  ): Promise<ImportResult> {
+    return await this.importParsedPackage(parsed, onProgress);
+  }
+
   async importTargetFile(
     file: File,
     onProgress?: (progress: ImportProgress) => void
