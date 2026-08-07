@@ -156,14 +156,15 @@
     }
   },
   "scripts": {
-    "build": "node esbuild.mjs --production",
-    "watch": "node esbuild.mjs --watch",
+    "build": "node build.mjs --production",
+    "watch": "node build.mjs --watch",
     "package": "vsce package --no-dependencies",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fhir-explorer/core": "*"
+    "@fhir-explorer/core": "*",
+    "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
     "@types/vscode": "^1.96.0",

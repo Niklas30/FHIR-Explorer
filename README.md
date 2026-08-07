@@ -123,6 +123,17 @@ Imported packages are read from the shared `~/.fhir/packages` cache when they
 are already there, and downloaded through the extension host otherwise — no
 CORS restriction, and VS Code's proxy settings apply.
 
+Because the resources are ordinary JSON files, the editor features work on them
+without opening anything FHIR-specific:
+
+- **Problems** — the same profile-driven validation the web app runs behind its
+  form, reported per file and line across the whole workspace.
+- **Hover** on a canonical url resolves it to the profile, value set or code
+  system it names, and says which package it came from.
+- **Go to definition** jumps from a canonical or a `ResourceType/id` reference
+  to the file that defines it.
+- **Completion** offers the codes of the bound value set inside `code` fields.
+
 ## Docker
 
 ### Production (container)

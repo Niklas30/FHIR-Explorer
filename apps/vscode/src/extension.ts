@@ -1,8 +1,14 @@
 import * as vscode from "vscode";
 import { createFsResourceStore } from "@/adapters/fs-resource-store";
+import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { createProjectCommand } from "@/commands/create-project";
 import { importPackageCommand } from "@/commands/import-package";
 import { newResourceCommand } from "@/commands/new-resource";
+import { createCompletionProvider } from "@/language/completion";
+import { createDefinitionProvider } from "@/language/definition";
+import { FhirDiagnostics } from "@/language/diagnostics";
+import { FhirIndex } from "@/language/fhir-index";
+import { createHoverProvider } from "@/language/hover";
 import {
   ProjectTreeProvider,
   resourceUri,
@@ -21,8 +27,15 @@ import {
 
 export const activate = (context: vscode.ExtensionContext): void => {
   const store = createFsResourceStore();
+  const packageStore = new GlobalPackageStore(context.globalStorageUri);
+  const index = new FhirIndex(packageStore, store);
+  const diagnostics = new FhirDiagnostics(index);
+
   const tree = new ProjectTreeProvider(store);
-  const refresh = () => tree.refresh();
+  const refresh = () => {
+    tree.refresh();
+    index.invalidateWorkspace();
+  };
 
   const view = vscode.window.createTreeView("fhirExplorer.projects", {
     treeDataProvider: tree,
@@ -30,11 +43,25 @@ export const activate = (context: vscode.ExtensionContext): void => {
   });
 
   // The file system is the source of truth, so anything that changes it —
-  // a text edit, a git checkout, the IG Publisher — has to repaint the tree.
+  // a text edit, a git checkout, the IG Publisher — has to repaint the tree
+  // and re-run validation.
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.json");
   watcher.onDidCreate(refresh);
   watcher.onDidChange(refresh);
-  watcher.onDidDelete(refresh);
+  watcher.onDidDelete((uri) => {
+    diagnostics.forget(uri);
+    refresh();
+  });
+
+  // Validate while typing, off the saved file — waiting for a save would make
+  // the Problems panel lag behind what the user is looking at.
+  const documentSelector: vscode.DocumentSelector = { language: "json", scheme: "file" };
+  const revalidateOpen = () => {
+    for (const document of vscode.workspace.textDocuments) {
+      if (document.languageId === "json") diagnostics.scheduleValidate(document);
+    }
+  };
+  index.onDidChange(revalidateOpen);
 
   const projectOf = (node: TreeNode | undefined) => {
     if (node) return node.project;
@@ -65,12 +92,42 @@ export const activate = (context: vscode.ExtensionContext): void => {
   context.subscriptions.push(
     view,
     watcher,
-    vscode.commands.registerCommand("fhirExplorer.refresh", refresh),
+    diagnostics,
+    vscode.languages.registerHoverProvider(documentSelector, createHoverProvider(index)),
+    vscode.languages.registerDefinitionProvider(
+      documentSelector,
+      createDefinitionProvider(index)
+    ),
+    vscode.languages.registerCompletionItemProvider(
+      documentSelector,
+      createCompletionProvider(index),
+      '"'
+    ),
+    vscode.workspace.onDidOpenTextDocument((document) =>
+      diagnostics.scheduleValidate(document)
+    ),
+    vscode.workspace.onDidChangeTextDocument((event) =>
+      diagnostics.scheduleValidate(event.document)
+    ),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      // Keep the diagnostics of files that still exist: the Problems panel is
+      // about the project, not about which tabs happen to be open.
+      if (document.isUntitled) diagnostics.forget(document.uri);
+    }),
+    vscode.commands.registerCommand("fhirExplorer.refresh", () => {
+      refresh();
+      void diagnostics.validateWorkspace();
+    }),
     vscode.commands.registerCommand("fhirExplorer.createProject", () =>
       createProjectCommand(refresh)
     ),
     vscode.commands.registerCommand("fhirExplorer.importPackage", () =>
-      importPackageCommand(context, refresh)
+      importPackageCommand(context, () => {
+        tree.refresh();
+        // A new package changes what every resource validates against.
+        index.invalidatePackages();
+        void diagnostics.validateWorkspace();
+      })
     ),
     vscode.commands.registerCommand(
       "fhirExplorer.newResource",
@@ -104,6 +161,10 @@ export const activate = (context: vscode.ExtensionContext): void => {
 
   // Adding or removing a workspace folder changes the set of projects.
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(refresh));
+
+  // First pass over the whole workspace, so Problems is populated before the
+  // user opens anything.
+  void diagnostics.validateWorkspace();
 };
 
 export const deactivate = (): void => {
