@@ -121,3 +121,71 @@ export const addDependencyToManifest = async (
     `Cannot record the dependency in ${file.path.split("/").pop()} — add it to the ImplementationGuide by hand.`
   );
 };
+
+const removeFromPackageJson = async (uri: vscode.Uri, id: string): Promise<void> => {
+  const text = await readText(uri);
+  const next = applyEdits(
+    text,
+    modify(text, ["dependencies", id], undefined, {
+      formattingOptions: { tabSize: 2, insertSpaces: true, eol: "\n" },
+    })
+  );
+  if (next !== text) await write(uri, next);
+};
+
+const removeFromSushiConfig = async (uri: vscode.Uri, id: string): Promise<void> => {
+  const text = await readText(uri);
+  const document = parseDocument(text);
+  document.deleteIn(["dependencies", id]);
+  const next = document.toString();
+  if (next !== text) await write(uri, next);
+};
+
+const removeFromImplementationGuide = async (
+  uri: vscode.Uri,
+  id: string
+): Promise<void> => {
+  const text = await readText(uri);
+  const parsed: unknown = JSON.parse(text);
+  const dependsOn = Array.isArray((parsed as { dependsOn?: unknown[] }).dependsOn)
+    ? ((parsed as { dependsOn: Record<string, unknown>[] }).dependsOn ?? [])
+    : [];
+  const index = dependsOn.findIndex((entry) => entry?.packageId === id);
+  if (index < 0) return;
+
+  const next = applyEdits(
+    text,
+    modify(text, ["dependsOn", index], undefined, {
+      formattingOptions: { tabSize: 2, insertSpaces: true, eol: "\n" },
+    })
+  );
+  if (next !== text) await write(uri, next);
+};
+
+/**
+ * Drop a dependency from the manifest.
+ *
+ * Only the declaration goes: the downloaded package stays in the shared cache,
+ * because other projects on the machine may still be using it and re-fetching
+ * it would be pure waste.
+ */
+export const removeDependencyFromManifest = async (
+  project: WorkspaceProject,
+  id: string
+): Promise<void> => {
+  const file = project.manifestFile;
+
+  if (file.path.endsWith("sushi-config.yaml") || file.path.endsWith("sushi-config.yml")) {
+    return await removeFromSushiConfig(file, id);
+  }
+  if (file.path.endsWith("/package.json")) {
+    return await removeFromPackageJson(file, id);
+  }
+  if (file.path.endsWith(".json")) {
+    return await removeFromImplementationGuide(file, id);
+  }
+
+  throw new ManifestNotWritable(
+    `Cannot edit ${file.path.split("/").pop()} — remove the dependency by hand.`
+  );
+};

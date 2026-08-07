@@ -79,10 +79,14 @@ export class DependencyTreeProvider
           "warning",
           new vscode.ThemeColor("list.warningForeground")
         );
-    // Only unmet dependencies get the install action in their context menu.
-    item.contextValue = dependency.resolved
-      ? "fhirExplorer.dependency"
-      : "fhirExplorer.missingDependency";
+    // The context value decides which actions the item offers: install for an
+    // unmet one, update and remove only for a dependency the project declares
+    // itself — a transitive version is not ours to change.
+    item.contextValue = !dependency.resolved
+      ? "fhirExplorer.missingDependency"
+      : dependency.direct
+        ? "fhirExplorer.directDependency"
+        : "fhirExplorer.dependency";
     return item;
   }
 
@@ -118,7 +122,7 @@ export class DependencyTreeProvider
     const project = parent.type === "project" ? parent.project : parent.project;
     const path = new Set([...ancestors, key]);
 
-    return childrenOf(graph, key, path).map((dependency) => ({
+    return childrenOf(graph, key, path, parent.type === "project").map((dependency) => ({
       type: "dependency",
       project,
       graph,
@@ -134,4 +138,12 @@ export const missingRequirement = (
 ): { id: string; version: string } | undefined =>
   node.type === "dependency" && !node.node.resolved
     ? { id: node.node.id, version: node.node.version }
+    : undefined;
+
+/** The declared dependency behind a node, for update and remove. */
+export const declaredDependency = (
+  node: DependencyTreeNode
+): { project: WorkspaceProject; id: string; version: string } | undefined =>
+  node.type === "dependency" && node.node.direct
+    ? { project: node.project, id: node.node.id, version: node.node.version }
     : undefined;

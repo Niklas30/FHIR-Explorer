@@ -65,8 +65,13 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
   `~/.fhir/packages`, so the IG Publisher, Sushi and this extension reuse each
   other's work.
 - **Dependency view** — the closure as a tree in the activity bar, unmet
-  entries first, each with an install action. *Show Dependency Graph* opens the
-  same closure as a diagram whose missing nodes are clickable.
+  entries first, each with an install action; update and remove on the ones
+  your project declares itself. *Show Dependency Graph* opens the same closure
+  as a diagram whose missing nodes are clickable.
+- **Browse Imported Packages** — search every profile, value set and code
+  system your dependencies provide, grouped by package, and open any of them
+  read-only. Go to definition reaches them too, so a canonical from a
+  dependency is no longer a dead end.
 
 ## Getting started
 
@@ -75,7 +80,9 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
    there is no `StructureDefinition` to validate against. Anything it depends on
    comes along automatically.
 3. **FHIR Explorer: Create FHIR Project**, then add resources from the tree in
-   the activity bar.
+   the activity bar. Creating an example instance starts by picking the profile
+   it conforms to — your own profiles first, then the ones your dependencies
+   bring, then the base FHIR resources.
 
 ## Settings
 

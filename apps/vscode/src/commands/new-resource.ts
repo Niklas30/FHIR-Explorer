@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { buildConformanceSkeleton } from "@fhir-explorer/core/projects/content";
 import type { AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
+import type { FhirIndex } from "@/language/fhir-index";
+import { pickProfile } from "@/commands/pick-profile";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 import {
   directoryForKind,
@@ -44,15 +46,35 @@ const pickKind = async (): Promise<AuthoredResourceKind | undefined> => {
 export const newResourceCommand = async (
   project: WorkspaceProject,
   presetKind: AuthoredResourceKind | undefined,
+  index: FhirIndex,
   onCreated: () => void
 ): Promise<void> => {
   const kind = presetKind ?? (await pickKind());
   if (!kind) return;
 
+  // The profile comes first for an instance: it decides the resource type, so
+  // asking for the type separately would only let the two disagree.
+  let profileUrl: string | undefined;
+  let exampleResourceType: string | undefined;
+  if (kind === "example") {
+    const snapshot = await index.get();
+    const choice = await pickProfile(
+      snapshot,
+      project.key,
+      "New Example instance — which profile?"
+    );
+    if (!choice) return;
+    profileUrl = choice.profileUrl;
+    exampleResourceType = choice.resourceType;
+  }
+
   const name = await vscode.window.showInputBox({
     title: `New ${KIND_LABELS[kind]}`,
     prompt: kind === "example" ? "Instance id" : "Resource name (PascalCase)",
-    placeHolder: kind === "example" ? "patient-example" : "MyPatient",
+    placeHolder:
+      kind === "example"
+        ? `${exampleResourceType?.toLowerCase() ?? "patient"}-example`
+        : "MyPatient",
     ignoreFocusOut: true,
     validateInput: (value) =>
       NAME.test(value.trim())
@@ -61,25 +83,17 @@ export const newResourceCommand = async (
   });
   if (!name) return;
 
-  let exampleResourceType: string | undefined;
-  if (kind === "example") {
-    exampleResourceType = await vscode.window.showInputBox({
-      title: "New Example instance",
-      prompt: "Resource type",
-      placeHolder: "Patient",
-      ignoreFocusOut: true,
-      validateInput: (value) =>
-        /^[A-Z][A-Za-z]+$/.test(value.trim()) ? undefined : "A FHIR resource type",
-    });
-    if (!exampleResourceType) return;
-  }
-
   const skeleton = buildConformanceSkeleton({
     kind,
     name: name.trim(),
     canonicalBase: project.manifest.canonical,
-    exampleResourceType: exampleResourceType?.trim(),
+    exampleResourceType,
+    exampleProfile: profileUrl,
   });
+
+  // An instance carries the id it was named with, so the file name, the
+  // resource id and any local reference to it line up.
+  if (kind === "example") skeleton.content.id = name.trim();
 
   const id = typeof skeleton.content.id === "string" ? skeleton.content.id : name.trim();
   const target = vscode.Uri.joinPath(

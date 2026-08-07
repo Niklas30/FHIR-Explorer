@@ -46,12 +46,19 @@ export type DependencyNode = {
   title: string;
   /** True once this key has already appeared higher up — stop recursing. */
   repeated: boolean;
+  /**
+   * Declared by the project itself rather than pulled in by another package.
+   * Only these can be updated or removed — a transitive version is decided by
+   * whoever depends on it.
+   */
+  direct: boolean;
 };
 
 const nodeFor = (
   graph: DependencyGraph,
   edge: DependencyEdge,
-  seen: Set<string>
+  seen: Set<string>,
+  direct: boolean
 ): DependencyNode => {
   const record = graph.byKey.get(edge.toKey);
   return {
@@ -61,6 +68,7 @@ const nodeFor = (
     resolved: edge.resolved,
     title: record?.manifest.title ?? record?.manifest.name ?? edge.dependencyId,
     repeated: seen.has(edge.toKey),
+    direct,
   };
 };
 
@@ -71,10 +79,11 @@ const nodeFor = (
 export const childrenOf = (
   graph: DependencyGraph,
   key: string,
-  ancestors: Set<string>
+  ancestors: Set<string>,
+  direct = false
 ): DependencyNode[] =>
   [...(graph.adjacency.get(key) ?? [])]
-    .map((edge) => nodeFor(graph, edge, ancestors))
+    .map((edge) => nodeFor(graph, edge, ancestors, direct))
     .sort(
       (a, b) => Number(a.resolved) - Number(b.resolved) || a.id.localeCompare(b.id)
     );

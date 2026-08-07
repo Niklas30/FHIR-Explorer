@@ -9,9 +9,19 @@ import {
   installMissingDependency,
   offerMissingDependencies,
 } from "@/commands/install-dependencies";
+import { browsePackageCommand } from "@/commands/browse-package";
+import {
+  removeDependencyCommand,
+  updateDependencyCommand,
+} from "@/commands/manage-dependency";
 import { DependencyGraphPanel } from "@/graph/dependency-graph-panel";
 import {
+  PACKAGE_SCHEME,
+  PackageDocumentProvider,
+} from "@/language/package-documents";
+import {
   DependencyTreeProvider,
+  declaredDependency,
   missingRequirement,
   type DependencyTreeNode,
 } from "@/tree/dependency-tree";
@@ -201,6 +211,35 @@ export const activate = (context: vscode.ExtensionContext): void => {
       importPackageFileCommand(context, afterPackagesChanged)
     ),
     dependencyView,
+    vscode.workspace.registerTextDocumentContentProvider(
+      PACKAGE_SCHEME,
+      new PackageDocumentProvider(index)
+    ),
+    vscode.commands.registerCommand("fhirExplorer.browsePackages", () =>
+      browsePackageCommand(index)
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.removeDependency",
+      async (node: DependencyTreeNode) => {
+        const declared = declaredDependency(node);
+        if (!declared) return;
+        await removeDependencyCommand(declared.project, declared.id, afterPackagesChanged);
+      }
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.updateDependency",
+      async (node: DependencyTreeNode) => {
+        const declared = declaredDependency(node);
+        if (!declared) return;
+        await updateDependencyCommand(
+          context,
+          declared.project,
+          declared.id,
+          declared.version,
+          afterPackagesChanged
+        );
+      }
+    ),
     vscode.commands.registerCommand(
       "fhirExplorer.showDependencyGraph",
       async (node?: DependencyTreeNode) => {
@@ -229,7 +268,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
       async (node?: CategoryNode) => {
         const project = await requireProject(node);
         if (!project) return;
-        await newResourceCommand(project, node?.kind, refresh);
+        await newResourceCommand(project, node?.kind, index, refresh);
       }
     ),
     vscode.commands.registerCommand("fhirExplorer.openResource", (node: ResourceNode) =>

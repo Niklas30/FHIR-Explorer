@@ -113,6 +113,7 @@ export const createVscodeStub = () => {
       workspaceFolders: [] as unknown[],
       textDocuments: [] as unknown[],
       getConfiguration: () => ({ get: () => undefined }),
+      registerTextDocumentContentProvider: () => disposable,
       createFileSystemWatcher: () => ({
         onDidCreate: () => disposable,
         onDidChange: () => disposable,

@@ -124,6 +124,24 @@
         "title": "Install This Dependency",
         "category": "FHIR Explorer",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "fhirExplorer.browsePackages",
+        "title": "Browse Imported Packages",
+        "category": "FHIR Explorer",
+        "icon": "$(library)"
+      },
+      {
+        "command": "fhirExplorer.removeDependency",
+        "title": "Remove Dependency",
+        "category": "FHIR Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "fhirExplorer.updateDependency",
+        "title": "Update Dependency",
+        "category": "FHIR Explorer",
+        "icon": "$(arrow-up)"
       }
     ],
     "menus": {
@@ -167,6 +185,11 @@
           "command": "fhirExplorer.installDependencies",
           "when": "view == fhirExplorer.dependencies",
           "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.browsePackages",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "1_browse"
         }
       ],
       "view/item/context": [
@@ -199,6 +222,16 @@
           "command": "fhirExplorer.showDependencyGraph",
           "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
           "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.updateDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.directDependency",
+          "group": "inline@1"
+        },
+        {
+          "command": "fhirExplorer.removeDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.directDependency",
+          "group": "inline@2"
         }
       ],
       "commandPalette": [
@@ -220,6 +253,14 @@
         },
         {
           "command": "fhirExplorer.installMissingDependency",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.removeDependency",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.updateDependency",
           "when": "false"
         }
       ],
