@@ -15,6 +15,9 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
+    "workspaceContains:**/sushi-config.yaml",
+    "workspaceContains:**/sushi-config.yml",
+    "workspaceContains:**/ig.ini",
     "workspaceContains:**/package.json"
   ],
   "contributes": {
@@ -44,7 +47,7 @@
     "viewsWelcome": [
       {
         "view": "fhirExplorer.projects",
-        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a package.json that carries a FHIR manifest (fhirVersions, canonical or type fhir.ig).\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Add FHIR dependency](command:fhirExplorer.addDependency)"
+        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a sushi-config.yaml, an ig.ini, or a package.json carrying a FHIR manifest.\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Add FHIR dependency](command:fhirExplorer.addDependency)"
       },
       {
         "view": "fhirExplorer.dependencies",
@@ -223,7 +226,7 @@
       "editor/title": [
         {
           "command": "fhirExplorer.openInFormEditor",
-          "when": "resourceExtname == .json && resourceDirname =~ /input\\\\/(profiles|extensions|vocabulary|examples)$/",
+          "when": "resourceExtname == .json && resourceDirname =~ /input\\\\/(capabilities|examples|extensions|models|operations|profiles|resources|testing|vocabulary)$/",
           "group": "navigation"
         }
       ]
@@ -259,16 +262,34 @@
         "displayName": "FHIR Form Editor",
         "selector": [
           {
-            "filenamePattern": "**/input/profiles/*.json"
+            "filenamePattern": "**/input/capabilities/*.json"
+          },
+          {
+            "filenamePattern": "**/input/examples/*.json"
           },
           {
             "filenamePattern": "**/input/extensions/*.json"
           },
           {
+            "filenamePattern": "**/input/models/*.json"
+          },
+          {
+            "filenamePattern": "**/input/operations/*.json"
+          },
+          {
+            "filenamePattern": "**/input/profiles/*.json"
+          },
+          {
+            "filenamePattern": "**/input/resources/*.json"
+          },
+          {
+            "filenamePattern": "**/input/testing/*.json"
+          },
+          {
             "filenamePattern": "**/input/vocabulary/*.json"
           },
           {
-            "filenamePattern": "**/input/examples/*.json"
+            "filenamePattern": "**/fsh-generated/resources/*.json"
           }
         ],
         "priority": "option"

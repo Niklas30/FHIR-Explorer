@@ -5,6 +5,10 @@ import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
 import { nodeHttpClient } from "@/adapters/node-http-client";
 import type { FhirIndex } from "@/language/fhir-index";
 import { renderWebviewHtml } from "@/webview/html";
+import {
+  isGeneratedResource,
+  projectForUri,
+} from "@/workspace/project-discovery";
 import { applyChanges, collectChanges, narrowReplacement } from "@/editor/json-diff";
 
 /**
@@ -67,6 +71,17 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
     document: vscode.TextDocument,
     panel: vscode.WebviewPanel
   ): Promise<void> {
+    // Resources under fsh-generated/ are build output: the next Sushi run
+    // overwrites them, so editing one silently loses the work. Validation and
+    // navigation still apply to them — only editing does not.
+    const snapshot = await this.index.get();
+    const project = projectForUri(snapshot.projects, document.uri);
+    if (project && isGeneratedResource(project, document.uri)) {
+      panel.webview.options = { enableScripts: false };
+      panel.webview.html = generatedNotice(document.uri);
+      return;
+    }
+
     panel.webview.options = {
       enableScripts: true,
       localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "dist")],
@@ -203,3 +218,35 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
     await vscode.workspace.applyEdit(edit);
   }
 }
+
+/**
+ * Shown instead of the form for generated resources.
+ *
+ * Plain HTML with no script: there is nothing to interact with, and the point
+ * is to send the user to the file that is actually the source.
+ */
+const generatedNotice = (uri: vscode.Uri): string => {
+  const name = uri.path.split("/").pop() ?? "This file";
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'" />
+    <style>
+      body { font-family: var(--vscode-font-family); color: var(--vscode-foreground);
+             padding: 2rem; line-height: 1.6; }
+      code { background: var(--vscode-textCodeBlock-background); padding: 0.1em 0.35em;
+             border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <h2>${name} is generated</h2>
+    <p>
+      It sits under <code>fsh-generated/</code>, which Sushi rewrites on every
+      build. Editing it here would lose the change on the next run.
+    </p>
+    <p>Edit the <code>.fsh</code> source under <code>input/fsh/</code> instead.</p>
+    <p>Validation, hover and go-to-definition still work on this file.</p>
+  </body>
+</html>`;
+};

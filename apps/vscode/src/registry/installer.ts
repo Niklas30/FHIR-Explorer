@@ -30,8 +30,6 @@ export type InstallOutcome = {
 /** How many downloads run at once. Enough to be quick, not enough to be rude. */
 const CONCURRENCY = 4;
 
-const decoder = new TextDecoder();
-
 const runWithLimit = async <T, R>(
   items: T[],
   limit: number,
@@ -177,22 +175,3 @@ export class PackageInstaller {
   }
 }
 
-/** Read a project manifest's `dependencies`, tolerating a malformed file. */
-export const readManifestDependencies = async (
-  manifestUri: vscode.Uri
-): Promise<Record<string, string>> => {
-  try {
-    const bytes = await vscode.workspace.fs.readFile(manifestUri);
-    const parsed: unknown = JSON.parse(decoder.decode(bytes));
-    if (!parsed || typeof parsed !== "object") return {};
-    const dependencies = (parsed as { dependencies?: unknown }).dependencies;
-    if (!dependencies || typeof dependencies !== "object") return {};
-    return Object.fromEntries(
-      Object.entries(dependencies as Record<string, unknown>).filter(
-        (entry): entry is [string, string] => typeof entry[1] === "string"
-      )
-    );
-  } catch {
-    return {};
-  }
-};

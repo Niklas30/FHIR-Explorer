@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
-import { addDependencyToManifest } from "@/registry/manifest";
+import {
+  ManifestNotWritable,
+  addDependencyToManifest,
+} from "@/registry/manifest";
 import { planInstall, type InstallPlan, type PlanRequest } from "@/registry/plan";
 import { createImportSession, type ImportSession } from "@/registry/session";
 import type { RegistryClient } from "@/registry/registry-client";
@@ -284,17 +287,15 @@ export const addDependencyCommand = async (
   // reproduce the install without any extension state.
   if (project) {
     try {
-      await addDependencyToManifest(
-        vscode.Uri.joinPath(project.root, "package.json"),
-        id,
-        version
-      );
+      await addDependencyToManifest(project, id, version);
     } catch (error) {
-      vscode.window.showWarningMessage(
-        `Installed ${id}, but could not record it in package.json: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      const detail =
+        error instanceof ManifestNotWritable
+          ? error.message
+          : `could not write ${project.manifestFile.path.split("/").pop()}: ${
+              error instanceof Error ? error.message : String(error)
+            }`;
+      vscode.window.showWarningMessage(`Installed ${id}, but ${detail}`);
     }
   }
 

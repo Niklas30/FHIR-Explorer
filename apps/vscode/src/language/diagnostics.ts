@@ -8,8 +8,7 @@ import {
 } from "@fhir-explorer/core/fhir-editor/schema";
 import type { FhirIndex, FhirIndexSnapshot } from "@/language/fhir-index";
 import { rangeForPath } from "@/language/json-path";
-import { projectForUri } from "@/workspace/project-discovery";
-import { RESOURCE_DIRECTORIES } from "@/workspace/layout";
+import { isProjectResource, projectForUri } from "@/workspace/project-discovery";
 
 /**
  * Live validation into the Problems panel.
@@ -27,16 +26,20 @@ const severityOf = (issue: ValidationIssue): vscode.DiagnosticSeverity =>
     ? vscode.DiagnosticSeverity.Error
     : vscode.DiagnosticSeverity.Warning;
 
-/** Only files inside a project's resource directories are FHIR resources. */
+/**
+ * Only files inside a project's resource directories are FHIR resources.
+ *
+ * Which directories those are depends on the project: a Sushi repo also keeps
+ * generated resources under `fsh-generated/`. Those are validated too — a
+ * broken generated resource is still broken — they just cannot be edited.
+ */
 export const isResourceDocument = (
   snapshot: FhirIndexSnapshot,
   uri: vscode.Uri
 ): boolean => {
   if (!uri.path.endsWith(".json")) return false;
   const project = projectForUri(snapshot.projects, uri);
-  if (!project) return false;
-  const relative = uri.path.slice(project.root.path.length).replace(/^\/+/, "");
-  return RESOURCE_DIRECTORIES.some((directory) => relative.startsWith(`${directory}/`));
+  return project ? isProjectResource(project, uri) : false;
 };
 
 const syntaxDiagnostics = (
@@ -182,7 +185,10 @@ export class FhirDiagnostics {
     this.collection.clear();
 
     for (const project of snapshot.projects) {
-      for (const directory of RESOURCE_DIRECTORIES) {
+      for (const directory of [
+        ...project.resourceDirectories,
+        ...project.generatedDirectories,
+      ]) {
         const pattern = new vscode.RelativePattern(
           vscode.Uri.joinPath(project.root, ...directory.split("/")),
           "*.json"

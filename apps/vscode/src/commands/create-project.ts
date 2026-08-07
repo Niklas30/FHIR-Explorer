@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
-import { RESOURCE_DIRECTORIES } from "@/workspace/layout";
+import { SCAFFOLDED_DIRECTORIES } from "@/workspace/layout";
 
 const encoder = new TextEncoder();
 
@@ -72,7 +72,7 @@ export const createProjectCommand = async (onCreated: () => void): Promise<void>
   };
 
   await vscode.workspace.fs.createDirectory(root);
-  for (const directory of RESOURCE_DIRECTORIES) {
+  for (const directory of SCAFFOLDED_DIRECTORIES) {
     await vscode.workspace.fs.createDirectory(
       vscode.Uri.joinPath(root, ...directory.split("/"))
     );

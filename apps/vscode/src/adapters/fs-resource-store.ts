@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import type { ResourceStore } from "@fhir-explorer/core/ports";
 import { extractAuthoredTitle } from "@fhir-explorer/core/projects/content";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
+import { IG_RESOURCE_DIRECTORIES } from "@/workspace/manifests";
 import {
-  RESOURCE_DIRECTORIES,
   directoryForKind,
   fileNameForResource,
   kindOfResource,
@@ -100,7 +100,7 @@ export const createFsResourceStore = (): ResourceStore<AuthoredResource> => ({
   load: async (collectionKey) => {
     const root = vscode.Uri.parse(collectionKey);
     const perDirectory = await Promise.all(
-      RESOURCE_DIRECTORIES.map((directory) =>
+      IG_RESOURCE_DIRECTORIES.map((directory) =>
         listJsonFiles(vscode.Uri.joinPath(root, ...directory.split("/")))
       )
     );
@@ -115,7 +115,7 @@ export const createFsResourceStore = (): ResourceStore<AuthoredResource> => ({
   save: async (collectionKey, entries) => {
     const root = vscode.Uri.parse(collectionKey);
     const existing = await Promise.all(
-      RESOURCE_DIRECTORIES.map((directory) =>
+      IG_RESOURCE_DIRECTORIES.map((directory) =>
         listJsonFiles(vscode.Uri.joinPath(root, ...directory.split("/")))
       )
     );
@@ -155,7 +155,7 @@ export const createFsResourceStore = (): ResourceStore<AuthoredResource> => ({
   clear: async (collectionKey) => {
     const root = vscode.Uri.parse(collectionKey);
     const perDirectory = await Promise.all(
-      RESOURCE_DIRECTORIES.map((directory) =>
+      IG_RESOURCE_DIRECTORIES.map((directory) =>
         listJsonFiles(vscode.Uri.joinPath(root, ...directory.split("/")))
       )
     );

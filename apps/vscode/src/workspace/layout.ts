@@ -1,13 +1,14 @@
 import type { AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
 
 /**
- * On-disk layout of a project.
+ * Directories a newly created project is scaffolded with.
  *
- * We follow the IG Publisher convention rather than inventing one, so the same
- * folder works with the publisher, Sushi output, Firely tooling and whatever
- * else the user already runs on it.
+ * A subset of what is *read* — see IG_RESOURCE_DIRECTORIES in manifests.ts,
+ * which covers everything the IG Publisher scans, including the folders older
+ * projects use. We follow the publisher's convention rather than inventing
+ * one, so the same folder works with it, with Sushi and with Firely tooling.
  */
-export const RESOURCE_DIRECTORIES = [
+export const SCAFFOLDED_DIRECTORIES = [
   "input/profiles",
   "input/extensions",
   "input/vocabulary",

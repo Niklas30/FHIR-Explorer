@@ -108,10 +108,12 @@ npm run dev:turbo
 ## VS Code extension
 
 The extension in `apps/vscode` treats the **workspace as the database**: a
-project is a folder with a FHIR `package.json`, and every resource is a `.json`
-file below `input/` in the IG Publisher layout. Nothing is hidden in an
-extension-private store, so git, the file explorer, the IG Publisher and Sushi
-all keep working on the same files.
+project is any folder the FHIR toolchain already recognises as one — marked by
+`sushi-config.yaml`, `ig.ini`, or a `package.json` carrying FHIR fields — and
+every resource is a `.json` file below `input/` in the IG Publisher layout.
+Nothing is hidden in an extension-private store, so git, the file explorer, the
+IG Publisher and Sushi all keep working on the same files. Generated output
+under `fsh-generated/` is validated but never edited.
 
 Run it from the repository root:
 

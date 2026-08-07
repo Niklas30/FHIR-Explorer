@@ -8,8 +8,21 @@ already work in.
 
 ## The workspace is the database
 
-A project is a folder with a FHIR `package.json`; every resource is a `.json`
-file below `input/` in the IG Publisher layout:
+A project is any folder the FHIR toolchain already recognises as one:
+
+| Marker | Repo type |
+| --- | --- |
+| `sushi-config.yaml` | Sushi / FSH |
+| `ig.ini` | classic IG Publisher |
+| `package.json` with FHIR fields | package-style, and what *Create FHIR Project* writes |
+
+Resources are read from every directory the IG Publisher scans
+(`input/profiles`, `input/extensions`, `input/vocabulary`, `input/examples`,
+`input/resources`, …). In a Sushi repo, `fsh-generated/` is validated as well
+but never offered for editing — the next build overwrites it, so the form
+editor sends you to the `.fsh` source instead.
+
+*Create FHIR Project* scaffolds this layout:
 
 ```
 my.project/
@@ -23,6 +36,10 @@ my.project/
 
 Nothing is hidden in an extension-private store, so git, the file explorer,
 search, the IG Publisher and Sushi all keep working on the same files.
+
+A dependency you add is recorded in whichever manifest your project actually
+uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
+`package.json` — so your existing toolchain sees it too.
 
 ## What it does
 

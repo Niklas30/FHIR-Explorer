@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 import { resolveAndInstall } from "@/commands/add-dependency";
-import { readManifestDependencies } from "@/registry/installer";
 import type { PlanRequest } from "@/registry/plan";
 import { createImportSession } from "@/registry/session";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
@@ -14,13 +13,15 @@ import type { WorkspaceProject } from "@/workspace/project-discovery";
  * lives in extension state — the `package.json` files are the input.
  */
 
-const rootsOf = async (projects: WorkspaceProject[]): Promise<PlanRequest[]> => {
+/**
+ * The dependencies every project declares, whichever format it declares them
+ * in — discovery has already normalised package.json, sushi-config.yaml and
+ * the ImplementationGuide onto one manifest.
+ */
+const rootsOf = (projects: WorkspaceProject[]): PlanRequest[] => {
   const roots = new Map<string, string>();
   for (const project of projects) {
-    const dependencies = await readManifestDependencies(
-      vscode.Uri.joinPath(project.root, "package.json")
-    );
-    for (const [id, version] of Object.entries(dependencies)) {
+    for (const [id, version] of Object.entries(project.manifest.dependencies ?? {})) {
       roots.set(id, version);
     }
   }
@@ -32,7 +33,7 @@ export const installDependenciesCommand = async (
   projects: WorkspaceProject[],
   onInstalled: () => void
 ): Promise<void> => {
-  const roots = await rootsOf(projects);
+  const roots = rootsOf(projects);
   if (roots.length === 0) {
     vscode.window.showInformationMessage(
       "No dependencies declared. Use FHIR Explorer: Add Dependency to add one."
@@ -61,7 +62,7 @@ export const offerMissingDependencies = async (
   projects: WorkspaceProject[],
   onInstalled: () => void
 ): Promise<void> => {
-  const roots = await rootsOf(projects);
+  const roots = rootsOf(projects);
   if (roots.length === 0) return;
 
   const session = await createImportSession(context);
