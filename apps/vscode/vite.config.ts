@@ -31,6 +31,9 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL("./webview/src/main.tsx", import.meta.url)),
         graph: fileURLToPath(new URL("./webview/src/graph.tsx", import.meta.url)),
+        "project-form": fileURLToPath(
+          new URL("./webview/src/project-form.tsx", import.meta.url)
+        ),
       },
       output: {
         entryFileNames: "[name].js",

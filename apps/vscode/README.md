@@ -68,12 +68,19 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
   entries first, each with an install action; update and remove on the ones
   your project declares itself. *Show Dependency Graph* opens the same closure
   as a diagram whose missing nodes are clickable.
-- **Browse Imported Packages** — search every profile, value set and code
-  system your dependencies provide, grouped by package, and open any of them
-  read-only. Go to definition reaches them too, so a canonical from a
-  dependency is no longer a dead end.
+- **Imported Packages view** — everything you have imported, independent of any
+  project, expandable into its profiles, value sets and code systems. Opening
+  one shows it read-only; go to definition reaches them too, so a canonical
+  from a dependency is no longer a dead end. *Create Project Using This
+  Package* turns an import into a project that depends on it.
+- **Create FHIR Project** is a form, not a chain of prompts: id, version,
+  canonical and the dependencies to start with, all visible at once, installed
+  as soon as you confirm.
 
 ## Getting started
+
+Run **Help ▸ Get Started ▸ Get started with FHIR Explorer** for a guided pass,
+or do it by hand:
 
 1. Open a folder.
 2. **FHIR Explorer: Add Dependency** — start with `hl7.fhir.r4.core`. Without it

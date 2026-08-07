@@ -10,6 +10,6 @@
 export const WEBVIEW_STYLESHEET = "styles.css";
 
 /** Entry bundles, matching the Vite input keys. */
-export const WEBVIEW_ENTRIES = ["main", "graph"] as const;
+export const WEBVIEW_ENTRIES = ["main", "graph", "project-form"] as const;
 
 export type WebviewEntry = (typeof WEBVIEW_ENTRIES)[number];

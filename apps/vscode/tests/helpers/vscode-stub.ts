@@ -86,7 +86,16 @@ export const createVscodeStub = () => {
       parse: (value: string) => ({ path: value, toString: () => value }),
       file: (value: string) => ({ path: value, fsPath: value, toString: () => value }),
     },
+    StatusBarAlignment: { Left: 1, Right: 2 },
     window: {
+      createStatusBarItem: () => ({
+        text: "",
+        tooltip: undefined as unknown,
+        command: undefined as unknown,
+        show: () => undefined,
+        hide: () => undefined,
+        dispose: () => undefined,
+      }),
       createTreeView: () => disposable,
       showInformationMessage: async () => undefined,
       showWarningMessage: async () => undefined,

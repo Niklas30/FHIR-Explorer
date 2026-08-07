@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   GENERATED_DIRECTORIES,
@@ -19,6 +20,7 @@ const manifest = JSON.parse(
   contributes: {
     customEditors: { selector: { filenamePattern: string }[] }[];
     menus: { "editor/title": { when: string }[] };
+    walkthroughs: { steps: { id: string; media: { markdown: string } }[] }[];
   };
 };
 
@@ -42,6 +44,17 @@ describe("package.json contract", () => {
     const when = manifest.contributes.menus["editor/title"][0].when;
     for (const directory of IG_RESOURCE_DIRECTORIES) {
       expect(when).toContain(directory.split("/")[1]);
+    }
+  });
+
+  it("ships the markdown every walkthrough step points at", () => {
+    // A missing file renders the step empty, with nothing in any log — and the
+    // walkthrough is the first thing a new user sees.
+    for (const walkthrough of manifest.contributes.walkthroughs) {
+      for (const step of walkthrough.steps) {
+        const file = fileURLToPath(new URL(`../${step.media.markdown}`, import.meta.url));
+        expect(existsSync(file), `${step.id}: ${step.media.markdown}`).toBe(true);
+      }
     }
   });
 

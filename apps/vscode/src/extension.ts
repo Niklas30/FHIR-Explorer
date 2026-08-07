@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { createFsResourceStore } from "@/adapters/fs-resource-store";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
-import { createProjectCommand } from "@/commands/create-project";
 import { addDependencyCommand } from "@/commands/add-dependency";
 import { importPackageFileCommand } from "@/commands/import-package-file";
 import {
@@ -10,6 +9,9 @@ import {
   offerMissingDependencies,
 } from "@/commands/install-dependencies";
 import { browsePackageCommand } from "@/commands/browse-package";
+import { ProjectFormPanel } from "@/project/project-form-panel";
+import { PackageTreeProvider, packageOf, type PackageTreeNode } from "@/tree/package-tree";
+import { FhirStatusBar } from "@/status-bar";
 import {
   removeDependencyCommand,
   updateDependencyCommand,
@@ -58,9 +60,13 @@ export const activate = (context: vscode.ExtensionContext): void => {
   const refresh = () => {
     tree.refresh();
     index.invalidateWorkspace();
+    void statusBar.refresh();
   };
 
   const dependencyTree = new DependencyTreeProvider(packageStore);
+  const packageTree = new PackageTreeProvider(packageStore, index);
+  const statusBar = new FhirStatusBar(packageStore);
+  void statusBar.refresh();
 
   const view = vscode.window.createTreeView("fhirExplorer.projects", {
     treeDataProvider: tree,
@@ -68,6 +74,10 @@ export const activate = (context: vscode.ExtensionContext): void => {
   });
   const dependencyView = vscode.window.createTreeView("fhirExplorer.dependencies", {
     treeDataProvider: dependencyTree,
+    showCollapseAll: true,
+  });
+  const packageView = vscode.window.createTreeView("fhirExplorer.packages", {
+    treeDataProvider: packageTree,
     showCollapseAll: true,
   });
 
@@ -99,6 +109,8 @@ export const activate = (context: vscode.ExtensionContext): void => {
   const afterPackagesChanged = () => {
     tree.refresh();
     dependencyTree.refresh();
+    packageTree.refresh();
+    void statusBar.refresh();
     DependencyGraphPanel.refresh();
     // New packages change what every resource validates against.
     index.invalidatePackages();
@@ -185,7 +197,31 @@ export const activate = (context: vscode.ExtensionContext): void => {
       void diagnostics.validateWorkspace();
     }),
     vscode.commands.registerCommand("fhirExplorer.createProject", () =>
-      createProjectCommand(refresh)
+      ProjectFormPanel.show(context, undefined, afterPackagesChanged)
+    ),
+    packageView,
+    statusBar,
+    vscode.commands.registerCommand("fhirExplorer.focusPackages", () =>
+      vscode.commands.executeCommand("fhirExplorer.packages.focus")
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.createProjectFromPackage",
+      (node: PackageTreeNode) => {
+        const record = packageOf(node);
+        if (!record) return;
+        // Pre-filled so the import the user just did becomes the starting
+        // point of the project rather than something they have to re-find.
+        ProjectFormPanel.show(
+          context,
+          {
+            dependencies: [record.key, "hl7.fhir.r4.core@4.0.1"].filter(
+              (key, index, all) => all.indexOf(key) === index
+            ),
+            canonicalHint: record.manifest.canonical,
+          },
+          afterPackagesChanged
+        );
+      }
     ),
     vscode.commands.registerCommand("fhirExplorer.addDependency", async () => {
       const projects = tree.knownProjects();
