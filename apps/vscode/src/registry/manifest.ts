@@ -189,3 +189,107 @@ export const removeDependencyFromManifest = async (
     `Cannot edit ${file.path.split("/").pop()} — remove the dependency by hand.`
   );
 };
+
+/**
+ * Fields of a project manifest that can be edited in place.
+ *
+ * `name` is deliberately absent. Renaming a package is not a field edit: the
+ * folder, the canonical, every url derived from it and everyone else's
+ * dependency entry all point at the old id. Offering it as a text box would
+ * promise a rename the extension does not perform.
+ */
+export type EditableManifestFields = {
+  version?: string;
+  title?: string;
+  description?: string;
+  canonical?: string;
+  fhirVersion?: string;
+};
+
+/** Where each field lives, per manifest format. */
+const FIELD_PATHS: Record<
+  "package" | "sushi" | "ig",
+  Partial<Record<keyof EditableManifestFields, (string | number)[]>>
+> = {
+  package: {
+    version: ["version"],
+    title: ["title"],
+    description: ["description"],
+    canonical: ["canonical"],
+    fhirVersion: ["fhirVersions", 0],
+  },
+  sushi: {
+    version: ["version"],
+    title: ["title"],
+    description: ["description"],
+    canonical: ["canonical"],
+    fhirVersion: ["fhirVersion"],
+  },
+  // An ImplementationGuide's url is the resource's own canonical, not the
+  // project's base, so it is not editable through here.
+  ig: {
+    version: ["version"],
+    title: ["title"],
+    description: ["description"],
+    fhirVersion: ["fhirVersion", 0],
+  },
+};
+
+export const updateManifestFields = async (
+  project: WorkspaceProject,
+  fields: EditableManifestFields
+): Promise<(keyof EditableManifestFields)[]> => {
+  const file = project.manifestFile;
+  const isSushi =
+    file.path.endsWith("sushi-config.yaml") || file.path.endsWith("sushi-config.yml");
+  const isPackageJson = file.path.endsWith("/package.json");
+  if (!isSushi && !isPackageJson && !file.path.endsWith(".json")) {
+    throw new ManifestNotWritable(
+      `Cannot edit ${file.path.split("/").pop()} — change the project details by hand.`
+    );
+  }
+
+  const format = isSushi ? "sushi" : isPackageJson ? "package" : "ig";
+  const paths = FIELD_PATHS[format];
+  const skipped: (keyof EditableManifestFields)[] = [];
+  const text = await readText(file);
+
+  if (isSushi) {
+    const document = parseDocument(text);
+    for (const [field, value] of Object.entries(fields) as [
+      keyof EditableManifestFields,
+      string | undefined,
+    ][]) {
+      const path = paths[field];
+      if (!path) {
+        skipped.push(field);
+        continue;
+      }
+      if (value === undefined || value === "") document.deleteIn(path);
+      else document.setIn(path, value);
+    }
+    const next = document.toString();
+    if (next !== text) await write(file, next);
+    return skipped;
+  }
+
+  let next = text;
+  for (const [field, value] of Object.entries(fields) as [
+    keyof EditableManifestFields,
+    string | undefined,
+  ][]) {
+    const path = paths[field];
+    if (!path) {
+      skipped.push(field);
+      continue;
+    }
+    next = applyEdits(
+      next,
+      modify(next, path, value === "" ? undefined : value, {
+        formattingOptions: { tabSize: 2, insertSpaces: true, eol: "\n" },
+      })
+    );
+  }
+  if (next !== text) await write(file, next);
+  return skipped;
+};

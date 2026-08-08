@@ -3,8 +3,15 @@ import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { resolveAndInstall } from "@/commands/add-dependency";
 import { createImportSession } from "@/registry/session";
+import {
+  ManifestNotWritable,
+  addDependencyToManifest,
+  removeDependencyFromManifest,
+  updateManifestFields,
+} from "@/registry/manifest";
 import { renderWebviewHtml } from "@/webview/html";
 import { SCAFFOLDED_DIRECTORIES } from "@/workspace/layout";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
 
 /**
  * Project creation as a form.
@@ -45,6 +52,9 @@ export type ProjectFormPreset = {
   canonicalHint?: string;
 };
 
+/** The same form, opened on a project that already exists. */
+export type ProjectFormEditing = { project: WorkspaceProject };
+
 type CreateValue = {
   folder: string;
   name: string;
@@ -56,10 +66,13 @@ type CreateValue = {
   dependencies: string[];
 };
 
+type SaveValue = Omit<CreateValue, "folder" | "name">;
+
 type FromWebview =
   | { type: "ready" }
   | { type: "cancel" }
-  | { type: "create"; value: CreateValue };
+  | { type: "create"; value: CreateValue }
+  | { type: "save"; value: SaveValue };
 
 export class ProjectFormPanel {
   private static current: ProjectFormPanel | undefined;
@@ -69,6 +82,7 @@ export class ProjectFormPanel {
     private readonly panel: vscode.WebviewPanel,
     private readonly context: vscode.ExtensionContext,
     private preset: ProjectFormPreset | undefined,
+    private editing: ProjectFormEditing | undefined,
     private readonly onCreated: () => void
   ) {
     panel.webview.options = {
@@ -79,7 +93,7 @@ export class ProjectFormPanel {
       panel.webview,
       context.extensionUri,
       "project-form",
-      "New FHIR project"
+      editing ? "FHIR project settings" : "New FHIR project"
     );
 
     this.disposables.push(
@@ -87,6 +101,7 @@ export class ProjectFormPanel {
         if (message.type === "ready") return await this.sendInit();
         if (message.type === "cancel") return this.dispose();
         if (message.type === "create") await this.create(message.value);
+        if (message.type === "save") await this.save(message.value);
       })
     );
 
@@ -98,8 +113,31 @@ export class ProjectFormPanel {
     preset: ProjectFormPreset | undefined,
     onCreated: () => void
   ): void {
+    ProjectFormPanel.open(context, preset, undefined, onCreated);
+  }
+
+  /** Open the form on an existing project, to inspect and change it. */
+  static edit(
+    context: vscode.ExtensionContext,
+    project: WorkspaceProject,
+    onChanged: () => void
+  ): void {
+    ProjectFormPanel.open(context, undefined, { project }, onChanged);
+  }
+
+  private static open(
+    context: vscode.ExtensionContext,
+    preset: ProjectFormPreset | undefined,
+    editing: ProjectFormEditing | undefined,
+    onDone: () => void
+  ): void {
     if (ProjectFormPanel.current) {
+      // Reused, so the title has to follow what it is now showing.
       ProjectFormPanel.current.preset = preset;
+      ProjectFormPanel.current.editing = editing;
+      ProjectFormPanel.current.panel.title = editing
+        ? "FHIR project settings"
+        : "New FHIR project";
       ProjectFormPanel.current.panel.reveal();
       void ProjectFormPanel.current.sendInit();
       return;
@@ -107,11 +145,17 @@ export class ProjectFormPanel {
 
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
-      "New FHIR project",
+      editing ? "FHIR project settings" : "New FHIR project",
       vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true }
     );
-    ProjectFormPanel.current = new ProjectFormPanel(panel, context, preset, onCreated);
+    ProjectFormPanel.current = new ProjectFormPanel(
+      panel,
+      context,
+      preset,
+      editing,
+      onDone
+    );
   }
 
   private async sendInit(): Promise<void> {
@@ -132,7 +176,83 @@ export class ProjectFormPanel {
         title: entry.manifest.title,
       })),
       preset: this.preset,
+      editing: this.editing
+        ? {
+            name: this.editing.project.manifest.name,
+            version: this.editing.project.manifest.version,
+            title: this.editing.project.manifest.title,
+            description: this.editing.project.manifest.description,
+            canonical: this.editing.project.manifest.canonical,
+            fhirVersion: this.editing.project.manifest.fhirVersions?.[0],
+            dependencies: this.editing.project.manifest.dependencies ?? {},
+            manifestFile: this.editing.project.manifestFile.path.split("/").pop(),
+            root: this.editing.project.root.fsPath,
+          }
+        : undefined,
     });
+  }
+
+  /**
+   * Apply changes to an existing project.
+   *
+   * Dependencies are diffed rather than rewritten: the manifest keeps its
+   * formatting and comments, and only what the user actually changed moves.
+   */
+  private async save(value: SaveValue): Promise<void> {
+    const project = this.editing?.project;
+    if (!project) return;
+
+    const wanted = new Map<string, string>();
+    for (const entry of value.dependencies) {
+      const separator = entry.lastIndexOf("@");
+      if (separator > 0) wanted.set(entry.slice(0, separator), entry.slice(separator + 1));
+    }
+    const current = project.manifest.dependencies ?? {};
+
+    try {
+      const skipped = await updateManifestFields(project, {
+        version: value.version,
+        title: value.title,
+        description: value.description,
+        canonical: value.canonical,
+        fhirVersion: value.fhirVersion,
+      });
+
+      for (const [id, version] of wanted) {
+        if (current[id] !== version) await addDependencyToManifest(project, id, version);
+      }
+      for (const id of Object.keys(current)) {
+        if (!wanted.has(id)) await removeDependencyFromManifest(project, id);
+      }
+
+      if (skipped.length > 0) {
+        vscode.window.showWarningMessage(
+          `Saved, except ${skipped.join(", ")} — ${project.manifestFile.path
+            .split("/")
+            .pop()} has no field for it.`
+        );
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        error instanceof ManifestNotWritable
+          ? error.message
+          : `Could not save: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return;
+    }
+
+    this.dispose();
+    this.onCreated();
+
+    // Anything newly declared has to actually be there for validation to work.
+    const added = [...wanted.entries()]
+      .filter(([id, version]) => current[id] !== version)
+      .map(([id, version]) => ({ id, version }));
+    if (added.length > 0) {
+      const session = await createImportSession(this.context);
+      await resolveAndInstall(session, added, `Install new dependencies`);
+      this.onCreated();
+    }
   }
 
   /**

@@ -162,6 +162,12 @@
         "command": "fhirExplorer.focusPackages",
         "title": "Show Imported Packages",
         "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.projectSettings",
+        "title": "Project Settings",
+        "category": "FHIR Explorer",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -225,6 +231,11 @@
           "command": "fhirExplorer.refresh",
           "when": "view == fhirExplorer.packages",
           "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
         }
       ],
       "view/item/context": [
@@ -272,6 +283,16 @@
           "command": "fhirExplorer.createProjectFromPackage",
           "when": "view == fhirExplorer.packages && viewItem == fhirExplorer.installedPackage",
           "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.project",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
+          "group": "navigation"
         }
       ],
       "commandPalette": [

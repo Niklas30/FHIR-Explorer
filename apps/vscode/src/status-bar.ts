@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { GlobalPackageStore } from "@/adapters/global-package-store";
-import { discoverProjects } from "@/workspace/project-discovery";
+import type { ProjectRegistry } from "@/workspace/project-registry";
 
 /**
  * One line saying whether the extension has anything to work with.
@@ -13,7 +13,10 @@ import { discoverProjects } from "@/workspace/project-discovery";
 export class FhirStatusBar {
   private readonly item: vscode.StatusBarItem;
 
-  constructor(private readonly store: GlobalPackageStore) {
+  constructor(
+    private readonly store: GlobalPackageStore,
+    private readonly registry: ProjectRegistry
+  ) {
     this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 90);
     this.item.command = "fhirExplorer.focusPackages";
     this.item.show();
@@ -22,7 +25,7 @@ export class FhirStatusBar {
   async refresh(): Promise<void> {
     const [packages, projects] = await Promise.all([
       this.store.listPackages(),
-      discoverProjects(),
+      this.registry.list(),
     ]);
 
     if (packages.length === 0 && projects.length === 0) {

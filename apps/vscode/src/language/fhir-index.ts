@@ -9,10 +9,8 @@ import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 import type { ResourceStore } from "@fhir-explorer/core/ports";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
-import {
-  discoverProjects,
-  type WorkspaceProject,
-} from "@/workspace/project-discovery";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
+import type { ProjectRegistry } from "@/workspace/project-registry";
 
 /**
  * Everything the language features resolve against: the conformance resources
@@ -70,7 +68,8 @@ export class FhirIndex {
 
   constructor(
     private readonly packageStore: GlobalPackageStore,
-    private readonly resourceStore: ResourceStore<AuthoredResource>
+    private readonly resourceStore: ResourceStore<AuthoredResource>,
+    private readonly projects: ProjectRegistry
   ) {}
 
   /** Workspace content changed: keep the package payloads, drop the rest. */
@@ -104,7 +103,7 @@ export class FhirIndex {
   private async build(): Promise<FhirIndexSnapshot> {
     const [packagePayloads, projects] = await Promise.all([
       this.loadPackagePayloads(),
-      discoverProjects(),
+      this.projects.list(),
     ]);
 
     const definitions = new Map<string, WorkspaceDefinition>();

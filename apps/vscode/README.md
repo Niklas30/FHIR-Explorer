@@ -76,6 +76,10 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
 - **Create FHIR Project** is a form, not a chain of prompts: id, version,
   canonical and the dependencies to start with, all visible at once, installed
   as soon as you confirm.
+- **Project Settings** opens the same form on an existing project. Version,
+  title, description, canonical, FHIR version and dependencies are written back
+  in place — your manifest keeps its formatting and comments, whether it is a
+  `package.json`, a `sushi-config.yaml` or an ImplementationGuide.
 
 ## Getting started
 

@@ -7,7 +7,8 @@ import {
   childrenOf,
   type DependencyNode,
 } from "@/registry/dependency-view";
-import { discoverProjects, type WorkspaceProject } from "@/workspace/project-discovery";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
+import type { ProjectRegistry } from "@/workspace/project-registry";
 
 /**
  * The dependency closure as a native tree.
@@ -37,7 +38,10 @@ export class DependencyTreeProvider
 
   private installed: PackageRecord[] = [];
 
-  constructor(private readonly store: GlobalPackageStore) {}
+  constructor(
+    private readonly store: GlobalPackageStore,
+    private readonly registry: ProjectRegistry
+  ) {}
 
   refresh(): void {
     this.changed.fire(undefined);
@@ -93,7 +97,7 @@ export class DependencyTreeProvider
   async getChildren(node?: DependencyTreeNode): Promise<DependencyTreeNode[]> {
     if (!node) {
       this.installed = await this.store.listPackages();
-      const projects = await discoverProjects();
+      const projects = await this.registry.list();
       const roots: ProjectRoot[] = projects.map((project) => ({
         type: "project",
         project,

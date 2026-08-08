@@ -4,10 +4,8 @@ import type {
   AuthoredResource,
   AuthoredResourceKind,
 } from "@fhir-explorer/core/projects/types";
-import {
-  discoverProjects,
-  type WorkspaceProject,
-} from "@/workspace/project-discovery";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
+import type { ProjectRegistry } from "@/workspace/project-registry";
 
 /**
  * The project structure as a native tree.
@@ -52,17 +50,15 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   private projects: WorkspaceProject[] = [];
   private readonly resources = new Map<string, AuthoredResource[]>();
 
-  constructor(private readonly store: ResourceStore<AuthoredResource>) {}
+  constructor(
+    private readonly store: ResourceStore<AuthoredResource>,
+    private readonly registry: ProjectRegistry
+  ) {}
 
   /** Drop all caches and repaint. Cheap — the file system is the truth. */
   refresh(): void {
     this.resources.clear();
     this.changed.fire(undefined);
-  }
-
-  /** The projects found on the last paint, for commands that need them. */
-  knownProjects(): WorkspaceProject[] {
-    return this.projects;
   }
 
   private async resourcesOf(project: WorkspaceProject): Promise<AuthoredResource[]> {
@@ -118,7 +114,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
   async getChildren(node?: TreeNode): Promise<TreeNode[]> {
     if (!node) {
-      this.projects = await discoverProjects();
+      this.projects = await this.registry.list();
       await vscode.commands.executeCommand(
         "setContext",
         "fhirExplorer.hasProjects",

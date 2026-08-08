@@ -12,6 +12,8 @@ import { browsePackageCommand } from "@/commands/browse-package";
 import { ProjectFormPanel } from "@/project/project-form-panel";
 import { PackageTreeProvider, packageOf, type PackageTreeNode } from "@/tree/package-tree";
 import { FhirStatusBar } from "@/status-bar";
+import { ProjectRegistry, pickProject } from "@/workspace/project-registry";
+import type { WorkspaceProject } from "@/workspace/project-discovery";
 import {
   removeDependencyCommand,
   updateDependencyCommand,
@@ -51,21 +53,23 @@ import {
  */
 
 export const activate = (context: vscode.ExtensionContext): void => {
+  const projects = new ProjectRegistry();
   const store = createFsResourceStore();
   const packageStore = new GlobalPackageStore(context.globalStorageUri);
-  const index = new FhirIndex(packageStore, store);
+  const index = new FhirIndex(packageStore, store, projects);
   const diagnostics = new FhirDiagnostics(index);
 
-  const tree = new ProjectTreeProvider(store);
+  const tree = new ProjectTreeProvider(store, projects);
   const refresh = () => {
+    projects.invalidate();
     tree.refresh();
     index.invalidateWorkspace();
     void statusBar.refresh();
   };
 
-  const dependencyTree = new DependencyTreeProvider(packageStore);
+  const dependencyTree = new DependencyTreeProvider(packageStore, projects);
   const packageTree = new PackageTreeProvider(packageStore, index);
-  const statusBar = new FhirStatusBar(packageStore);
+  const statusBar = new FhirStatusBar(packageStore, projects);
   void statusBar.refresh();
 
   const view = vscode.window.createTreeView("fhirExplorer.projects", {
@@ -107,6 +111,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
   index.onDidChange(revalidateOpen);
 
   const afterPackagesChanged = () => {
+    projects.invalidate();
     tree.refresh();
     dependencyTree.refresh();
     packageTree.refresh();
@@ -117,35 +122,17 @@ export const activate = (context: vscode.ExtensionContext): void => {
     void diagnostics.validateWorkspace();
   };
 
-  const projectOf = (node: TreeNode | undefined) => {
-    if (node) return node.project;
-    const projects = tree.knownProjects();
-    return projects.length === 1 ? projects[0] : undefined;
-  };
+  const openProjectForm = () =>
+    ProjectFormPanel.show(context, undefined, afterPackagesChanged);
 
-  const requireProject = async (node: TreeNode | undefined) => {
-    const known = projectOf(node);
-    if (known) return known;
-
-    const projects = tree.knownProjects();
-    if (projects.length === 0) {
-      vscode.window.showErrorMessage("No FHIR project found in this workspace.");
-      return undefined;
-    }
-    const picked = await vscode.window.showQuickPick(
-      projects.map((project) => ({
-        label: project.manifest.name,
-        description: project.manifest.version,
-        project,
-      })),
-      { title: "Which project?", placeHolder: "Select a FHIR project" }
-    );
-    return picked?.project;
-  };
+  /** A node's own project, otherwise ask — with creating one always on offer. */
+  const requireProject = async (node: TreeNode | undefined, title: string) =>
+    node?.project ?? (await pickProject(projects, title, openProjectForm));
 
   context.subscriptions.push(
     view,
     watcher,
+    projects,
     diagnostics,
     vscode.window.registerCustomEditorProvider(
       FormEditorProvider.viewType,
@@ -230,24 +217,25 @@ export const activate = (context: vscode.ExtensionContext): void => {
       }
     ),
     vscode.commands.registerCommand("fhirExplorer.addDependency", async () => {
-      const projects = tree.knownProjects();
-      const project =
-        projects.length <= 1
-          ? projects[0]
-          : (
-              await vscode.window.showQuickPick(
-                projects.map((candidate) => ({
-                  label: candidate.manifest.name,
-                  description: candidate.manifest.version,
-                  project: candidate,
-                })),
-                { title: "Which project should declare the dependency?" }
-              )
-            )?.project;
+      const project = await requireProject(
+        undefined,
+        "Which project should declare the dependency?"
+      );
+      if (!project) return;
       await addDependencyCommand(context, project, afterPackagesChanged);
     }),
-    vscode.commands.registerCommand("fhirExplorer.installDependencies", () =>
-      installDependenciesCommand(context, tree.knownProjects(), afterPackagesChanged)
+    vscode.commands.registerCommand(
+      "fhirExplorer.projectSettings",
+      async (node?: { project?: WorkspaceProject }) => {
+        const project =
+          node?.project ??
+          (await pickProject(projects, "Settings of which project?", openProjectForm));
+        if (!project) return;
+        ProjectFormPanel.edit(context, project, afterPackagesChanged);
+      }
+    ),
+    vscode.commands.registerCommand("fhirExplorer.installDependencies", async () =>
+      installDependenciesCommand(context, await projects.list(), afterPackagesChanged)
     ),
     vscode.commands.registerCommand("fhirExplorer.importPackageFile", () =>
       importPackageFileCommand(context, afterPackagesChanged)
@@ -285,7 +273,9 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.commands.registerCommand(
       "fhirExplorer.showDependencyGraph",
       async (node?: DependencyTreeNode) => {
-        const project = node?.project ?? (await requireProject(undefined));
+        const project =
+          node?.project ??
+          (await pickProject(projects, "Which project?", openProjectForm));
         if (!project) return;
         DependencyGraphPanel.show(context, project, (id, requirement) =>
           void installMissingDependency(context, id, requirement, afterPackagesChanged)
@@ -308,7 +298,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.commands.registerCommand(
       "fhirExplorer.newResource",
       async (node?: CategoryNode) => {
-        const project = await requireProject(node);
+        const project = await requireProject(node, "Add a resource to which project?");
         if (!project) return;
         await newResourceCommand(project, node?.kind, index, refresh);
       }
@@ -342,11 +332,9 @@ export const activate = (context: vscode.ExtensionContext): void => {
   // user opens anything.
   void diagnostics.validateWorkspace();
 
-  // A fresh clone declares dependencies it does not have yet. Offer to fetch
-  // them once the tree knows which projects exist.
+  // A fresh clone declares dependencies it does not have yet.
   void (async () => {
-    await tree.getChildren();
-    await offerMissingDependencies(context, tree.knownProjects(), afterPackagesChanged);
+    await offerMissingDependencies(context, await projects.list(), afterPackagesChanged);
   })();
 };
 

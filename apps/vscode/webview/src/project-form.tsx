@@ -27,11 +27,25 @@ type Basis = {
   dependencies: Record<string, string>;
 };
 
+/** Present when the form was opened on a project that already exists. */
+type Editing = {
+  name: string;
+  version: string;
+  title?: string;
+  description?: string;
+  canonical?: string;
+  fhirVersion?: string;
+  dependencies: Record<string, string>;
+  manifestFile?: string;
+  root: string;
+};
+
 type InitMessage = {
   type: "init";
   folders: WorkspaceFolder[];
   installed: InstalledPackage[];
   preset?: { basedOn?: Basis; canonicalHint?: string };
+  editing?: Editing;
 };
 
 type VsCodeApi = { postMessage: (message: unknown) => void };
@@ -76,12 +90,31 @@ const App = () => {
   const [folder, setFolder] = useState("");
   const [dependencies, setDependencies] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  // Once the user edits the canonical — or the project already has one — it is
+  // never derived from the id again.
+  const [canonicalTouched, setCanonicalTouched] = useState(false);
 
   useEffect(() => {
     const listener = (event: MessageEvent<InitMessage>) => {
       if (event.data?.type !== "init") return;
       setInit(event.data);
       setFolder(event.data.folders[0]?.uri ?? "");
+
+      const existing = event.data.editing;
+      if (existing) {
+        setName(existing.name);
+        setVersion(existing.version);
+        setTitle(existing.title ?? "");
+        setDescription(existing.description ?? "");
+        setCanonical(existing.canonical ?? "");
+        setCanonicalTouched(true); // never derive over what the project already has
+        if (existing.fhirVersion) setFhirVersion(existing.fhirVersion);
+        setDependencies(
+          Object.entries(existing.dependencies).map(([id, v]) => `${id}@${v}`)
+        );
+        return;
+      }
+
       const basis = event.data.preset?.basedOn;
       // With a basis, everything it needs is already implied; without one the
       // project still needs a core to validate against.
@@ -95,7 +128,6 @@ const App = () => {
 
   // The canonical follows the id unless the user takes it over, which is what
   // people do by hand anyway and gets it wrong half the time.
-  const [canonicalTouched, setCanonicalTouched] = useState(false);
   useEffect(() => {
     if (canonicalTouched || !name) return;
     const base = init?.preset?.canonicalHint ?? "http://example.org/fhir";
@@ -121,31 +153,44 @@ const App = () => {
   if (!init) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
   const basis = init.preset?.basedOn;
+  const editing = init.editing;
 
   const submit = () => {
     setSubmitted(true);
     if (!valid) return;
-    vscode.postMessage({
-      type: "create",
-      value: {
-        folder,
-        name,
-        version,
-        title: title || undefined,
-        description: description || undefined,
-        canonical: canonical || undefined,
-        fhirVersion,
-        dependencies,
-      },
-    });
+    const shared = {
+      version,
+      title: title || undefined,
+      description: description || undefined,
+      canonical: canonical || undefined,
+      fhirVersion,
+      dependencies,
+    };
+    vscode.postMessage(
+      editing
+        ? { type: "save", value: shared }
+        : { type: "create", value: { ...shared, folder, name } }
+    );
   };
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-1 text-lg font-semibold">New FHIR project</h1>
+      <h1 className="mb-1 text-lg font-semibold">
+        {editing ? editing.name : "New FHIR project"}
+      </h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Creates a folder with a FHIR <code>package.json</code> and the IG Publisher
-        input directories. Dependencies are installed right after.
+        {editing ? (
+          <>
+            Editing <code>{editing.manifestFile ?? "the manifest"}</code> in{" "}
+            <code>{editing.root}</code>. Changes are written in place, keeping
+            formatting and comments.
+          </>
+        ) : (
+          <>
+            Creates a folder with a FHIR <code>package.json</code> and the IG
+            Publisher input directories. Dependencies are installed right after.
+          </>
+        )}
       </p>
 
       {basis ? (
@@ -168,7 +213,7 @@ const App = () => {
         </div>
       ) : null}
 
-      {init.folders.length > 1 && (
+      {!editing && init.folders.length > 1 && (
         <Field label="Workspace folder" error={show("folder")}>
           <select
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
@@ -187,14 +232,19 @@ const App = () => {
       <div className="grid grid-cols-[2fr_1fr] gap-4">
         <Field
           label="Package id"
-          hint="Becomes the folder name and the published package name"
+          hint={
+            editing
+              ? "Renaming a package moves its canonicals and everyone else's dependency entry — not a field edit"
+              : "Becomes the folder name and the published package name"
+          }
           error={show("name")}
         >
           <Input
             value={name}
             placeholder="de.example.project"
             onChange={(event) => setName(event.target.value.trim())}
-            autoFocus
+            disabled={Boolean(editing)}
+            autoFocus={!editing}
           />
         </Field>
         <Field label="Version" error={show("version")}>
@@ -252,7 +302,9 @@ const App = () => {
       <p className="mb-2 text-xs text-muted-foreground">
         {basis
           ? "Anything else this project should depend on, beyond what the package above already brings."
-          : "Already-imported packages are listed. Anything not installed yet is fetched when the project is created."}
+          : editing
+            ? "Ticked entries are what the manifest declares. Unticking removes the declaration; the download stays in the local cache."
+            : "Already-imported packages are listed. Anything not installed yet is fetched when the project is created."}
       </p>
       <div className="mb-6 rounded-md border border-input">
         {init.installed.length === 0 && dependencies.length === 0 ? (
@@ -304,7 +356,7 @@ const App = () => {
         <Button variant="ghost" onClick={() => vscode.postMessage({ type: "cancel" })}>
           Cancel
         </Button>
-        <Button onClick={submit}>Create project</Button>
+        <Button onClick={submit}>{editing ? "Save changes" : "Create project"}</Button>
       </div>
     </div>
   );
