@@ -209,14 +209,20 @@ export const activate = (context: vscode.ExtensionContext): void => {
       (node: PackageTreeNode) => {
         const record = packageOf(node);
         if (!record) return;
-        // Pre-filled so the import the user just did becomes the starting
-        // point of the project rather than something they have to re-find.
+        // The package is the premise of this command, and everything derived
+        // from it — the FHIR version, the dependencies it brings — comes from
+        // its own manifest rather than from an assumption about R4.
         ProjectFormPanel.show(
           context,
           {
-            dependencies: [record.key, "hl7.fhir.r4.core@4.0.1"].filter(
-              (key, index, all) => all.indexOf(key) === index
-            ),
+            basedOn: {
+              key: record.key,
+              id: record.id,
+              version: record.version,
+              title: record.manifest.title,
+              fhirVersion: record.manifest.fhirVersions?.[0],
+              dependencies: record.manifest.dependencies ?? {},
+            },
             canonicalHint: record.manifest.canonical,
           },
           afterPackagesChanged

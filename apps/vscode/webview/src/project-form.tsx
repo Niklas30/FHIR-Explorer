@@ -17,12 +17,21 @@ import "@webview/theme.css";
 type WorkspaceFolder = { name: string; uri: string };
 type InstalledPackage = { key: string; id: string; version: string; title?: string };
 
+/** The package this project is built on, when there is one. */
+type Basis = {
+  key: string;
+  id: string;
+  version: string;
+  title?: string;
+  fhirVersion?: string;
+  dependencies: Record<string, string>;
+};
+
 type InitMessage = {
   type: "init";
   folders: WorkspaceFolder[];
   installed: InstalledPackage[];
-  /** Pre-filled when the form was opened from an imported package. */
-  preset?: { dependencies: string[]; canonicalHint?: string };
+  preset?: { basedOn?: Basis; canonicalHint?: string };
 };
 
 type VsCodeApi = { postMessage: (message: unknown) => void };
@@ -73,7 +82,11 @@ const App = () => {
       if (event.data?.type !== "init") return;
       setInit(event.data);
       setFolder(event.data.folders[0]?.uri ?? "");
-      setDependencies(event.data.preset?.dependencies ?? ["hl7.fhir.r4.core@4.0.1"]);
+      const basis = event.data.preset?.basedOn;
+      // With a basis, everything it needs is already implied; without one the
+      // project still needs a core to validate against.
+      setDependencies(basis ? [] : ["hl7.fhir.r4.core@4.0.1"]);
+      if (basis?.fhirVersion) setFhirVersion(basis.fhirVersion);
     };
     window.addEventListener("message", listener);
     vscode.postMessage({ type: "ready" });
@@ -107,6 +120,8 @@ const App = () => {
 
   if (!init) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
+  const basis = init.preset?.basedOn;
+
   const submit = () => {
     setSubmitted(true);
     if (!valid) return;
@@ -132,6 +147,26 @@ const App = () => {
         Creates a folder with a FHIR <code>package.json</code> and the IG Publisher
         input directories. Dependencies are installed right after.
       </p>
+
+      {basis ? (
+        <div className="mb-6 rounded-md border border-input p-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Built on
+          </p>
+          <p className="mt-1 text-sm font-medium">
+            {basis.title ?? basis.id}{" "}
+            <span className="text-muted-foreground">{basis.version}</span>
+          </p>
+          {Object.keys(basis.dependencies).length > 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Brings {Object.entries(basis.dependencies)
+                .map(([id, dependencyVersion]) => `${id} ${dependencyVersion}`)
+                .join(", ")}
+              {" "}— installed with it, whether or not you add anything else.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {init.folders.length > 1 && (
         <Field label="Workspace folder" error={show("folder")}>
@@ -211,10 +246,13 @@ const App = () => {
         </Field>
       </div>
 
-      <Label className="mb-1 mt-2 block text-sm font-medium">Dependencies</Label>
+      <Label className="mb-1 mt-2 block text-sm font-medium">
+        {basis ? "Additional dependencies" : "Dependencies"}
+      </Label>
       <p className="mb-2 text-xs text-muted-foreground">
-        Already-imported packages are listed. Anything not installed yet is fetched
-        when the project is created.
+        {basis
+          ? "Anything else this project should depend on, beyond what the package above already brings."
+          : "Already-imported packages are listed. Anything not installed yet is fetched when the project is created."}
       </p>
       <div className="mb-6 rounded-md border border-input">
         {init.installed.length === 0 && dependencies.length === 0 ? (
@@ -227,7 +265,12 @@ const App = () => {
             ...dependencies,
             ...init.installed.map((entry) => `${entry.id}@${entry.version}`),
           ]),
-        ].map((key) => {
+        ]
+          // The basis and what it declares are not choices — offering them as
+          // checkboxes would imply they can be dropped, and they cannot.
+          .filter((key) => key !== basis?.key)
+          .filter((key) => !(basis && key.split("@")[0] in basis.dependencies))
+          .map((key) => {
           const installed = init.installed.find(
             (entry) => `${entry.id}@${entry.version}` === key
           );

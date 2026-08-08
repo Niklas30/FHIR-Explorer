@@ -19,9 +19,28 @@ const encoder = new TextEncoder();
 
 const PACKAGE_ID = /^[a-z0-9]+(\.[a-z0-9-]+)+$/;
 
+/**
+ * The package a new project is built on.
+ *
+ * Fixed, not a suggestion: the command that carries it is "create a project
+ * using this package", so making it a checkbox would let the user silently
+ * turn it into a different command. Its own declared dependencies come along
+ * whether or not anyone ticks them — the planner resolves the closure — so
+ * they are shown as consequences rather than choices.
+ */
+export type ProjectFormBasis = {
+  key: string;
+  id: string;
+  version: string;
+  title?: string;
+  /** Drives the new project's FHIR version instead of assuming R4. */
+  fhirVersion?: string;
+  /** What the package itself declares, for display. */
+  dependencies: Record<string, string>;
+};
+
 export type ProjectFormPreset = {
-  /** `id@version` entries to tick by default. */
-  dependencies: string[];
+  basedOn?: ProjectFormBasis;
   /** Canonical base to derive a suggestion from. */
   canonicalHint?: string;
 };
@@ -146,6 +165,11 @@ export class ProjectFormPanel {
     }
 
     const dependencies: Record<string, string> = {};
+    // The basis is added here rather than trusted from the form: it is the
+    // premise of the command, not something the webview gets to drop.
+    if (this.preset?.basedOn) {
+      dependencies[this.preset.basedOn.id] = this.preset.basedOn.version;
+    }
     for (const entry of value.dependencies) {
       const separator = entry.lastIndexOf("@");
       if (separator <= 0) continue;
