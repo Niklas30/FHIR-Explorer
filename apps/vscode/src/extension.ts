@@ -10,6 +10,7 @@ import {
 } from "@/commands/install-dependencies";
 import { browsePackageCommand } from "@/commands/browse-package";
 import { ProjectFormPanel } from "@/project/project-form-panel";
+import { cloneDefaultsFrom } from "@/project/clone-package";
 import { PackageTreeProvider, packageOf, type PackageTreeNode } from "@/tree/package-tree";
 import { FhirStatusBar } from "@/status-bar";
 import { ProjectRegistry, pickProject } from "@/workspace/project-registry";
@@ -190,6 +191,24 @@ export const activate = (context: vscode.ExtensionContext): void => {
     statusBar,
     vscode.commands.registerCommand("fhirExplorer.focusPackages", () =>
       vscode.commands.executeCommand("fhirExplorer.packages.focus")
+    ),
+    vscode.commands.registerCommand(
+      "fhirExplorer.clonePackageAsProject",
+      (node: PackageTreeNode) => {
+        const record = packageOf(node);
+        if (!record) return;
+        ProjectFormPanel.clone(
+          context,
+          {
+            sourceKey: record.key,
+            sourceId: record.id,
+            sourceVersion: record.version,
+            sourceTitle: record.manifest.title,
+            defaults: cloneDefaultsFrom(record),
+          },
+          afterPackagesChanged
+        );
+      }
     ),
     vscode.commands.registerCommand(
       "fhirExplorer.createProjectFromPackage",

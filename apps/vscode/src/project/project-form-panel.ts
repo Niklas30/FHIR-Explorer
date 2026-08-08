@@ -10,6 +10,7 @@ import {
   updateManifestFields,
 } from "@/registry/manifest";
 import { renderWebviewHtml } from "@/webview/html";
+import { clonePackageResources } from "@/project/clone-package";
 import { SCAFFOLDED_DIRECTORIES } from "@/workspace/layout";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 
@@ -25,6 +26,16 @@ const VIEW_TYPE = "fhirExplorer.projectForm";
 const encoder = new TextEncoder();
 
 const PACKAGE_ID = /^[a-z0-9]+(\.[a-z0-9-]+)+$/;
+
+const titleFor = (
+  editing: ProjectFormEditing | undefined,
+  cloning: ProjectFormCloning | undefined
+): string =>
+  editing
+    ? "FHIR project settings"
+    : cloning
+      ? `Clone ${cloning.sourceId}`
+      : "New FHIR project";
 
 /**
  * The package a new project is built on.
@@ -55,6 +66,26 @@ export type ProjectFormPreset = {
 /** The same form, opened on a project that already exists. */
 export type ProjectFormEditing = { project: WorkspaceProject };
 
+/**
+ * Forking an imported package into an editable project.
+ *
+ * Carries the source key so the resources can be copied after the folder
+ * exists, and the manifest defaults the clone inherits.
+ */
+export type ProjectFormCloning = {
+  sourceKey: string;
+  sourceId: string;
+  sourceVersion: string;
+  sourceTitle?: string;
+  defaults: {
+    title?: string;
+    description?: string;
+    canonical?: string;
+    fhirVersion?: string;
+    dependencies: Record<string, string>;
+  };
+};
+
 type CreateValue = {
   folder: string;
   name: string;
@@ -83,6 +114,7 @@ export class ProjectFormPanel {
     private readonly context: vscode.ExtensionContext,
     private preset: ProjectFormPreset | undefined,
     private editing: ProjectFormEditing | undefined,
+    private cloning: ProjectFormCloning | undefined,
     private readonly onCreated: () => void
   ) {
     panel.webview.options = {
@@ -93,7 +125,7 @@ export class ProjectFormPanel {
       panel.webview,
       context.extensionUri,
       "project-form",
-      editing ? "FHIR project settings" : "New FHIR project"
+      titleFor(editing, cloning)
     );
 
     this.disposables.push(
@@ -113,7 +145,16 @@ export class ProjectFormPanel {
     preset: ProjectFormPreset | undefined,
     onCreated: () => void
   ): void {
-    ProjectFormPanel.open(context, preset, undefined, onCreated);
+    ProjectFormPanel.open(context, preset, undefined, undefined, onCreated);
+  }
+
+  /** Open the form to fork an imported package into an editable project. */
+  static clone(
+    context: vscode.ExtensionContext,
+    cloning: ProjectFormCloning,
+    onCreated: () => void
+  ): void {
+    ProjectFormPanel.open(context, undefined, undefined, cloning, onCreated);
   }
 
   /** Open the form on an existing project, to inspect and change it. */
@@ -122,22 +163,22 @@ export class ProjectFormPanel {
     project: WorkspaceProject,
     onChanged: () => void
   ): void {
-    ProjectFormPanel.open(context, undefined, { project }, onChanged);
+    ProjectFormPanel.open(context, undefined, { project }, undefined, onChanged);
   }
 
   private static open(
     context: vscode.ExtensionContext,
     preset: ProjectFormPreset | undefined,
     editing: ProjectFormEditing | undefined,
+    cloning: ProjectFormCloning | undefined,
     onDone: () => void
   ): void {
     if (ProjectFormPanel.current) {
       // Reused, so the title has to follow what it is now showing.
       ProjectFormPanel.current.preset = preset;
       ProjectFormPanel.current.editing = editing;
-      ProjectFormPanel.current.panel.title = editing
-        ? "FHIR project settings"
-        : "New FHIR project";
+      ProjectFormPanel.current.cloning = cloning;
+      ProjectFormPanel.current.panel.title = titleFor(editing, cloning);
       ProjectFormPanel.current.panel.reveal();
       void ProjectFormPanel.current.sendInit();
       return;
@@ -145,7 +186,7 @@ export class ProjectFormPanel {
 
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
-      editing ? "FHIR project settings" : "New FHIR project",
+      titleFor(editing, cloning),
       vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true }
     );
@@ -154,6 +195,7 @@ export class ProjectFormPanel {
       context,
       preset,
       editing,
+      cloning,
       onDone
     );
   }
@@ -189,6 +231,7 @@ export class ProjectFormPanel {
             root: this.editing.project.root.fsPath,
           }
         : undefined,
+      cloning: this.cloning,
     });
   }
 
@@ -317,6 +360,32 @@ export class ProjectFormPanel {
       manifestUri,
       encoder.encode(`${JSON.stringify(manifest, null, 2)}\n`)
     );
+
+    // Copy the source package's resources in before anything else looks at
+    // the folder, so the project is never briefly an empty shell.
+    if (this.cloning) {
+      const store = new GlobalPackageStore(this.context.globalStorageUri);
+      const payloads = await store.listResourcePayloadsByPackageKeys([
+        this.cloning.sourceKey,
+      ]);
+
+      const outcome = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Cloning ${this.cloning.sourceId} into ${value.name}`,
+        },
+        (progress) =>
+          clonePackageResources(root, payloads, (completed, total) =>
+            progress.report({ message: `${completed}/${total} resources` })
+          )
+      );
+
+      vscode.window.showInformationMessage(
+        outcome.skipped > 0
+          ? `Copied ${outcome.written} resources, skipped ${outcome.skipped} that carry no resourceType.`
+          : `Copied ${outcome.written} resources. Canonicals are unchanged — adjust the ones you want to own.`
+      );
+    }
 
     this.dispose();
     this.onCreated();

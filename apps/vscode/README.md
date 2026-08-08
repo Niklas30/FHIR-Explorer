@@ -72,7 +72,8 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
   project, expandable into its profiles, value sets and code systems. Opening
   one shows it read-only; go to definition reaches them too, so a canonical
   from a dependency is no longer a dead end. *Create Project Using This
-  Package* turns an import into a project that depends on it.
+  Package* turns an import into a project that depends on it, and *Clone as
+  Editable Project* forks its resources into one you own.
 - **Create FHIR Project** is a form, not a chain of prompts: id, version,
   canonical and the dependencies to start with, all visible at once, installed
   as soon as you confirm.

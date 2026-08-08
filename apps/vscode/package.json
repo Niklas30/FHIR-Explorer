@@ -168,6 +168,12 @@
         "title": "Project Settings",
         "category": "FHIR Explorer",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "fhirExplorer.clonePackageAsProject",
+        "title": "Clone as Editable Project",
+        "category": "FHIR Explorer",
+        "icon": "$(repo-forked)"
       }
     ],
     "menus": {
@@ -293,6 +299,11 @@
           "command": "fhirExplorer.projectSettings",
           "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
           "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.clonePackageAsProject",
+          "when": "view == fhirExplorer.packages && viewItem == fhirExplorer.installedPackage",
+          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -326,6 +337,10 @@
         },
         {
           "command": "fhirExplorer.createProjectFromPackage",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.clonePackageAsProject",
           "when": "false"
         }
       ],

@@ -40,12 +40,28 @@ type Editing = {
   root: string;
 };
 
+/** Present when forking an imported package into an editable project. */
+type Cloning = {
+  sourceKey: string;
+  sourceId: string;
+  sourceVersion: string;
+  sourceTitle?: string;
+  defaults: {
+    title?: string;
+    description?: string;
+    canonical?: string;
+    fhirVersion?: string;
+    dependencies: Record<string, string>;
+  };
+};
+
 type InitMessage = {
   type: "init";
   folders: WorkspaceFolder[];
   installed: InstalledPackage[];
   preset?: { basedOn?: Basis; canonicalHint?: string };
   editing?: Editing;
+  cloning?: Cloning;
 };
 
 type VsCodeApi = { postMessage: (message: unknown) => void };
@@ -115,6 +131,23 @@ const App = () => {
         return;
       }
 
+      const clone = event.data.cloning;
+      if (clone) {
+        setName(`${clone.sourceId}.copy`);
+        setVersion("0.1.0");
+        setTitle(clone.defaults.title ? `${clone.defaults.title} (copy)` : "");
+        setDescription(clone.defaults.description ?? "");
+        setCanonical(clone.defaults.canonical ?? "");
+        setCanonicalTouched(true);
+        if (clone.defaults.fhirVersion) setFhirVersion(clone.defaults.fhirVersion);
+        // The clone holds the source's resources, so it inherits what the
+        // source needed — not the source itself.
+        setDependencies(
+          Object.entries(clone.defaults.dependencies).map(([id, v]) => `${id}@${v}`)
+        );
+        return;
+      }
+
       const basis = event.data.preset?.basedOn;
       // With a basis, everything it needs is already implied; without one the
       // project still needs a core to validate against.
@@ -154,6 +187,7 @@ const App = () => {
 
   const basis = init.preset?.basedOn;
   const editing = init.editing;
+  const cloning = init.cloning;
 
   const submit = () => {
     setSubmitted(true);
@@ -176,7 +210,7 @@ const App = () => {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-1 text-lg font-semibold">
-        {editing ? editing.name : "New FHIR project"}
+        {editing ? editing.name : cloning ? `Clone ${cloning.sourceId}` : "New FHIR project"}
       </h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {editing ? (
@@ -184,6 +218,16 @@ const App = () => {
             Editing <code>{editing.manifestFile ?? "the manifest"}</code> in{" "}
             <code>{editing.root}</code>. Changes are written in place, keeping
             formatting and comments.
+          </>
+        ) : cloning ? (
+          <>
+            Copies every resource of{" "}
+            <code>
+              {cloning.sourceId}@{cloning.sourceVersion}
+            </code>{" "}
+            into a new editable project. Canonicals are kept as they are — a
+            fork that rewrote them would break the references between the copied
+            resources.
           </>
         ) : (
           <>
@@ -356,7 +400,9 @@ const App = () => {
         <Button variant="ghost" onClick={() => vscode.postMessage({ type: "cancel" })}>
           Cancel
         </Button>
-        <Button onClick={submit}>{editing ? "Save changes" : "Create project"}</Button>
+        <Button onClick={submit}>
+          {editing ? "Save changes" : cloning ? "Clone project" : "Create project"}
+        </Button>
       </div>
     </div>
   );
