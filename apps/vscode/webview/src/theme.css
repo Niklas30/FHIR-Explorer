@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
 /**
+ * The shared components live in another workspace package, reached through a
+ * node_modules symlink — and Tailwind's automatic source detection skips
+ * node_modules, so none of their classes were ever generated. The webviews
+ * rendered with only the utilities their own files happened to use.
+ *
+ * It failed loudest in the dependency graph: an SVG with no `fill` rule falls
+ * back to black, so every node was a black box with black text on a dark
+ * theme. Nothing errored, and the build was green throughout.
+ */
+@source "../../../../packages/ui/src";
+@source "../../src";
+@source ".";
+
+/**
  * Theme bridge.
  *
  * The shared components are styled with the shadcn token set. Instead of

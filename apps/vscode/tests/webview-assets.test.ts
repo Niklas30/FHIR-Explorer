@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +32,18 @@ describe("webview bundle", () => {
     expect(emitted).toContain(WEBVIEW_STYLESHEET);
     for (const entry of WEBVIEW_ENTRIES) {
       expect(emitted).toContain(`${entry}.js`);
+    }
+
+    // Tailwind reaches @fhir-explorer/ui through a node_modules symlink, which
+    // its source detection skips by default. Without an explicit @source none
+    // of the shared components' classes are generated: the build stays green
+    // and the dependency graph renders as black boxes on black. These classes
+    // appear only in packages/ui, so they are the canary.
+    const css = readFileSync(join(outDir, WEBVIEW_STYLESHEET), "utf8");
+    for (const utility of [".fill-background", ".fill-foreground", ".stroke-primary"]) {
+      expect(css, `${utility} missing — packages/ui is not being scanned`).toContain(
+        utility
+      );
     }
   }, 120_000);
 });
