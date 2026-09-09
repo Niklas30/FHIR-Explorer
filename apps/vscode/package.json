@@ -360,15 +360,36 @@
           "default": true,
           "markdownDescription": "Read from and write to the shared `~/.fhir/packages` cache, so the IG Publisher, Sushi and this extension reuse each other's downloads."
         },
-        "fhirExplorer.registry.baseUrl": {
-          "type": "string",
-          "default": "https://packages2.fhir.org/packages",
-          "markdownDescription": "Registry serving npm-style package metadata at `/{id}`. It must publish each version's `dependencies` \u2014 that is what lets the extension resolve the whole dependency tree before downloading anything."
-        },
-        "fhirExplorer.registry.searchUrl": {
-          "type": "string",
-          "default": "https://packages.fhir.org",
-          "markdownDescription": "Registry serving `/catalog?op=find` for package search. Optional: without it, **Add Dependency** takes a package id typed by hand."
+        "fhirExplorer.registry.sources": {
+          "type": "array",
+          "markdownDescription": "Registries searched for packages, in order. No single registry has every version: `packages2.fhir.org` publishes each version's `dependencies` but mirrors only a slice of what publishers released, while `packages.simplifier.net` keeps the full history and has its dependencies read out of the package archive instead.",
+          "items": {
+            "type": "object",
+            "required": [
+              "url"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "markdownDescription": "Registry serving npm-style package metadata at `/{id}`."
+              },
+              "searchUrl": {
+                "type": "string",
+                "markdownDescription": "Registry serving `/catalog?op=find` for package search. Optional: a registry without one simply contributes no search results."
+              }
+            },
+            "additionalProperties": false
+          },
+          "default": [
+            {
+              "url": "https://packages2.fhir.org/packages",
+              "searchUrl": "https://packages.fhir.org"
+            },
+            {
+              "url": "https://packages.simplifier.net",
+              "searchUrl": "https://packages.simplifier.net"
+            }
+          ]
         },
         "fhirExplorer.terminologyServer.url": {
           "type": "string",

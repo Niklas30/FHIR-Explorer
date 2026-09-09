@@ -100,8 +100,7 @@ or do it by hand:
 
 | Setting | Purpose |
 | --- | --- |
-| `fhirExplorer.registry.baseUrl` | Registry serving package metadata. Must publish each version's `dependencies`. |
-| `fhirExplorer.registry.searchUrl` | Registry serving `/catalog?op=find`. Optional — without it you type package ids. |
+| `fhirExplorer.registry.sources` | Registries searched for packages, in order. Defaults to `packages2.fhir.org` then `packages.simplifier.net`. |
 | `fhirExplorer.packageCache.useFhirHome` | Share downloads through `~/.fhir/packages`. |
 | `fhirExplorer.terminologyServer.url` | Optional `$expand` server for value sets the imported packages cannot expand. |
 

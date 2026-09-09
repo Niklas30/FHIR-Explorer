@@ -5,8 +5,8 @@ import { compareVersions, resolveVersionRange } from "@/registry/version";
 /**
  * Works out everything that has to be installed, before anything is downloaded.
  *
- * The registry publishes each version's `dependencies`, so the whole tree can
- * be walked over metadata alone. The user then sees one plan — how many
+ * The registry answers what each version depends on, so the whole tree can be
+ * walked before anything is installed. The user then sees one plan — how many
  * packages, which conflicts, what is already on disk — and confirms once,
  * rather than being sent round the loop per missing dependency.
  */
@@ -151,16 +151,19 @@ export const planInstall = async (
       continue;
     }
 
+    const chosen = pinned ?? resolved;
     const target = requested.get(entry.id);
-    if (target) target.version = pinned ?? resolved;
+    if (target) target.version = chosen;
 
-    const version = metadata.versions.find(
-      (candidate) => candidate.version === (pinned ?? resolved)
-    );
-    const key = buildPackageKey(entry.id, pinned ?? resolved);
+    const version = metadata.versions.find((candidate) => candidate.version === chosen);
+    const key = buildPackageKey(entry.id, chosen);
     if (version?.tarball) tarballs.set(key, version.tarball);
 
-    for (const [dependencyId, range] of Object.entries(version?.dependencies ?? {})) {
+    // Asked of the registry rather than read off the version entry: not every
+    // registry publishes dependencies in its metadata, and the ones that do
+    // not have to go and look inside the archive.
+    const dependencies = await registry.dependencies(entry.id, chosen);
+    for (const [dependencyId, range] of Object.entries(dependencies)) {
       queue.push({ id: dependencyId, version: range, by: key, direct: false });
     }
   }

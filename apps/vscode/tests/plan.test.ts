@@ -16,6 +16,7 @@ const stubRegistry = (
     calls,
     search: async () => [],
     tarballUrl: (id, version) => `https://example.org/${id}/${version}`,
+    dependencies: async (id, version) => catalogue[id]?.[version] ?? {},
     metadata: async (id): Promise<RegistryPackage | undefined> => {
       calls.push(id);
       const versions = catalogue[id];

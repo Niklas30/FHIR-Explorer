@@ -1,10 +1,12 @@
 /**
  * The slice of the FHIR package registry the extension talks to.
  *
- * `packages.fhir.org` answers in an npm-shaped format and — crucially —
- * carries `dependencies` on every version entry. That is what lets the whole
- * dependency tree be resolved before a single tarball is downloaded, instead
- * of the web app's "download, discover something is missing, repeat".
+ * The npm-shaped registries answer at `/{id}` with a version map. The ones
+ * that carry `dependencies` on every version entry — `packages2.fhir.org` —
+ * let the whole tree be resolved before a single tarball is downloaded,
+ * instead of the web app's "download, discover something is missing, repeat".
+ * Registries that omit them, such as `packages.simplifier.net`, are still
+ * usable: `dependencies()` falls back to the manifest inside the tarball.
  */
 
 export type RegistryVersion = {
@@ -39,6 +41,14 @@ export interface PackageRegistryApi {
   search: (query: string) => Promise<RegistrySearchHit[]>;
   /** Metadata for one package, or undefined when the registry does not know it. */
   metadata: (id: string) => Promise<RegistryPackage | undefined>;
+  /**
+   * Direct dependencies of one version, as `id -> version`.
+   *
+   * Separate from `metadata` because not every registry publishes them: the
+   * answer may cost a tarball download, so it is asked for only about the
+   * versions the planner actually settled on. Empty means none declared.
+   */
+  dependencies: (id: string, version: string) => Promise<Record<string, string>>;
   /** Where the tarball for a specific version lives. */
   tarballUrl: (id: string, version: string) => string;
 }

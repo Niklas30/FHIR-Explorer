@@ -6,7 +6,7 @@ import {
 } from "@/registry/manifest";
 import { planInstall, type InstallPlan, type PlanRequest } from "@/registry/plan";
 import { createImportSession, type ImportSession } from "@/registry/session";
-import type { RegistryClient } from "@/registry/registry-client";
+import type { PackageRegistryApi } from "@/registry/types";
 import { sortVersionsForPicking } from "@/registry/version";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 
@@ -25,7 +25,7 @@ const SEARCH_DEBOUNCE_MS = 250;
 type PackagePick = vscode.QuickPickItem & { packageId?: string };
 
 /** Live search against the registry catalogue, with manual entry as a fallback. */
-const pickPackageId = async (registry: RegistryClient): Promise<string | undefined> => {
+const pickPackageId = async (registry: PackageRegistryApi): Promise<string | undefined> => {
   const quickPick = vscode.window.createQuickPick<PackagePick>();
   quickPick.title = "Add FHIR Dependency";
   quickPick.placeholder = "Search the registry, or type a package id";
@@ -90,7 +90,7 @@ const pickPackageId = async (registry: RegistryClient): Promise<string | undefin
 };
 
 const pickVersion = async (
-  registry: RegistryClient,
+  registry: PackageRegistryApi,
   id: string
 ): Promise<string | undefined> => {
   const metadata = await vscode.window.withProgress(

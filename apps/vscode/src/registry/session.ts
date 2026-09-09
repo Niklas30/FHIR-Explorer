@@ -2,8 +2,10 @@ import * as vscode from "vscode";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { listCachedPackages, type CachedPackage } from "@/adapters/fhir-home-cache";
 import { nodeHttpClient } from "@/adapters/node-http-client";
+import { ChainedRegistry } from "@/registry/chained-registry";
 import { PackageInstaller } from "@/registry/installer";
 import { RegistryClient } from "@/registry/registry-client";
+import type { PackageRegistryApi } from "@/registry/types";
 
 /**
  * Everything the import commands need, assembled from the current settings.
@@ -14,7 +16,7 @@ import { RegistryClient } from "@/registry/registry-client";
  */
 
 export type ImportSession = {
-  registry: RegistryClient;
+  registry: PackageRegistryApi;
   store: GlobalPackageStore;
   installer: PackageInstaller;
   /** `id@version` of everything already available without downloading. */
@@ -22,23 +24,53 @@ export type ImportSession = {
   cached: Map<string, CachedPackage>;
 };
 
-/** Serves dependencies in its metadata, which is what the planner needs. */
-const DEFAULT_REGISTRY = "https://packages2.fhir.org/packages";
-/** Serves the catalogue the metadata registry lacks. */
-const DEFAULT_SEARCH = "https://packages.fhir.org";
+export type RegistrySource = {
+  /** npm-shaped metadata endpoint, answering at `/{id}`. */
+  url: string;
+  /** Catalogue endpoint for search, when this registry has one. */
+  searchUrl?: string;
+};
+
+/**
+ * Where packages are looked for, in order.
+ *
+ * `packages2.fhir.org` first because it publishes each version's
+ * `dependencies`, so the tree resolves without downloading anything. It
+ * mirrors only a slice of the versions publishers released, though — a
+ * package pinning an older dependency needs Simplifier, which has the full
+ * history and whose dependencies are read out of the archive instead.
+ */
+const DEFAULT_SOURCES: RegistrySource[] = [
+  { url: "https://packages2.fhir.org/packages", searchUrl: "https://packages.fhir.org" },
+  { url: "https://packages.simplifier.net", searchUrl: "https://packages.simplifier.net" },
+];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+/** Settings are user-editable JSON, so anything unusable is dropped, not trusted. */
+const readSources = (configured: unknown): RegistrySource[] => {
+  if (!Array.isArray(configured)) return DEFAULT_SOURCES;
+  const sources = configured.filter(isRecord).flatMap((entry) => {
+    const url = typeof entry.url === "string" ? entry.url.trim() : "";
+    if (!url) return [];
+    const searchUrl = typeof entry.searchUrl === "string" ? entry.searchUrl.trim() : "";
+    return [{ url, searchUrl: searchUrl || undefined }];
+  });
+  return sources.length > 0 ? sources : DEFAULT_SOURCES;
+};
 
 export const createImportSession = async (
   context: vscode.ExtensionContext
 ): Promise<ImportSession> => {
   const configuration = vscode.workspace.getConfiguration("fhirExplorer");
-  const baseUrl = configuration.get<string>("registry.baseUrl")?.trim() || DEFAULT_REGISTRY;
-  const searchUrl = configuration.get<string>("registry.searchUrl")?.trim() || undefined;
+  const sources = readSources(configuration.get<unknown>("registry.sources"));
   const useFhirHome = configuration.get<boolean>("packageCache.useFhirHome") ?? true;
 
-  const registry = new RegistryClient(
-    nodeHttpClient,
-    baseUrl,
-    searchUrl ?? (baseUrl === DEFAULT_REGISTRY ? DEFAULT_SEARCH : undefined)
+  const registry = new ChainedRegistry(
+    sources.map(
+      (source) => new RegistryClient(nodeHttpClient, source.url, source.searchUrl)
+    )
   );
   const store = new GlobalPackageStore(context.globalStorageUri);
 
