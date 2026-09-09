@@ -3,6 +3,7 @@ import {
   FhirPackageRegistry,
   fetchPackageAvailability,
   listAvailableVersions,
+  listSourcesFor,
   resolveDownloadUrl,
   resolveImportUrl,
 } from "@/lib/fhir-importer/registry";
@@ -135,6 +136,45 @@ describe("registry chain", () => {
     );
 
     expect(source).toBeUndefined();
+  });
+
+  it("lists every registry that carries a version, in chain order", async () => {
+    const sources = await listSourcesFor(
+      "de.basisprofil.r4",
+      "1.5.0",
+      chain,
+      stubFetch({
+        "https://mirror.example/packages/de.basisprofil.r4": metadata({ "1.5.0": {} }),
+        "https://full.example/de.basisprofil.r4": metadata({ "1.5.0": {}, "1.3.2": {} }),
+      })
+    );
+
+    expect(sources).toEqual([
+      {
+        registry: "Mirror",
+        url: "https://mirror.example/packages/de.basisprofil.r4/1.5.0",
+        fetchable: false,
+      },
+      {
+        registry: "Full",
+        url: "https://full.example/de.basisprofil.r4/1.5.0",
+        fetchable: true,
+      },
+    ]);
+  });
+
+  it("lists nothing for a version no registry carries", async () => {
+    const sources = await listSourcesFor(
+      "de.basisprofil.r4",
+      "9.9.9",
+      chain,
+      stubFetch({
+        "https://mirror.example/packages/de.basisprofil.r4": metadata({ "1.5.0": {} }),
+        "https://full.example/de.basisprofil.r4": metadata({ "1.5.0": {} }),
+      })
+    );
+
+    expect(sources).toEqual([]);
   });
 
   it("says so when no registry could be reached at all", async () => {

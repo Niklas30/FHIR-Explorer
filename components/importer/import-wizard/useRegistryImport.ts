@@ -17,7 +17,7 @@ type RegistryImportOptions = {
   importFromRegistry: (
     id: string,
     version: string,
-    options?: { asTarget?: boolean }
+    options?: { asTarget?: boolean; url?: string }
   ) => Promise<ImportResult | null>;
   refresh: () => Promise<ImporterSnapshot | null>;
   currentTarget?: PackageRef;
@@ -44,10 +44,10 @@ export const useRegistryImport = ({
    * still there for those, and the error says so.
    */
   const handleImportFromRegistry = useCallback(
-    async (id: string, version: string, asTarget = false) => {
+    async (id: string, version: string, asTarget = false, url?: string) => {
       setUploadNotice(null);
       setIsUploading(true);
-      const result = await importFromRegistry(id, version, { asTarget });
+      const result = await importFromRegistry(id, version, { asTarget, url });
       setIsUploading(false);
       if (result) {
         setUploadNotice(

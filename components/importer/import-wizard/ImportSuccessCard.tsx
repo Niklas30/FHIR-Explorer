@@ -40,11 +40,8 @@ export const ImportSuccessCard = ({
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="size-2 animate-pulse rounded-full bg-primary" />
-          {text.finishRedirecting}
-        </div>
-        <Button asChild variant="outline" size="sm">
+        <p className="text-sm text-muted-foreground">{text.finishStayHint}</p>
+        <Button asChild size="sm">
           <Link href="/">
             {text.finishGoNow}
             <ArrowRight className="size-4" />

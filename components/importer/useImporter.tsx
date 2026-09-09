@@ -33,7 +33,7 @@ type UseImporterResult = {
   importFromRegistry: (
     id: string,
     version: string,
-    options?: { asTarget?: boolean }
+    options?: { asTarget?: boolean; url?: string }
   ) => Promise<ImportResult | null>;
   addImportHistory: (targetKey: string) => Promise<void>;
   deletePackage: (packageKey: string) => Promise<void>;
@@ -214,13 +214,17 @@ export const useImporter = (): UseImporterResult => {
   );
 
   const importFromRegistry = useCallback(
-    async (id: string, version: string, options: { asTarget?: boolean } = {}) => {
+    async (id: string, version: string, options: { asTarget?: boolean; url?: string } = {}) => {
       setError(null);
       setLastResult(null);
       if (!client) return null;
       try {
         setProgress({ phase: "reading", message: `Fetching ${id}@${version}` });
-        const source = await resolveImportUrl(id, version);
+        // An explicit url means the user picked the registry themselves, and
+        // that choice is not second-guessed by resolving one again.
+        const source = options.url
+          ? { url: options.url, registry: options.url, found: true }
+          : await resolveImportUrl(id, version);
         if (!source) {
           setError(text.notFetchable);
           return null;

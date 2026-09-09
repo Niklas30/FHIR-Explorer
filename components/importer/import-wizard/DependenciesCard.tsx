@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { formatRequirement } from "@/components/importer/import-wizard/helpers";
+import { DependencySourceList } from "@/components/importer/import-wizard/DependencySourceList";
+import type { DependencySources } from "@/components/importer/import-wizard/useDependencySources";
 import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
@@ -25,10 +27,12 @@ export type DependenciesCardProps = {
   onClearVersion: (depId: string) => void;
   onCopy: (link: string) => void;
   getDownloadUrl: (id: string, version: string) => string;
-  onImportDirectly: (id: string, version: string) => void;
+  /** `url` pins the registry the user chose; without it the resolver decides. */
+  onImportDirectly: (id: string, version: string, url?: string) => void;
   onImportAllMissing: () => void;
   onUpload: (files: File[]) => void;
   advancedMode: boolean;
+  sources: DependencySources;
 };
 
 export const DependenciesCard = ({
@@ -50,6 +54,7 @@ export const DependenciesCard = ({
   onImportAllMissing,
   onUpload,
   advancedMode,
+  sources,
 }: DependenciesCardProps) => {
   if (!currentTarget || allResolved) return null;
   // Nothing is missing yet while the import is still being agreed to, and an
@@ -141,31 +146,18 @@ export const DependenciesCard = ({
                   ) : null}
 
                   <div className={cn("mt-3 flex-col gap-2", advancedMode ? "flex" : "hidden")}>
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium text-foreground">{text.download}</span>
-                      <span className="text-muted-foreground">{link ?? text.selectVersionForLink}</span>
-                      {link ? (
-                        <div className="flex flex-wrap items-center gap-2">
-                          {selectedVersion && advancedMode ? (
-                            <Button
-                              size="sm"
-                              disabled={isUploading}
-                              onClick={() => onImportDirectly(dependency.id, selectedVersion)}
-                            >
-                              {text.importDirectly}
-                            </Button>
-                          ) : null}
-                          <Button asChild size="sm" variant="secondary">
-                            <a href={link} target="_blank" rel="noreferrer">
-                              {text.openLink}
-                            </a>
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => onCopy(link)}>
-                            {text.copyLink}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
+                    <DependencySourceList
+                      text={text}
+                      sources={selectedVersion ? sources[`${dependency.id}@${selectedVersion}`] : undefined}
+                      fallbackLink={link}
+                      isUploading={isUploading}
+                      onImportFrom={(url) =>
+                        selectedVersion
+                          ? onImportDirectly(dependency.id, selectedVersion, url)
+                          : undefined
+                      }
+                      onCopy={onCopy}
+                    />
                   </div>
                 </div>
               );

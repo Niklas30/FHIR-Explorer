@@ -168,6 +168,13 @@ const urlOf = (
   return entry.tarball ?? owner.buildDownloadUrl(id, version);
 };
 
+export type PackageSource = {
+  registry: string;
+  url: string;
+  /** Whether the browser may fetch it, or only link to it for a manual download. */
+  fetchable: boolean;
+};
+
 export type ResolvedSource = {
   url: string;
   registry: string;
@@ -195,6 +202,30 @@ export const resolveDownloadUrl = async (
     return { url: chain[0].buildDownloadUrl(id, version), registry: chain[0].name, found: false };
   }
   return { url: urlOf(match, id, version, chain), registry: match.registry, found: true };
+};
+
+/**
+ * Every registry in the chain that carries this exact version.
+ *
+ * The automatic import picks one of these and says which; this lists them all,
+ * for the case where someone wants to decide for themselves — a mirror they
+ * trust, a host that is reachable from their network, or simply the one they
+ * know the package was published to.
+ */
+export const listSourcesFor = async (
+  id: PackageId,
+  version: PackageVersion,
+  chain: FhirPackageRegistry[] = REGISTRY_CHAIN,
+  fetchImpl: typeof fetch = fetch
+): Promise<PackageSource[]> => {
+  const availability = await fetchPackageAvailability(id, chain, fetchImpl);
+  return availability.versions
+    .filter((entry) => entry.version === version)
+    .map((entry) => ({
+      registry: entry.registry,
+      url: urlOf(entry, id, version, chain),
+      fetchable: entry.fetchable,
+    }));
 };
 
 /**

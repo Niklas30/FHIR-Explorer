@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { VersionChoicesCard } from "@/components/importer/import-wizard/VersionChoicesCard";
 import { DependenciesCard } from "@/components/importer/import-wizard/DependenciesCard";
@@ -13,6 +13,7 @@ import { ImportLogCard } from "@/components/importer/import-wizard/ImportLogCard
 import { ImportSuccessCard } from "@/components/importer/import-wizard/ImportSuccessCard";
 import { TargetPackageCard } from "@/components/importer/import-wizard/TargetPackageCard";
 import { useAdvancedMode } from "@/components/importer/import-wizard/useAdvancedMode";
+import { useDependencySources } from "@/components/importer/import-wizard/useDependencySources";
 import { useImportSource } from "@/components/importer/import-wizard/useImportSource";
 import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
@@ -61,7 +62,6 @@ export const ImportWizard = () => {
   // import the next one the user names.
   const [consented, setConsented] = useState(false);
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [packageId, setPackageId] = useState("");
   const [version, setVersion] = useState("");
   const [versionDrafts, setVersionDrafts] = useState<Record<string, string>>({});
@@ -112,6 +112,7 @@ export const ImportWizard = () => {
   const dependencyState = snapshot?.dependencyState;
   const missing = dependencyState?.missing ?? EMPTY_DEPENDENCIES;
   const decisions = dependencyState?.decisions ?? EMPTY_DEPENDENCIES;
+  const dependencySources = useDependencySources(missing, advancedMode);
   const packages = snapshot?.packages ?? EMPTY_PACKAGES;
   const trimmedPackageId = packageId.trim();
   const trimmedVersion = version.trim();
@@ -289,14 +290,6 @@ export const ImportWizard = () => {
 
   const { isDragging: isDraggingFile, dropHandlers } = usePageFileDrop(handleGlobalFiles);
 
-  // After a successful import, briefly show the confirmation, then hand the user
-  // off to the projects overview. Unmounting resets the wizard to its initial state.
-  useEffect(() => {
-    if (!importFinished) return;
-    const timer = window.setTimeout(() => router.push("/"), 2200);
-    return () => window.clearTimeout(timer);
-  }, [importFinished, router]);
-
   const logToShow = currentTarget ? importLog : lastImportLog;
 
   const logCardConfig = useMemo(() => {
@@ -330,14 +323,23 @@ export const ImportWizard = () => {
       />
 
       {importFinished && completedSummary ? (
-        <ImportSuccessCard
-          text={text}
-          format={format}
-          targetKey={completedSummary.targetKey}
-          packageCount={finishDependencyCount + 1}
-          dependencyCount={finishDependencyCount}
-          definitionCount={importedDefinitions}
-        />
+        <>
+          <ImportSuccessCard
+            text={text}
+            format={format}
+            targetKey={completedSummary.targetKey}
+            packageCount={finishDependencyCount + 1}
+            dependencyCount={finishDependencyCount}
+            definitionCount={importedDefinitions}
+          />
+          <ImportLogCard
+            text={text}
+            format={format}
+            title={text.importLog}
+            description={logCardConfig.description}
+            log={logToShow}
+          />
+        </>
       ) : (
         <>
           <TargetPackageCard
@@ -407,7 +409,10 @@ export const ImportWizard = () => {
             onClearVersion={(depId) => void clearVersionSelection(depId)}
             onCopy={(link) => void handleCopy(link)}
             getDownloadUrl={getDownloadUrl}
-            onImportDirectly={(id, version) => void handleImportFromRegistry(id, version)}
+            onImportDirectly={(id, version, url) =>
+              void handleImportFromRegistry(id, version, false, url)
+            }
+            sources={dependencySources}
             onImportAllMissing={() => void handleImportAllMissing()}
             onUpload={(files) => void handleUpload(files)}
             advancedMode={advancedMode}
