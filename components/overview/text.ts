@@ -267,7 +267,7 @@ const overviewText = {
     selectedPrefix: "Ausgewählt:",
     clear: "Leeren",
     datasetFileSupportHint:
-      "Unterstützt JSON/ZIP Dataset-Exports, einzelne Ressourcen, Ressourcenlisten oder FHIR Bundles.",
+      "Unterstützt JSON/ZIP Dataset-Exports, einzelne Ressourcen, Ressourcenlisten oder FHIR® Bundles.",
     fallbackNameLabel: "Fallback-Name (optional)",
     fallbackNameHint: "Wird nur genutzt, wenn die Importdatei keinen Namen enthält.",
     importDatasetConfirm: "Dataset importieren",
@@ -284,20 +284,20 @@ const overviewText = {
       "Beim Löschen werden importierte Pakete, Abhängigkeitsmetadaten, gecachte Ressourcen und alle Datasets in diesem Browser entfernt.",
     terminologyServerLabel: "Terminologie-Server (optional)",
     terminologyServerHint:
-      "FHIR-Basis-URL für $expand, z. B. https://tx.fhir.org/r4. Wird nur genutzt, wenn ein ValueSet lokal nicht auflösbar ist.",
+      "FHIR®-Basis-URL für $expand, z. B. https://tx.fhir.org/r4. Wird nur genutzt, wenn ein ValueSet lokal nicht auflösbar ist.",
     close: "Schließen",
     deleteAllLocalData: "Alle lokalen Daten löschen",
     thisProject: "dieses Projekt",
     importedPackagesTitle: "Importierte Pakete",
     importedPackagesDescription:
-      "Von anderen Autoren importierte FHIR-Pakete. Im Projekt-Editor ansehen oder als eigenes Projekt duplizieren.",
+      "Von anderen Autoren importierte FHIR®-Pakete. Im Projekt-Editor ansehen oder als eigenes Projekt duplizieren.",
     openInProjectEditor: "Im Projekt-Editor öffnen",
     newProject: "Neues Projekt",
     duplicateProjectAction: "Duplizieren",
     projectSourceAuthored: "Eigen",
     projectSourceImported: "Importiert",
     projectsSectionDescription:
-      "Eigene und importierte FHIR-Projekte. Lege Datasets an, um Ressourcen zu bearbeiten.",
+      "Eigene und importierte FHIR®-Projekte. Lege Datasets an, um Ressourcen zu bearbeiten.",
     projectDuplicated: "Projekt dupliziert.",
   },
   en: {
@@ -419,7 +419,7 @@ const overviewText = {
     selectedPrefix: "Selected:",
     clear: "Clear",
     datasetFileSupportHint:
-      "Supports JSON/ZIP dataset exports, single resources, resource lists, or FHIR bundles.",
+      "Supports JSON/ZIP dataset exports, single resources, resource lists, or FHIR® bundles.",
     fallbackNameLabel: "Fallback name (optional)",
     fallbackNameHint: "Used only if the import file does not include a name.",
     importDatasetConfirm: "Import dataset",
@@ -436,20 +436,20 @@ const overviewText = {
       "Deleting data removes imported packages, dependency metadata, cached resources, and all datasets saved in this browser.",
     terminologyServerLabel: "Terminology server (optional)",
     terminologyServerHint:
-      "FHIR base URL used for $expand, e.g. https://tx.fhir.org/r4. Only queried when a ValueSet cannot be resolved locally.",
+      "FHIR® base URL used for $expand, e.g. https://tx.fhir.org/r4. Only queried when a ValueSet cannot be resolved locally.",
     close: "Close",
     deleteAllLocalData: "Delete all local data",
     thisProject: "this project",
     importedPackagesTitle: "Imported packages",
     importedPackagesDescription:
-      "FHIR packages imported from other authors. View them in the project editor or duplicate one into your own project.",
+      "FHIR® packages imported from other authors. View them in the project editor or duplicate one into your own project.",
     openInProjectEditor: "Open in project editor",
     newProject: "New project",
     duplicateProjectAction: "Duplicate",
     projectSourceAuthored: "Authored",
     projectSourceImported: "Imported",
     projectsSectionDescription:
-      "Your own and imported FHIR projects. Create datasets to author resources.",
+      "Your own and imported FHIR® projects. Create datasets to author resources.",
     projectDuplicated: "Project duplicated.",
   },
 } satisfies Record<"de" | "en", OverviewText>;
@@ -556,4 +556,3 @@ export const localizedOverviewText = {
     datasetDuplicated: 'Dataset "{name}" duplicato.',
   },
 } satisfies Record<"de" | "en" | "fr" | "es" | "it", OverviewText>;
-

@@ -15,7 +15,7 @@ const enText = {
     "The dataset id could not be resolved. Return to the projects overview.",
   missingIdPrefix: "Missing id:",
   editorInitErrorTitle: "Editor could not be loaded",
-  editorInitErrorDescription: "An error occurred while initializing FHIR profiles.",
+  editorInitErrorDescription: "An error occurred while initializing HL7 FHIR® profiles.",
   devModeHintPrefix: "For technical details, enable Dev Mode via",
   devModeHintSuffix: ".",
   datasetInfoTitle: "Dataset Info",
@@ -42,7 +42,7 @@ const enText = {
   exportConfirmProject: "Export project",
   loadingEditorOverlay: "Loading editor…",
   loadingFallback: "Loading editor…",
-  errorLoadingResources: "Failed to load FHIR package resources.",
+  errorLoadingResources: "Failed to load FHIR® package resources.",
   referenceTargetCreated: "Created {reference} and linked it.",
 };
 
@@ -66,7 +66,7 @@ export const datasetEditorText: Dictionary = {
       "Die Dataset-ID konnte nicht aufgelöst werden. Gehe zurück zur Projektübersicht.",
     missingIdPrefix: "Fehlende ID:",
     editorInitErrorTitle: "Editor konnte nicht geladen werden",
-    editorInitErrorDescription: "Beim Initialisieren der FHIR-Profile ist ein Fehler aufgetreten.",
+    editorInitErrorDescription: "Beim Initialisieren der HL7 FHIR®-Profile ist ein Fehler aufgetreten.",
     devModeHintPrefix: "Für technische Details kann der Dev Mode über",
     devModeHintSuffix: "aktiviert werden.",
     datasetInfoTitle: "Dataset-Info",
@@ -94,7 +94,7 @@ export const datasetEditorText: Dictionary = {
     exportConfirmProject: "Projekt exportieren",
     loadingEditorOverlay: "Editor wird geladen…",
     loadingFallback: "Editor wird geladen…",
-    errorLoadingResources: "FHIR-Paketressourcen konnten nicht geladen werden.",
+    errorLoadingResources: "FHIR®-Paketressourcen konnten nicht geladen werden.",
     referenceTargetCreated: "{reference} angelegt und verknüpft.",
   },
   en: enText,
@@ -168,4 +168,3 @@ export const datasetEditorText: Dictionary = {
     loadingFallback: "Caricamento editor…",
   },
 };
-

@@ -1,13 +1,13 @@
 # FHIR-Explorer
 
-Local‑first FHIR R4 **package importer**, **project/dataset manager**, and **resource editor**.
+Local‑first HL7 FHIR® R4 **package importer**, **project/dataset manager**, and **resource editor**.
 FHIR-Explorer runs entirely in the browser: no backend required.
 
 > Status: work in progress (internal tooling). APIs and UX may change.
 
 ## What it does
 
-- **Import FHIR packages** (target + transitive dependencies) and visualize the dependency graph.
+- **Import HL7 FHIR® packages** (target + transitive dependencies) and visualize the dependency graph.
 - **Create projects and datasets** and manage them from an overview.
 - **Edit resources** with profile‑driven forms generated from `StructureDefinition`.
 - **Validate resources live** (cardinality, required fields, bindings, references).
@@ -16,7 +16,7 @@ FHIR-Explorer runs entirely in the browser: no backend required.
 ## Key concepts
 
 - **Project**: A chosen “target package” plus its dependency closure.
-- **Dataset**: A collection of FHIR resources belonging to a project.
+- **Dataset**: A collection of FHIR® resources belonging to a project.
 - **Registry**: In‑memory index of `StructureDefinition`, `ValueSet`, `CodeSystem` used for rendering and validation.
 
 ## Data model & privacy
@@ -33,7 +33,7 @@ If you work with sensitive data, treat your browser storage like any other local
 
 - Next.js (App Router), React, TypeScript
 - Tailwind CSS + Radix UI
-- `@medplum/core` for parts of FHIR handling/validation
+- `@medplum/core` for parts of FHIR® handling/validation
 - Mermaid for dependency graph visualization
 - IndexedDB / LocalStorage (local persistence)
 
@@ -138,4 +138,6 @@ If you contribute internally:
 
 ## Legal
 
-FHIR® is a registered trademark of HL7. This project is not affiliated with or endorsed by HL7.
+FHIR® is a registered trademark of Health Level Seven International (HL7).
+Use of this trademark does not constitute endorsement by HL7.
+This project is not affiliated with or endorsed by HL7.

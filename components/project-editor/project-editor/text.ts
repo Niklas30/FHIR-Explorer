@@ -4,7 +4,7 @@ const enText = {
   // Overview section
   sectionTitle: "My projects",
   sectionDescription:
-    "Author your own FHIR projects: manifest, dependencies and conformance resources.",
+    "Author your own HL7 FHIR® projects: manifest, dependencies and conformance resources.",
   newProject: "New project",
   noProjectsYet: "No authored projects yet. Create one to get started.",
   open: "Open",
@@ -28,7 +28,7 @@ const enText = {
   readOnlyBadge: "Read-only",
 
   // New project dialog
-  dialogTitle: "New FHIR project",
+  dialogTitle: "New FHIR® project",
   dialogDescription: "Define the package manifest and pick dependencies.",
   nameLabel: "Package name",
   namePlaceholder: "my.organization.project",
@@ -87,7 +87,7 @@ const enText = {
 
   // Manifest editor
   manifestTitle: "Manifest",
-  manifestDescription: "Metadata that describes your FHIR package.",
+  manifestDescription: "Metadata that describes your FHIR® package.",
   manifestNameReadonlyHint:
     "Name and version form the project key and are read-only after creation.",
 
@@ -167,7 +167,7 @@ export type ProjectEditorText = typeof enText;
 const deText: ProjectEditorText = {
   sectionTitle: "Meine Projekte",
   sectionDescription:
-    "Eigene FHIR-Projekte anlegen: Manifest, Abhängigkeiten und Konformanz-Ressourcen.",
+    "Eigene HL7 FHIR®-Projekte anlegen: Manifest, Abhängigkeiten und Konformanz-Ressourcen.",
   newProject: "Neues Projekt",
   noProjectsYet: "Noch keine eigenen Projekte. Lege eines an, um zu starten.",
   open: "Öffnen",
@@ -190,7 +190,7 @@ const deText: ProjectEditorText = {
   duplicateToEditable: "Als eigenes Projekt duplizieren",
   readOnlyBadge: "Schreibgeschützt",
 
-  dialogTitle: "Neues FHIR-Projekt",
+  dialogTitle: "Neues FHIR®-Projekt",
   dialogDescription: "Paket-Manifest definieren und Abhängigkeiten wählen.",
   nameLabel: "Paketname",
   namePlaceholder: "meine.organisation.projekt",
@@ -246,7 +246,7 @@ const deText: ProjectEditorText = {
   removeResourceConfirm: "Diese Ressource wirklich aus dem Projekt entfernen?",
 
   manifestTitle: "Manifest",
-  manifestDescription: "Metadaten, die dein FHIR-Paket beschreiben.",
+  manifestDescription: "Metadaten, die dein FHIR®-Paket beschreiben.",
   manifestNameReadonlyHint:
     "Name und Version bilden den Projekt-Key und sind nach dem Anlegen schreibgeschützt.",
 

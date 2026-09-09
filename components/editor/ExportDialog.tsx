@@ -78,9 +78,9 @@ export const ExportDialog = ({
     datasetPayload: "Dataset payload",
     datasetPackage: "Dataset package",
     resourcesList: "Resources list",
-    fhirSearchset: "FHIR searchset",
+    fhirSearchset: "FHIR® searchset",
     payloadHint:
-      "Resources list exports raw resource JSON. Searchset exports a FHIR Bundle with type",
+      "Resources list exports raw resource JSON. Searchset exports a FHIR® Bundle with type",
     includeDatasets: "Include datasets",
     cancel: "Cancel",
   };
@@ -97,9 +97,9 @@ export const ExportDialog = ({
       datasetPayload: "Dataset-Inhalt",
       datasetPackage: "Dataset-Paket",
       resourcesList: "Ressourcenliste",
-      fhirSearchset: "FHIR Searchset",
+      fhirSearchset: "FHIR® Searchset",
       payloadHint:
-        "Ressourcenliste exportiert rohe Ressourcen-JSON. Searchset exportiert ein FHIR Bundle mit Typ",
+        "Ressourcenliste exportiert rohe Ressourcen-JSON. Searchset exportiert ein FHIR® Bundle mit Typ",
       includeDatasets: "Datasets einschließen",
       cancel: "Abbrechen",
     },

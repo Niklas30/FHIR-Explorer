@@ -20,12 +20,12 @@ const EN_TEXT = {
   importedPackageShort: "Imported {packageKey}.",
   errorPrefix: "Error: {error}",
   title: "Package Import",
-  importer: "FHIR Importer",
+  importer: "HL7 FHIR® Importer",
   cancelImport: "Cancel Import",
   projectsOverview: "Projects Overview",
   home: "Home",
   intro:
-    "Import a FHIR package with all of its dependencies — everything runs in your browser. Follow the steps below; the page updates after each upload.",
+    "Import an HL7 FHIR® package with all of its dependencies — everything runs in your browser. Follow the steps below; the page updates after each upload.",
   imported: "Imported: {count}",
   missing: "Missing: {count}",
   definitions: "Resource definitions: {count}",
@@ -39,7 +39,7 @@ const EN_TEXT = {
   stepFinishHint: "Everything resolved — ready to use.",
   howItWorksTitle: "How importing works",
   howItWorksBody:
-    "This tool runs fully in your browser and cannot fetch packages for you. Name a package, use the link to download it from the FHIR registry, then upload the file here. Repeat for any dependency the tool reports as missing.",
+    "This tool runs fully in your browser and cannot fetch packages for you. Name a package, use the link to download it from the FHIR® registry, then upload the file here. Repeat for any dependency the tool reports as missing.",
   newImportTitle: "Start a new import",
   newImportDescription:
     "Enter a package ID and version to get a download link, or upload the package file (.tgz) directly.",
@@ -147,12 +147,12 @@ const LOCALE_TEXT = {
     importedPackageShort: "{packageKey} importiert.",
     errorPrefix: "Fehler: {error}",
     title: "Paket-Import",
-    importer: "FHIR Importer",
+    importer: "HL7 FHIR® Importer",
     cancelImport: "Import abbrechen",
     projectsOverview: "Projektübersicht",
     home: "Startseite",
     intro:
-      "Importiere ein FHIR-Paket mit allen Abhängigkeiten — alles läuft in deinem Browser. Folge den Schritten unten; die Seite aktualisiert sich nach jedem Upload.",
+      "Importiere ein HL7 FHIR®-Paket mit allen Abhängigkeiten — alles läuft in deinem Browser. Folge den Schritten unten; die Seite aktualisiert sich nach jedem Upload.",
     imported: "Importiert: {count}",
     missing: "Fehlend: {count}",
     definitions: "Ressourcen-Definitionen: {count}",
@@ -166,7 +166,7 @@ const LOCALE_TEXT = {
     stepFinishHint: "Alles aufgelöst — startklar.",
     howItWorksTitle: "So funktioniert der Import",
     howItWorksBody:
-      "Dieses Tool läuft vollständig in deinem Browser und kann Pakete nicht selbst herunterladen. Benenne ein Paket, lade es über den Link aus der FHIR-Registry herunter und lade die Datei hier hoch. Wiederhole das für jede als fehlend gemeldete Abhängigkeit.",
+      "Dieses Tool läuft vollständig in deinem Browser und kann Pakete nicht selbst herunterladen. Benenne ein Paket, lade es über den Link aus der FHIR®-Registry herunter und lade die Datei hier hoch. Wiederhole das für jede als fehlend gemeldete Abhängigkeit.",
     newImportTitle: "Neuen Import starten",
     newImportDescription:
       "Gib Paket-ID und Version ein, um einen Download-Link zu erhalten, oder lade die Paketdatei (.tgz) direkt hoch.",
@@ -275,12 +275,12 @@ const LOCALE_TEXT = {
     importedPackageShort: "{packageKey} importe.",
     errorPrefix: "Erreur: {error}",
     title: "Import de paquet",
-    importer: "Importeur FHIR",
+    importer: "Importeur HL7 FHIR®",
     cancelImport: "Annuler l'import",
     projectsOverview: "Vue d'ensemble des projets",
     home: "Accueil",
     intro:
-      "Importez des paquets FHIR et toutes les dependances transitives dans le navigateur. L'assistant se met a jour apres chaque televersement.",
+      "Importez des paquets HL7 FHIR® et toutes les dependances transitives dans le navigateur. L'assistant se met a jour apres chaque televersement.",
     imported: "Importes: {count}",
     missing: "Manquants: {count}",
     definitions: "Definitions: {count}",
@@ -357,12 +357,12 @@ const LOCALE_TEXT = {
     importedPackageShort: "{packageKey} importado.",
     errorPrefix: "Error: {error}",
     title: "Importacion de paquetes",
-    importer: "Importador FHIR",
+    importer: "Importador HL7 FHIR®",
     cancelImport: "Cancelar importacion",
     projectsOverview: "Resumen de proyectos",
     home: "Inicio",
     intro:
-      "Importa paquetes FHIR y todas las dependencias transitivas en el navegador. El asistente se actualiza tras cada carga.",
+      "Importa paquetes HL7 FHIR® y todas las dependencias transitivas en el navegador. El asistente se actualiza tras cada carga.",
     imported: "Importados: {count}",
     missing: "Faltantes: {count}",
     definitions: "Definiciones: {count}",
@@ -439,12 +439,12 @@ const LOCALE_TEXT = {
     importedPackageShort: "{packageKey} importato.",
     errorPrefix: "Errore: {error}",
     title: "Importazione pacchetti",
-    importer: "Importatore FHIR",
+    importer: "Importatore HL7 FHIR®",
     cancelImport: "Annulla importazione",
     projectsOverview: "Panoramica progetti",
     home: "Home",
     intro:
-      "Importa pacchetti FHIR e tutte le dipendenze transitive nel browser. La procedura guidata si aggiorna dopo ogni caricamento.",
+      "Importa pacchetti HL7 FHIR® e tutte le dipendenze transitive nel browser. La procedura guidata si aggiorna dopo ogni caricamento.",
     imported: "Importati: {count}",
     missing: "Mancanti: {count}",
     definitions: "Definizioni: {count}",
@@ -518,4 +518,3 @@ export const useImportWizardText = () => {
 
   return { locale, text, format };
 };
-
