@@ -8,13 +8,14 @@ import type { PackageRef } from "@/lib/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
 
 /**
- * Asks before anything is downloaded, and says exactly what and from where.
+ * Asks before anything is downloaded: what, from where, and by which route.
  *
  * The import reaches a third party the user never chose — whichever registry
  * carries the version — and pulls an open-ended number of further packages,
  * because a dependency only becomes known once the package naming it has been
  * read. Starting all that on the same click that names a package would hide
- * both facts. So the destination is named first and the walk waits for a yes.
+ * both facts. So the destination is named first, and the user chooses whether
+ * the tool walks the tree or they take it package by package themselves.
  */
 
 export type ImportConsentCardProps = {
@@ -23,7 +24,8 @@ export type ImportConsentCardProps = {
   target: PackageRef;
   source: ImportSourceState;
   isImporting: boolean;
-  onConfirm: () => void;
+  onConfirmAuto: () => void;
+  onConfirmManual: () => void;
   onCancel: () => void;
 };
 
@@ -33,7 +35,8 @@ export const ImportConsentCard = ({
   target,
   source,
   isImporting,
-  onConfirm,
+  onConfirmAuto,
+  onConfirmManual,
   onCancel,
 }: ImportConsentCardProps) => (
   <Card>
@@ -65,14 +68,20 @@ export const ImportConsentCard = ({
 
       <p className="text-xs text-muted-foreground">{text.consentDependenciesNote}</p>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button disabled={isImporting || source.status !== "ready"} onClick={onConfirm}>
-          {isImporting ? <Loader2 className="size-4 animate-spin" /> : null}
-          {isImporting ? text.consentRunning : text.consentConfirm}
-        </Button>
-        <Button variant="ghost" disabled={isImporting} onClick={onCancel}>
-          {text.consentCancel}
-        </Button>
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button disabled={isImporting || source.status !== "ready"} onClick={onConfirmAuto}>
+            {isImporting ? <Loader2 className="size-4 animate-spin" /> : null}
+            {isImporting ? text.consentRunning : text.consentConfirm}
+          </Button>
+          <Button variant="outline" disabled={isImporting} onClick={onConfirmManual}>
+            {text.consentManual}
+          </Button>
+          <Button variant="ghost" disabled={isImporting} onClick={onCancel}>
+            {text.consentCancel}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">{text.consentManualHint}</p>
       </div>
     </CardContent>
   </Card>

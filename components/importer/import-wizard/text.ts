@@ -147,6 +147,15 @@ const EN_TEXT = {
   consentDependenciesNote:
     "How many packages follow is not known up front: a package's dependencies are listed inside it, so each one is read as it arrives. They come from the same registries.",
   consentConfirm: "Download and import",
+  consentManual: "Choose sources myself",
+  consentManualHint:
+    "Step by step: pick which registry each package comes from, one at a time.",
+  manualTitle: "Import step by step",
+  manualDescription:
+    "Pick where each package comes from. Its dependencies appear once it has been read — they are listed inside the package itself.",
+  manualTargetLabel: "Version",
+  manualSwitchToAuto: "Import everything automatically",
+  manualSwitchToAutoHint: "Hands the rest back to the tool.",
   consentRunning: "Importing…",
   consentCancel: "Back",
   importEverythingHint:
@@ -300,6 +309,15 @@ const LOCALE_TEXT = {
     consentDependenciesNote:
       "Wie viele Pakete folgen, steht vorher nicht fest: Die Abhängigkeiten stehen im Paket selbst, jedes wird beim Eintreffen gelesen. Sie kommen aus denselben Registries.",
     consentConfirm: "Herunterladen und importieren",
+    consentManual: "Quellen selbst wählen",
+    consentManualHint:
+      "Schritt für Schritt: pro Paket entscheiden, aus welcher Registry es kommt.",
+    manualTitle: "Schritt für Schritt importieren",
+    manualDescription:
+      "Wähle, woher jedes Paket kommt. Die Abhängigkeiten erscheinen, sobald es gelesen wurde — sie stehen im Paket selbst.",
+    manualTargetLabel: "Version",
+    manualSwitchToAuto: "Alles automatisch importieren",
+    manualSwitchToAutoHint: "Übergibt den Rest wieder an das Tool.",
     consentRunning: "Importiere…",
     consentCancel: "Zurück",
     importEverythingHint:
@@ -407,6 +425,14 @@ const LOCALE_TEXT = {
     consentDependenciesNote:
       "Le nombre de paquets n'est pas connu d'avance : les dependances figurent dans le paquet lui-meme et sont lues a mesure. Elles viennent des memes registres.",
     consentConfirm: "Telecharger et importer",
+    consentManual: "Choisir les sources moi-meme",
+    consentManualHint: "Etape par etape : choisir le registre de chaque paquet.",
+    manualTitle: "Importer etape par etape",
+    manualDescription:
+      "Choisissez la provenance de chaque paquet. Ses dependances apparaissent une fois qu'il a ete lu.",
+    manualTargetLabel: "Version",
+    manualSwitchToAuto: "Tout importer automatiquement",
+    manualSwitchToAutoHint: "Rend la suite a l'outil.",
     consentRunning: "Import en cours…",
     consentCancel: "Retour",
     importEverythingHint:
@@ -514,6 +540,14 @@ const LOCALE_TEXT = {
     consentDependenciesNote:
       "Cuantos paquetes siguen no se sabe de antemano: las dependencias estan dentro del paquete y se leen segun llegan. Vienen de los mismos registros.",
     consentConfirm: "Descargar e importar",
+    consentManual: "Elegir las fuentes yo mismo",
+    consentManualHint: "Paso a paso: elegir de que registro viene cada paquete.",
+    manualTitle: "Importar paso a paso",
+    manualDescription:
+      "Elige de donde viene cada paquete. Sus dependencias aparecen cuando se ha leido.",
+    manualTargetLabel: "Version",
+    manualSwitchToAuto: "Importar todo automaticamente",
+    manualSwitchToAutoHint: "Devuelve el resto a la herramienta.",
     consentRunning: "Importando…",
     consentCancel: "Volver",
     importEverythingHint:
@@ -621,6 +655,14 @@ const LOCALE_TEXT = {
     consentDependenciesNote:
       "Quanti pacchetti seguiranno non e noto in anticipo: le dipendenze sono dentro al pacchetto e si leggono via via. Provengono dagli stessi registri.",
     consentConfirm: "Scarica e importa",
+    consentManual: "Scelgo io le fonti",
+    consentManualHint: "Passo per passo: scegliere da quale registro viene ogni pacchetto.",
+    manualTitle: "Importa passo per passo",
+    manualDescription:
+      "Scegli da dove viene ogni pacchetto. Le dipendenze compaiono dopo che e stato letto.",
+    manualTargetLabel: "Versione",
+    manualSwitchToAuto: "Importa tutto automaticamente",
+    manualSwitchToAutoHint: "Restituisce il resto allo strumento.",
     consentRunning: "Importazione…",
     consentCancel: "Indietro",
     importEverythingHint:

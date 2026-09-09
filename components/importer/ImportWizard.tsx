@@ -5,15 +5,20 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { VersionChoicesCard } from "@/components/importer/import-wizard/VersionChoicesCard";
 import { DependenciesCard } from "@/components/importer/import-wizard/DependenciesCard";
-import { deriveWizardStep } from "@/components/importer/import-wizard/helpers";
+import {
+  describeGraph,
+  describeLog,
+  deriveWizardStep,
+} from "@/components/importer/import-wizard/helpers";
 import { ImportConsentCard } from "@/components/importer/import-wizard/ImportConsentCard";
 import { ImportGraphCard } from "@/components/importer/import-wizard/ImportGraphCard";
+import { ManualTargetCard } from "@/components/importer/import-wizard/ManualTargetCard";
 import { ImportHistoryCard } from "@/components/importer/import-wizard/ImportHistoryCard";
 import { ImportLogCard } from "@/components/importer/import-wizard/ImportLogCard";
 import { ImportSuccessCard } from "@/components/importer/import-wizard/ImportSuccessCard";
 import { TargetPackageCard } from "@/components/importer/import-wizard/TargetPackageCard";
 import { useAdvancedMode } from "@/components/importer/import-wizard/useAdvancedMode";
-import { useDependencySources } from "@/components/importer/import-wizard/useDependencySources";
+import { useImportRoute } from "@/components/importer/import-wizard/useImportRoute";
 import { useImportSource } from "@/components/importer/import-wizard/useImportSource";
 import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
@@ -23,7 +28,7 @@ import { useRegistryImport } from "@/components/importer/import-wizard/useRegist
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { useDownloadLinks } from "@/components/importer/useDownloadLinks";
 import { useImporter } from "@/components/importer/useImporter";
-import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
+import { buildDependencyGraph } from "@/lib/fhir-importer/dependency-graph";
 import type { DependencyRequirement, PackageRecord } from "@/lib/fhir-importer/types";
 
 type ImportSummary = {
@@ -60,7 +65,6 @@ export const ImportWizard = () => {
   const [advancedMode, setAdvancedMode] = useAdvancedMode();
   // Reset per target: agreeing to import one package is not agreement to
   // import the next one the user names.
-  const [consented, setConsented] = useState(false);
   const searchParams = useSearchParams();
   const [packageId, setPackageId] = useState("");
   const [version, setVersion] = useState("");
@@ -112,7 +116,6 @@ export const ImportWizard = () => {
   const dependencyState = snapshot?.dependencyState;
   const missing = dependencyState?.missing ?? EMPTY_DEPENDENCIES;
   const decisions = dependencyState?.decisions ?? EMPTY_DEPENDENCIES;
-  const dependencySources = useDependencySources(missing, advancedMode);
   const packages = snapshot?.packages ?? EMPTY_PACKAGES;
   const trimmedPackageId = packageId.trim();
   const trimmedVersion = version.trim();
@@ -122,10 +125,6 @@ export const ImportWizard = () => {
 
   // A new target is a new decision: agreeing to import one package is not
   // agreement to import the next one the user names.
-  useEffect(() => {
-    setConsented(false);
-  }, [targetKey]);
-
   // Links point at a registry that has the version, not at the default mirror,
   // which carries only some of them.
   const getDownloadUrl = useDownloadLinks(currentTarget, missing, buildDownloadUrl);
@@ -198,15 +197,33 @@ export const ImportWizard = () => {
     setIsUploading,
   });
 
+  const {
+    choosingSources,
+    sources: dependencySources,
+    chooseAuto,
+    chooseManual,
+    resetRoute,
+    showChoice,
+    showManualTarget,
+  } = useImportRoute({
+    currentTarget,
+    targetKey,
+    missing,
+    advancedMode,
+    allResolved,
+    isTargetImported,
+    onAuto: () => void handleImportEverything(),
+  });
+
   const handleCancel = useCallback(async () => {
-    setConsented(false);
+    resetRoute();
     await clearTarget();
     setPackageId("");
     setVersion("");
     setVersionDrafts({});
     setUploadNotice(null);
     setImportLog([]);
-  }, [clearTarget]);
+  }, [clearTarget, resetRoute]);
 
   useEffect(() => {
     if (!allResolved || !currentTarget) return;
@@ -236,15 +253,18 @@ export const ImportWizard = () => {
   });
 
   const graph = useMemo(() => buildDependencyGraph(packages), [packages]);
-  const graphRootKey = importFinished ? completedSummary?.targetKey ?? null : targetKey;
-  const showGraph = Boolean(graphRootKey) && (isTargetReady || importFinished);
-  const finishDependencyCount = useMemo(
-    () =>
-      importFinished && completedSummary
-        ? collectDependencies(completedSummary.targetKey, graph).size
-        : 0,
-    [importFinished, completedSummary, graph]
-  );
+  const { rootKey: graphRootKey, show: showGraph, dependencyCount: finishDependencyCount } =
+    useMemo(
+      () =>
+        describeGraph({
+          graph,
+          importFinished,
+          completedTargetKey: completedSummary?.targetKey,
+          targetKey,
+          isTargetReady,
+        }),
+      [graph, importFinished, completedSummary?.targetKey, targetKey, isTargetReady]
+    );
 
   const {
     handleImportFromRegistry,
@@ -290,14 +310,12 @@ export const ImportWizard = () => {
 
   const { isDragging: isDraggingFile, dropHandlers } = usePageFileDrop(handleGlobalFiles);
 
-  const logToShow = currentTarget ? importLog : lastImportLog;
-
-  const logCardConfig = useMemo(() => {
-    if (currentTarget) {
-      return { description: text.latestImportActions };
-    }
-    return { description: text.importLogHistory };
-  }, [currentTarget, text.importLogHistory, text.latestImportActions]);
+  const { log: logToShow, description: logDescription } = describeLog({
+    running: Boolean(currentTarget),
+    importLog,
+    lastImportLog,
+    text,
+  });
 
   return (
     <div
@@ -336,7 +354,7 @@ export const ImportWizard = () => {
             text={text}
             format={format}
             title={text.importLog}
-            description={logCardConfig.description}
+            description={logDescription}
             log={logToShow}
           />
         </>
@@ -363,18 +381,30 @@ export const ImportWizard = () => {
             onTargetUpload={(files) => void handleTargetUpload(files)}
           />
 
-          {currentTarget && !consented && !allResolved ? (
+          {showChoice && currentTarget ? (
             <ImportConsentCard
               text={text}
               format={format}
               target={currentTarget}
               source={importSource}
               isImporting={isUploading}
-              onConfirm={() => {
-                setConsented(true);
-                void handleImportEverything();
-              }}
+              onConfirmAuto={chooseAuto}
+              onConfirmManual={chooseManual}
               onCancel={() => void handleCancel()}
+            />
+          ) : null}
+
+          {showManualTarget && currentTarget ? (
+            <ManualTargetCard
+              text={text}
+              target={currentTarget}
+              sources={dependencySources[targetKey ?? ""]}
+              isUploading={isUploading}
+              onImportFrom={(url) =>
+                void handleImportFromRegistry(currentTarget.id, currentTarget.version, true, url)
+              }
+              onCopy={(link) => void handleCopy(link)}
+              onSwitchToAuto={chooseAuto}
             />
           ) : null}
 
@@ -416,6 +446,7 @@ export const ImportWizard = () => {
             onImportAllMissing={() => void handleImportAllMissing()}
             onUpload={(files) => void handleUpload(files)}
             advancedMode={advancedMode}
+            choosingSources={choosingSources}
           />
 
           {advancedMode ? (
@@ -434,7 +465,7 @@ export const ImportWizard = () => {
             text={text}
             format={format}
             title={text.importLog}
-            description={logCardConfig.description}
+            description={logDescription}
             log={logToShow}
           />
         </>

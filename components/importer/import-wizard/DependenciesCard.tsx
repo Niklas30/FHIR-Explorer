@@ -32,6 +32,8 @@ export type DependenciesCardProps = {
   onImportAllMissing: () => void;
   onUpload: (files: File[]) => void;
   advancedMode: boolean;
+  /** True in the step-by-step route, and whenever the advanced controls are open. */
+  choosingSources: boolean;
   sources: DependencySources;
 };
 
@@ -54,6 +56,7 @@ export const DependenciesCard = ({
   onImportAllMissing,
   onUpload,
   advancedMode,
+  choosingSources,
   sources,
 }: DependenciesCardProps) => {
   if (!currentTarget || allResolved) return null;
@@ -81,10 +84,13 @@ export const DependenciesCard = ({
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
+                variant={choosingSources ? "secondary" : "default"}
                 disabled={isUploading || !missing.some((entry) => entry.exactVersion ?? entry.chosenVersion)}
                 onClick={onImportAllMissing}
               >
-                {format(text.importAllMissing, { count: missing.length })}
+                {choosingSources
+                  ? text.manualSwitchToAuto
+                  : format(text.importAllMissing, { count: missing.length })}
               </Button>
             </div>
             {missing.map((dependency) => {
@@ -145,7 +151,7 @@ export const DependenciesCard = ({
                     </div>
                   ) : null}
 
-                  <div className={cn("mt-3 flex-col gap-2", advancedMode ? "flex" : "hidden")}>
+                  <div className={cn("mt-3 flex-col gap-2", choosingSources ? "flex" : "hidden")}>
                     <DependencySourceList
                       text={text}
                       sources={selectedVersion ? sources[`${dependency.id}@${selectedVersion}`] : undefined}
