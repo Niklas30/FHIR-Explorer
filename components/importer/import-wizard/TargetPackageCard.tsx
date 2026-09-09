@@ -22,6 +22,9 @@ export type TargetPackageCardProps = {
   onPackageIdChange: (next: string) => void;
   onVersionChange: (next: string) => void;
   onSetTarget: (id: string, version: string) => void;
+  /** The default path: fetch the package and everything it depends on. */
+  onImportEverything: (id: string, version: string) => void;
+  advancedMode: boolean;
   onCopy: (link: string) => void;
   onImportDirectly: () => void;
   onTargetUpload: (files: File[]) => void;
@@ -41,11 +44,17 @@ export const TargetPackageCard = ({
   onPackageIdChange,
   onVersionChange,
   onSetTarget,
+  onImportEverything,
+  advancedMode,
   onCopy,
   onImportDirectly,
   onTargetUpload,
 }: TargetPackageCardProps) => {
   if (isTargetReady && !allResolved) return null;
+  // Once a package is named, the consent step is the whole story: repeating
+  // it here alongside per-package links and an upload box would put manual
+  // machinery in front of someone who asked for none.
+  if (currentTarget && !advancedMode) return null;
 
   return (
     <Card>
@@ -104,7 +113,7 @@ export const TargetPackageCard = ({
                 <p className="text-sm font-semibold text-foreground">{text.newImportTitle}</p>
                 <p className="text-xs text-muted-foreground">{text.newImportDescription}</p>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
                   <Label htmlFor="package-id">{text.packageId}</Label>
                   <Input
@@ -123,24 +132,35 @@ export const TargetPackageCard = ({
                     placeholder="1.0.0"
                   />
                 </div>
-                <div className="flex items-end">
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  disabled={!trimmedPackageId || !trimmedVersion || isUploading}
+                  onClick={() => onImportEverything(trimmedPackageId, trimmedVersion)}
+                >
+                  {text.importEverything}
+                </Button>
+                {advancedMode ? (
                   <Button
-                    className="w-full"
+                    variant="secondary"
                     disabled={!trimmedPackageId || !trimmedVersion}
                     onClick={() => onSetTarget(trimmedPackageId, trimmedVersion)}
                   >
                     {text.setTarget}
                   </Button>
-                </div>
+                ) : null}
               </div>
-              <FileDropzone
-                label={text.uploadTargetPackage}
-                helperText={text.uploadTargetOrComposeHelper}
-                disabled={isUploading}
-                accept=".tgz,.tar.gz,.tar,application/gzip,application/x-gzip,application/x-tar"
-                hint={text.uploadTargetHint}
-                onFiles={onTargetUpload}
-              />
+              <p className="text-xs text-muted-foreground">{text.importEverythingHint}</p>
+              {advancedMode ? (
+                <FileDropzone
+                  label={text.uploadTargetPackage}
+                  helperText={text.uploadTargetOrComposeHelper}
+                  disabled={isUploading}
+                  accept=".tgz,.tar.gz,.tar,application/gzip,application/x-gzip,application/x-tar"
+                  hint={text.uploadTargetHint}
+                  onFiles={onTargetUpload}
+                />
+              ) : null}
             </div>
 
             <div className="flex items-center gap-3" role="separator" aria-hidden="true">

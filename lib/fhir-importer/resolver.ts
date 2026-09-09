@@ -1,12 +1,13 @@
 import type { DependencyRequirement, DependencyState, ImportState, PackageRecord } from "./types";
 import { buildPackageKey, isExactVersion, unique } from "./utils";
+import { sortVersionsForPicking } from "./version";
 
 const normalizeSpec = (spec: string) => spec.trim();
 
 const emptyDependencyState = (): DependencyState => ({
   missing: [],
   resolved: [],
-  conflicts: [],
+  decisions: [],
 });
 
 const buildImportedVersionMap = (packages: PackageRecord[]) => {
@@ -112,7 +113,7 @@ export const resolveDependencies = (
 
   const missing: DependencyRequirement[] = [];
   const resolved: DependencyRequirement[] = [];
-  const conflicts: DependencyRequirement[] = [];
+  const decisions: DependencyRequirement[] = [];
 
   for (const [depId, requirement] of requirements.entries()) {
     const ranges = unique(requirement.ranges);
@@ -122,22 +123,20 @@ export const resolveDependencies = (
     const importedList = importedForId ? Array.from(importedForId) : [];
 
     let status: DependencyRequirement["status"] = "missing";
-    let conflictReason: string | undefined;
     let exactVersion: string | undefined;
     let chosenVersion: string | undefined;
 
     if (exactVersions.length > 1) {
-      // Two packages pinning different exact versions is a real disagreement,
-      // but a resolvable one: the user picks which of them to install, and
-      // that choice settles it. Without a choice it stays a conflict.
+      // Two packages pinning different exact versions is a disagreement the
+      // user should not have to arbitrate: the newer version is the one that
+      // can satisfy both requirements, so it is chosen by default. A pick the
+      // user made in the advanced controls still wins over that.
       const picked = state.versionSelections[depId];
-      if (picked && exactVersions.includes(picked)) {
-        chosenVersion = picked;
-        status = importedList.includes(picked) ? "resolved" : "missing";
-      } else {
-        status = "conflict";
-        conflictReason = "Multiple exact versions required.";
-      }
+      chosenVersion =
+        picked && exactVersions.includes(picked)
+          ? picked
+          : sortVersionsForPicking(exactVersions)[0];
+      status = importedList.includes(chosenVersion) ? "resolved" : "missing";
     } else if (exactVersions.length === 1) {
       exactVersion = exactVersions[0];
       status = importedList.includes(exactVersion) ? "resolved" : "missing";
@@ -159,12 +158,13 @@ export const resolveDependencies = (
       chosenVersion,
       requestedBy,
       status,
-      conflictReason,
     };
 
-    if (status === "conflict") {
-      conflicts.push(requirementRecord);
-    } else if (status === "resolved") {
+    // More than one version asked for means the resolver decided something on
+    // the user's behalf, which the advanced controls let them revisit.
+    if (ranges.length > 1) decisions.push(requirementRecord);
+
+    if (status === "resolved") {
       resolved.push(requirementRecord);
     } else {
       missing.push(requirementRecord);
@@ -174,6 +174,6 @@ export const resolveDependencies = (
   return {
     missing: missing.sort((a, b) => a.id.localeCompare(b.id)),
     resolved: resolved.sort((a, b) => a.id.localeCompare(b.id)),
-    conflicts: conflicts.sort((a, b) => a.id.localeCompare(b.id)),
+    decisions: decisions.sort((a, b) => a.id.localeCompare(b.id)),
   };
 };

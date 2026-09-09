@@ -109,5 +109,22 @@ export const useRegistryImport = ({
     }
   }, [format, importFromRegistry, refresh, setIsUploading, setUploadNotice, text]);
 
-  return { handleImportFromRegistry, handleImportTarget, handleImportAllMissing };
+  /**
+   * The whole tree in one action, once the user has agreed to it: the package,
+   * then everything it turns out to need. The layer-by-layer mechanics are an
+   * implementation detail, not a workflow to walk anyone through — but they
+   * are only started from the consent step, never from naming a package.
+   */
+  const handleImportEverything = useCallback(async () => {
+    if (!currentTarget) return;
+    await handleImportFromRegistry(currentTarget.id, currentTarget.version, true);
+    await handleImportAllMissing();
+  }, [currentTarget, handleImportAllMissing, handleImportFromRegistry]);
+
+  return {
+    handleImportFromRegistry,
+    handleImportTarget,
+    handleImportAllMissing,
+    handleImportEverything,
+  };
 };

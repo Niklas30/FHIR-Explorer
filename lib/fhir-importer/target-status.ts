@@ -4,7 +4,7 @@ import { buildPackageKey } from "./utils";
 type TargetStatusInput = {
   packages: Pick<PackageRecord, "key">[];
   state: Pick<ImportState, "currentTarget">;
-  dependencyState?: Pick<DependencyState, "missing" | "conflicts">;
+  dependencyState?: Pick<DependencyState, "missing">;
 };
 
 export const getCurrentTargetKey = (
@@ -32,5 +32,5 @@ export const isProjectSelectableForDatasets = (
   const targetKey = getCurrentTargetKey(input.state);
   if (!targetKey || projectKey !== targetKey) return true;
   if (isTargetImportInProgress(input)) return false;
-  return (input.dependencyState?.missing.length ?? 0) === 0 && (input.dependencyState?.conflicts.length ?? 0) === 0;
+  return (input.dependencyState?.missing.length ?? 0) === 0;
 };

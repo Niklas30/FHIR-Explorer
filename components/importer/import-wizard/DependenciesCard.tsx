@@ -28,6 +28,7 @@ export type DependenciesCardProps = {
   onImportDirectly: (id: string, version: string) => void;
   onImportAllMissing: () => void;
   onUpload: (files: File[]) => void;
+  advancedMode: boolean;
 };
 
 export const DependenciesCard = ({
@@ -48,8 +49,12 @@ export const DependenciesCard = ({
   onImportDirectly,
   onImportAllMissing,
   onUpload,
+  advancedMode,
 }: DependenciesCardProps) => {
   if (!currentTarget || allResolved) return null;
+  // Nothing is missing yet while the import is still being agreed to, and an
+  // empty dependency card at that point is just noise.
+  if (!advancedMode && missing.length === 0) return null;
 
   return (
     <Card>
@@ -83,7 +88,7 @@ export const DependenciesCard = ({
                 ? getDownloadUrl(dependency.id, selectedVersion)
                 : null;
               const draftValue = versionDrafts[dependency.id] ?? dependency.chosenVersion ?? "";
-              const needsSelection = !dependency.exactVersion;
+              const needsSelection = advancedMode && !dependency.exactVersion;
 
               return (
                 <div
@@ -135,13 +140,13 @@ export const DependenciesCard = ({
                     </div>
                   ) : null}
 
-                  <div className="mt-3 flex flex-col gap-2">
+                  <div className={cn("mt-3 flex-col gap-2", advancedMode ? "flex" : "hidden")}>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-medium text-foreground">{text.download}</span>
                       <span className="text-muted-foreground">{link ?? text.selectVersionForLink}</span>
                       {link ? (
                         <div className="flex flex-wrap items-center gap-2">
-                          {selectedVersion ? (
+                          {selectedVersion && advancedMode ? (
                             <Button
                               size="sm"
                               disabled={isUploading}
@@ -168,7 +173,7 @@ export const DependenciesCard = ({
           </div>
         )}
 
-        {missing.length > 0 ? (
+        {missing.length > 0 && advancedMode ? (
           <FileDropzone
             label={text.uploadPackageOrCompose}
             helperText={text.uploadPackageOrComposeHelper}

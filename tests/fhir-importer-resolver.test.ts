@@ -35,7 +35,7 @@ describe("resolveDependencies", () => {
     expect(result).toEqual({
       missing: [],
       resolved: [],
-      conflicts: [],
+      decisions: [],
     });
   });
 
@@ -49,7 +49,7 @@ describe("resolveDependencies", () => {
 
     const result = resolveDependencies(packages, createState({ id: "example.target", version: "1.0.1" }));
 
-    expect(result.conflicts).toHaveLength(0);
+    expect(result.decisions).toHaveLength(0);
     expect(result.missing).toHaveLength(0);
     expect(result.resolved).toHaveLength(1);
     expect(result.resolved[0]).toMatchObject({
@@ -59,7 +59,7 @@ describe("resolveDependencies", () => {
     });
   });
 
-  it("still reports exact-version conflicts inside one active target graph", () => {
+  it("settles an exact-version disagreement on the newest of the pinned versions", () => {
     const packages = [
       createPackage("example.target", "1.0.0", {
         "example.dep.a": "1.0.0",
@@ -71,15 +71,16 @@ describe("resolveDependencies", () => {
 
     const result = resolveDependencies(packages, createState({ id: "example.target", version: "1.0.0" }));
 
-    expect(result.conflicts).toHaveLength(1);
-    expect(result.conflicts[0]).toMatchObject({
+    expect(result.decisions).toHaveLength(1);
+    expect(result.decisions[0]).toMatchObject({
       id: "example.shared",
-      conflictReason: "Multiple exact versions required.",
-      status: "conflict",
+      chosenVersion: "2.0.0",
+      status: "missing",
     });
+    expect(result.missing.map((entry) => entry.id)).toContain("example.shared");
   });
 
-  it("settles an exact-version conflict once the user picks one of the versions", () => {
+  it("lets a version the user picked override the automatic choice", () => {
     const packages = [
       createPackage("example.target", "1.0.0", {
         "example.dep.a": "1.0.0",
@@ -91,19 +92,18 @@ describe("resolveDependencies", () => {
 
     const picked = resolveDependencies(
       packages,
-      createState({ id: "example.target", version: "1.0.0" }, { "example.shared": "2.0.0" })
+      createState({ id: "example.target", version: "1.0.0" }, { "example.shared": "1.0.0" })
     );
 
-    expect(picked.conflicts).toHaveLength(0);
     expect(picked.missing).toHaveLength(1);
     expect(picked.missing[0]).toMatchObject({
       id: "example.shared",
-      chosenVersion: "2.0.0",
+      chosenVersion: "1.0.0",
       status: "missing",
     });
   });
 
-  it("keeps reporting a conflict when the pick is not one of the required versions", () => {
+  it("ignores a picked version nobody asked for and keeps the newest", () => {
     const packages = [
       createPackage("example.target", "1.0.0", {
         "example.dep.a": "1.0.0",
@@ -118,7 +118,7 @@ describe("resolveDependencies", () => {
       createState({ id: "example.target", version: "1.0.0" }, { "example.shared": "3.0.0" })
     );
 
-    expect(result.conflicts).toHaveLength(1);
+    expect(result.missing[0]).toMatchObject({ id: "example.shared", chosenVersion: "2.0.0" });
   });
 
   it("treats multi-version range dependencies as selectable instead of conflicting", () => {
@@ -129,7 +129,7 @@ describe("resolveDependencies", () => {
     ];
 
     const withoutSelection = resolveDependencies(packages, createState({ id: "example.target", version: "1.0.0" }));
-    expect(withoutSelection.conflicts).toHaveLength(0);
+    expect(withoutSelection.decisions).toHaveLength(0);
     expect(withoutSelection.missing).toHaveLength(1);
     expect(withoutSelection.missing[0]).toMatchObject({
       id: "example.range.dep",
@@ -140,7 +140,7 @@ describe("resolveDependencies", () => {
       packages,
       createState({ id: "example.target", version: "1.0.0" }, { "example.range.dep": "1.1.0" })
     );
-    expect(withSelection.conflicts).toHaveLength(0);
+    expect(withSelection.decisions).toHaveLength(0);
     expect(withSelection.missing).toHaveLength(0);
     expect(withSelection.resolved[0]).toMatchObject({
       id: "example.range.dep",

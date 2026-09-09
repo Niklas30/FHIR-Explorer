@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StepProgress } from "@/components/importer/import-wizard/StepProgress";
 import type { PackageRef } from "@/lib/fhir-importer/types";
@@ -13,6 +13,8 @@ export type WizardHeaderProps = {
   allResolved: boolean;
   activeStepIndex: number;
   importFinished: boolean;
+  advancedMode: boolean;
+  onAdvancedModeChange: (value: boolean) => void;
   onCancel: () => void;
 };
 
@@ -22,6 +24,8 @@ export const WizardHeader = ({
   allResolved,
   activeStepIndex,
   importFinished,
+  advancedMode,
+  onAdvancedModeChange,
   onCancel,
 }: WizardHeaderProps) => {
   const steps = [
@@ -40,6 +44,16 @@ export const WizardHeader = ({
           <h1 className="text-3xl font-semibold text-foreground">{text.title}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={advancedMode ? "secondary" : "ghost"}
+            size="sm"
+            aria-pressed={advancedMode}
+            title={text.advancedModeHint}
+            onClick={() => onAdvancedModeChange(!advancedMode)}
+          >
+            <SlidersHorizontal className="size-4" />
+            {text.advancedMode}
+          </Button>
           {currentTarget && !allResolved ? (
             <Button variant="outline" onClick={onCancel}>
               {text.cancelImport}

@@ -3,18 +3,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ConflictsCard } from "@/components/importer/import-wizard/ConflictsCard";
-import { maybeImportComposeProject } from "@/components/importer/import-wizard/composeProjectImport";
+import { VersionChoicesCard } from "@/components/importer/import-wizard/VersionChoicesCard";
 import { DependenciesCard } from "@/components/importer/import-wizard/DependenciesCard";
-import { deriveWizardStep, parsePackageKey } from "@/components/importer/import-wizard/helpers";
+import { deriveWizardStep } from "@/components/importer/import-wizard/helpers";
+import { ImportConsentCard } from "@/components/importer/import-wizard/ImportConsentCard";
 import { ImportGraphCard } from "@/components/importer/import-wizard/ImportGraphCard";
 import { ImportHistoryCard } from "@/components/importer/import-wizard/ImportHistoryCard";
 import { ImportLogCard } from "@/components/importer/import-wizard/ImportLogCard";
 import { ImportSuccessCard } from "@/components/importer/import-wizard/ImportSuccessCard";
 import { TargetPackageCard } from "@/components/importer/import-wizard/TargetPackageCard";
+import { useAdvancedMode } from "@/components/importer/import-wizard/useAdvancedMode";
+import { useImportSource } from "@/components/importer/import-wizard/useImportSource";
 import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
 import { usePageFileDrop } from "@/components/importer/import-wizard/usePageFileDrop";
+import { useFileImport } from "@/components/importer/import-wizard/useFileImport";
 import { useRegistryImport } from "@/components/importer/import-wizard/useRegistryImport";
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { useDownloadLinks } from "@/components/importer/useDownloadLinks";
@@ -53,6 +56,10 @@ export const ImportWizard = () => {
     getDownloadUrl: buildDownloadUrl,
   } = useImporter();
 
+  const [advancedMode, setAdvancedMode] = useAdvancedMode();
+  // Reset per target: agreeing to import one package is not agreement to
+  // import the next one the user names.
+  const [consented, setConsented] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [packageId, setPackageId] = useState("");
@@ -70,6 +77,7 @@ export const ImportWizard = () => {
   const completionHandledRef = useRef<string | null>(null);
 
   const currentTarget = snapshot?.state.currentTarget;
+  const importSource = useImportSource(currentTarget);
 
   useEffect(() => {
     if (currentTarget) return;
@@ -103,13 +111,19 @@ export const ImportWizard = () => {
 
   const dependencyState = snapshot?.dependencyState;
   const missing = dependencyState?.missing ?? EMPTY_DEPENDENCIES;
-  const conflicts = dependencyState?.conflicts ?? EMPTY_DEPENDENCIES;
+  const decisions = dependencyState?.decisions ?? EMPTY_DEPENDENCIES;
   const packages = snapshot?.packages ?? EMPTY_PACKAGES;
   const trimmedPackageId = packageId.trim();
   const trimmedVersion = version.trim();
 
   const targetKey = currentTarget ? `${currentTarget.id}@${currentTarget.version}` : null;
   const isTargetImported = targetKey ? packages.some((pkg) => pkg.key === targetKey) : false;
+
+  // A new target is a new decision: agreeing to import one package is not
+  // agreement to import the next one the user names.
+  useEffect(() => {
+    setConsented(false);
+  }, [targetKey]);
 
   // Links point at a registry that has the version, not at the default mirror,
   // which carries only some of them.
@@ -119,9 +133,7 @@ export const ImportWizard = () => {
 
   const missingCount = missing.length;
   const importedDefinitions = snapshot?.resourceIndexCount ?? 0;
-  const allResolved = Boolean(
-    currentTarget && isTargetImported && missing.length === 0 && conflicts.length === 0
-  );
+  const allResolved = Boolean(currentTarget && isTargetImported && missing.length === 0);
   const isTargetReady = Boolean(currentTarget && isTargetImported);
   const importHistory = snapshot?.state.importHistory ?? EMPTY_IMPORT_HISTORY;
   const lastImportLog = completedSummary?.log ?? EMPTY_LOG;
@@ -173,91 +185,20 @@ export const ImportWizard = () => {
     addLog(uploadNotice);
   }, [addLog, uploadNotice]);
 
-  const handleUpload = useCallback(
-    async (files: File[]) => {
-      setUploadNotice(null);
-      const missingIds = new Set(missing.map((dep) => dep.id));
-      setIsUploading(true);
-      const notices: string[] = [];
-
-      for (const file of files) {
-        const composeNotice = await maybeImportComposeProject({
-          file,
-          importComposeProject,
-          text,
-          format,
-        });
-        if (composeNotice) {
-          notices.push(composeNotice);
-          continue;
-        }
-
-        const result = await importFile(file);
-        if (!result) continue;
-        const parsed = parsePackageKey(result.packageKey);
-
-        if (result.status === "duplicate") {
-          notices.push(format(text.packageAlreadyImported, { packageKey: result.packageKey }));
-        } else if (
-          currentTarget &&
-          parsed.id === currentTarget.id &&
-          parsed.version === currentTarget.version
-        ) {
-          notices.push(format(text.targetPackageImported, { packageKey: result.packageKey }));
-        } else if (missingIds.has(parsed.id)) {
-          notices.push(format(text.dependencyImported, { packageKey: result.packageKey }));
-        } else {
-          notices.push(format(text.packageImportedButNotMissing, { packageKey: result.packageKey }));
-        }
-      }
-
-      setIsUploading(false);
-      if (notices.length > 0) {
-        setUploadNotice(notices.join(" "));
-      }
-    },
-    [currentTarget, format, importComposeProject, importFile, missing, text]
-  );
-
-  const handleTargetUpload = useCallback(
-    async (files: File[]) => {
-      setUploadNotice(null);
-      setIsUploading(true);
-      const notices: string[] = [];
-
-      for (const file of files) {
-        const composeNotice = await maybeImportComposeProject({
-          file,
-          importComposeProject,
-          text,
-          format,
-        });
-        if (composeNotice) {
-          notices.push(composeNotice);
-          continue;
-        }
-
-        const result = await importTargetFile(file);
-        if (!result) continue;
-
-        if (result.status === "duplicate") {
-          notices.push(
-            format(text.targetPackageAlreadyImported, { packageKey: result.packageKey })
-          );
-        } else {
-          notices.push(format(text.targetPackageImported, { packageKey: result.packageKey }));
-        }
-      }
-
-      setIsUploading(false);
-      if (notices.length > 0) {
-        setUploadNotice(notices.join(" "));
-      }
-    },
-    [format, importComposeProject, importTargetFile, text]
-  );
+  const { handleUpload, handleTargetUpload } = useFileImport({
+    importFile,
+    importTargetFile,
+    importComposeProject,
+    currentTarget,
+    missing,
+    text,
+    format,
+    setUploadNotice,
+    setIsUploading,
+  });
 
   const handleCancel = useCallback(async () => {
+    setConsented(false);
     await clearTarget();
     setPackageId("");
     setVersion("");
@@ -304,8 +245,12 @@ export const ImportWizard = () => {
     [importFinished, completedSummary, graph]
   );
 
-  const { handleImportFromRegistry, handleImportTarget, handleImportAllMissing } =
-    useRegistryImport({
+  const {
+    handleImportFromRegistry,
+    handleImportTarget,
+    handleImportAllMissing,
+    handleImportEverything,
+  } = useRegistryImport({
       importFromRegistry,
       refresh,
       currentTarget,
@@ -378,6 +323,8 @@ export const ImportWizard = () => {
         currentTarget={currentTarget}
         allResolved={allResolved}
         activeStepIndex={activeStepIndex}
+        advancedMode={advancedMode}
+        onAdvancedModeChange={setAdvancedMode}
         importFinished={importFinished}
         onCancel={handleCancel}
       />
@@ -408,9 +355,26 @@ export const ImportWizard = () => {
             onVersionChange={setVersion}
             onSetTarget={(id, version) => void setTarget(id, version)}
             onCopy={(link) => void handleCopy(link)}
+            onImportEverything={(id, version) => void setTarget(id, version)}
+            advancedMode={advancedMode}
             onImportDirectly={handleImportTarget}
             onTargetUpload={(files) => void handleTargetUpload(files)}
           />
+
+          {currentTarget && !consented && !allResolved ? (
+            <ImportConsentCard
+              text={text}
+              format={format}
+              target={currentTarget}
+              source={importSource}
+              isImporting={isUploading}
+              onConfirm={() => {
+                setConsented(true);
+                void handleImportEverything();
+              }}
+              onCancel={() => void handleCancel()}
+            />
+          ) : null}
 
           {showGraph ? (
             <ImportGraphCard
@@ -446,13 +410,18 @@ export const ImportWizard = () => {
             onImportDirectly={(id, version) => void handleImportFromRegistry(id, version)}
             onImportAllMissing={() => void handleImportAllMissing()}
             onUpload={(files) => void handleUpload(files)}
+            advancedMode={advancedMode}
           />
 
-          <ConflictsCard
-            text={text}
-            conflicts={conflicts}
-            onPickVersion={(depId, value) => void setVersionSelection(depId, value)}
-          />
+          {advancedMode ? (
+            <VersionChoicesCard
+              text={text}
+              decisions={decisions}
+              onPickVersion={(depId: string, value: string) =>
+                void setVersionSelection(depId, value)
+              }
+            />
+          ) : null}
 
           <ImportHistoryCard text={text} importHistory={importHistory} show={!currentTarget} />
 

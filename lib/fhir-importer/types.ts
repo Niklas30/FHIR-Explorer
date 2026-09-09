@@ -85,18 +85,23 @@ export type ImportState = {
 
 export type DependencyRequirement = {
   id: PackageId;
+  /** Every version string that was asked for, deduplicated. */
   ranges: string[];
   exactVersion?: string;
   chosenVersion?: string;
   requestedBy: PackageKey[];
-  status: "missing" | "resolved" | "conflict";
-  conflictReason?: string;
+  status: "missing" | "resolved";
 };
 
 export type DependencyState = {
   missing: DependencyRequirement[];
   resolved: DependencyRequirement[];
-  conflicts: DependencyRequirement[];
+  /**
+   * Requirements where packages asked for more than one version and the
+   * resolver picked one. Not a problem to solve — the import proceeds — but
+   * the advanced controls surface them so the choice can be overridden.
+   */
+  decisions: DependencyRequirement[];
 };
 
 export type ImportProgress = {
