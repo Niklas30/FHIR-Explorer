@@ -57,13 +57,18 @@ export const extractImportedDatasetPayload = (parsed: unknown): ImportedDatasetP
   }
 
   const resourceType = getString(parsed.resourceType);
-  const bundleType = getString(parsed.type);
-  if (resourceType === "Bundle" && bundleType === "searchset") {
+  if (resourceType === "Bundle") {
     const entries = getArray(parsed.entry) ?? [];
     const resources = entries
       .map((entry) => (isObject(entry) ? (entry as Record<string, unknown>).resource : undefined))
       .filter(Boolean) as unknown[];
     return { resources };
+  }
+
+  // A single FHIR resource is also a useful dataset seed. Check this after
+  // Bundle handling so that the Bundle container itself is not imported.
+  if (resourceType) {
+    return { resources: [parsed] };
   }
 
   return {
@@ -72,4 +77,3 @@ export const extractImportedDatasetPayload = (parsed: unknown): ImportedDatasetP
     resources: getArray(parsed.resources),
   };
 };
-

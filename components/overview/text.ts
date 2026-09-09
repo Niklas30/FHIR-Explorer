@@ -267,7 +267,7 @@ const overviewText = {
     selectedPrefix: "Ausgewählt:",
     clear: "Leeren",
     datasetFileSupportHint:
-      "Unterstützt JSON/ZIP Dataset-Exports, Ressourcenlisten oder FHIR Searchset Bundles.",
+      "Unterstützt JSON/ZIP Dataset-Exports, einzelne Ressourcen, Ressourcenlisten oder FHIR Bundles.",
     fallbackNameLabel: "Fallback-Name (optional)",
     fallbackNameHint: "Wird nur genutzt, wenn die Importdatei keinen Namen enthält.",
     importDatasetConfirm: "Dataset importieren",
@@ -418,7 +418,8 @@ const overviewText = {
     clipboardFilename: "dataset-from-clipboard.json",
     selectedPrefix: "Selected:",
     clear: "Clear",
-    datasetFileSupportHint: "Supports JSON/ZIP dataset exports, resource lists, or FHIR searchset bundles.",
+    datasetFileSupportHint:
+      "Supports JSON/ZIP dataset exports, single resources, resource lists, or FHIR bundles.",
     fallbackNameLabel: "Fallback name (optional)",
     fallbackNameHint: "Used only if the import file does not include a name.",
     importDatasetConfirm: "Import dataset",

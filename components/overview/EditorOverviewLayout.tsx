@@ -37,6 +37,7 @@ type Props = {
   selectableProjectOptions: PackageRecord[];
   onCreateDatasetFromList: () => void;
   onNewProject: () => void;
+  onImportDatasetFromList: () => void;
   onOpenSettings: () => void;
   onRefresh: () => void;
 
@@ -120,6 +121,7 @@ export const EditorOverviewLayout = ({
   selectableProjectOptions,
   onCreateDatasetFromList,
   onNewProject,
+  onImportDatasetFromList,
   onOpenSettings,
   onRefresh,
   targets,
@@ -304,6 +306,7 @@ export const EditorOverviewLayout = ({
           selectableProjectOptions={selectableProjectOptions}
           isProjectDatasetSelectable={isProjectDatasetSelectable}
           onCreateDatasetFromList={onCreateDatasetFromList}
+          onImportDatasetFromList={onImportDatasetFromList}
           onOpenExportDialog={onOpenExportDialog}
           onOpenDatasetInfo={onOpenDatasetInfo}
           onDuplicateDataset={onDuplicateDataset}
@@ -407,4 +410,3 @@ export const EditorOverviewLayout = ({
     </div>
   );
 };
-

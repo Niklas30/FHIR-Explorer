@@ -200,6 +200,14 @@ export default function EditorOverviewPage() {
     setCreateDialogOpen(true);
   };
 
+  const openImportDialogFromList = () => {
+    setSelectedProject(null);
+    setSelectedProjectKey(null);
+    setDatasetName("");
+    setImportDatasetFile(null);
+    setImportDialogOpen(true);
+  };
+
   const openDatasetDialog = (project: PackageRecord) => {
     const defaultName = project.manifest.title ?? project.manifest.name ?? project.id;
     setSelectedProject(project);
@@ -386,6 +394,7 @@ export default function EditorOverviewPage() {
         onViewModeChange={setViewMode}
         selectableProjectOptions={selectableProjectOptions}
         onCreateDatasetFromList={openDatasetDialogFromList}
+        onImportDatasetFromList={openImportDialogFromList}
         onNewProject={() => authored.setNewProjectOpen(true)}
         onOpenSettings={() => setSettingsDialogOpen(true)}
         onRefresh={() => void refresh()}

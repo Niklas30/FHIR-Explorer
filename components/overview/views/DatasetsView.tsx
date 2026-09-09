@@ -23,6 +23,7 @@ type Props = {
   selectableProjectOptions: PackageRecord[];
   isProjectDatasetSelectable: (projectKey: string) => boolean;
   onCreateDatasetFromList: () => void;
+  onImportDatasetFromList: () => void;
   onOpenExportDialog: (project: PackageRecord) => void;
   onOpenDatasetInfo: (dataset: DatasetRecord) => void;
   onDuplicateDataset: (dataset: DatasetRecord) => void;
@@ -37,6 +38,7 @@ export const DatasetsView = ({
   selectableProjectOptions,
   isProjectDatasetSelectable,
   onCreateDatasetFromList,
+  onImportDatasetFromList,
   onOpenExportDialog,
   onOpenDatasetInfo,
   onDuplicateDataset,
@@ -62,6 +64,14 @@ export const DatasetsView = ({
               onClick={onCreateDatasetFromList}
             >
               {text.createDataset}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={selectableProjectOptions.length === 0}
+              onClick={onImportDatasetFromList}
+            >
+              {text.importDatasetAria}
             </Button>
           </CardContent>
         </Card>
@@ -136,4 +146,3 @@ export const DatasetsView = ({
     </section>
   );
 };
-
