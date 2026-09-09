@@ -10,7 +10,7 @@ import type {
 } from "@/lib/fhir-importer/types";
 import type { ComposeProjectExport } from "@/lib/fhir-importer/compose";
 import { ImporterClient } from "@/lib/fhir-importer/client";
-import { registryStrategies } from "@/lib/fhir-importer/registry";
+import { registryStrategies, resolveImportUrl } from "@/lib/fhir-importer/registry";
 import { byLocale } from "@/lib/i18n/select";
 
 type UseImporterResult = {
@@ -25,6 +25,16 @@ type UseImporterResult = {
   clearVersionSelection: (depId: string) => Promise<void>;
   importFile: (file: File) => Promise<ImportResult | null>;
   importTargetFile: (file: File) => Promise<ImportResult | null>;
+  /**
+   * Fetch a package straight from a registry and import it, skipping the
+   * download-and-upload round trip. Null when no registry the browser may
+   * read carries the version, or when the fetch failed.
+   */
+  importFromRegistry: (
+    id: string,
+    version: string,
+    options?: { asTarget?: boolean }
+  ) => Promise<ImportResult | null>;
   addImportHistory: (targetKey: string) => Promise<void>;
   deletePackage: (packageKey: string) => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -34,7 +44,8 @@ type UseImporterResult = {
   } | null>;
   getResourcePayloadsByPackageKeys: (packageKeys: string[]) => Promise<ResourcePayload[]>;
   getDownloadUrl: (id: string, version: string) => string;
-  refresh: () => Promise<void>;
+  /** Reloads and returns the snapshot, so a caller can act on what changed. */
+  refresh: () => Promise<ImporterSnapshot | null>;
 };
 
 const defaultProgress: ImportProgress = { phase: "idle" };
@@ -53,37 +64,48 @@ export const useImporter = (): UseImporterResult => {
       importFailed: "Import fehlgeschlagen",
       clientNotReady: "Importer-Client ist noch nicht bereit.",
       composeImportFailed: "Import der Projektdatei fehlgeschlagen",
+      notFetchable:
+        "Dieses Paket kann der Browser nicht selbst laden. Lade es über den Link herunter und hier hoch.",
     },
     en: {
       failedToLoadState: "Failed to load importer state",
       importFailed: "Import failed",
       clientNotReady: "Importer client is not ready yet.",
       composeImportFailed: "Project import failed",
+      notFetchable:
+        "This package cannot be fetched by the browser. Download it with the link and upload it here.",
     },
     fr: {
       failedToLoadState: "Impossible de charger l'état de l'importateur",
       importFailed: "Échec de l'import",
       clientNotReady: "Le client importateur n'est pas encore prêt.",
       composeImportFailed: "Échec de l'import du projet",
+      notFetchable:
+        "Le navigateur ne peut pas recuperer ce paquet. Telechargez-le via le lien et televersez-le ici.",
     },
     es: {
       failedToLoadState: "No se pudo cargar el estado del importador",
       importFailed: "Error de importación",
       clientNotReady: "El cliente importador aún no está listo.",
       composeImportFailed: "Error al importar el proyecto",
+      notFetchable:
+        "El navegador no puede descargar este paquete. Usa el enlace y subelo aqui.",
     },
     it: {
       failedToLoadState: "Impossibile caricare lo stato dell'importatore",
       importFailed: "Importazione non riuscita",
       clientNotReady: "Il client importatore non è ancora pronto.",
       composeImportFailed: "Importazione progetto non riuscita",
+      notFetchable:
+        "Il browser non puo scaricare questo pacchetto. Usa il link e caricalo qui.",
     },
   });
 
   const refresh = useCallback(async () => {
-    if (!client) return;
+    if (!client) return null;
     const latest = await client.loadSnapshot();
     setSnapshot(latest);
+    return latest;
   }, [client]);
 
   useEffect(() => {
@@ -191,6 +213,42 @@ export const useImporter = (): UseImporterResult => {
     [client, refresh, text.importFailed]
   );
 
+  const importFromRegistry = useCallback(
+    async (id: string, version: string, options: { asTarget?: boolean } = {}) => {
+      setError(null);
+      setLastResult(null);
+      if (!client) return null;
+      try {
+        setProgress({ phase: "reading", message: `Fetching ${id}@${version}` });
+        const source = await resolveImportUrl(id, version);
+        if (!source) {
+          setError(text.notFetchable);
+          return null;
+        }
+
+        const response = await fetch(source.url);
+        if (!response.ok) {
+          throw new Error(`${source.registry} answered ${response.status}`);
+        }
+
+        const result = await client.importPackageBuffer(
+          await response.arrayBuffer(),
+          (update) => setProgress(update),
+          { asTarget: options.asTarget }
+        );
+        setLastResult(result);
+        await refresh();
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : text.importFailed);
+        return null;
+      } finally {
+        setProgress({ phase: "idle" });
+      }
+    },
+    [client, refresh, text.importFailed, text.notFetchable]
+  );
+
   const addImportHistory = useCallback(
     async (targetKey: string) => {
       if (!client) return;
@@ -256,6 +314,7 @@ export const useImporter = (): UseImporterResult => {
     clearVersionSelection,
     importFile,
     importTargetFile,
+    importFromRegistry,
     addImportHistory,
     deletePackage,
     clearAllData,

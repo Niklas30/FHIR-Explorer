@@ -119,19 +119,7 @@ export class ImporterClient {
     onProgress?: (progress: ImportProgress) => void
   ): Promise<ImportResult> {
     onProgress?.({ phase: "reading", message: "Reading package file" });
-
-    const buffer = await file.arrayBuffer();
-
-    onProgress?.({ phase: "parsing", message: "Parsing archive" });
-
-    const parsed = await this.parsePackage(buffer, (progress) =>
-      onProgress?.({
-        phase: "parsing",
-        message: "Parsing archive",
-        percent: progress,
-      })
-    );
-    return await this.importParsedPackage(parsed, onProgress);
+    return await this.importPackageBuffer(await file.arrayBuffer(), onProgress);
   }
 
   async importTargetFile(
@@ -139,9 +127,22 @@ export class ImporterClient {
     onProgress?: (progress: ImportProgress) => void
   ): Promise<ImportResult> {
     onProgress?.({ phase: "reading", message: "Reading package file" });
+    return await this.importPackageBuffer(await file.arrayBuffer(), onProgress, {
+      asTarget: true,
+    });
+  }
 
-    const buffer = await file.arrayBuffer();
-
+  /**
+   * Import an archive already in memory.
+   *
+   * Uploads arrive as a File, but a package the browser fetched from a
+   * registry itself never becomes one, so both paths meet here.
+   */
+  async importPackageBuffer(
+    buffer: ArrayBuffer,
+    onProgress?: (progress: ImportProgress) => void,
+    options: { asTarget?: boolean } = {}
+  ): Promise<ImportResult> {
     onProgress?.({ phase: "parsing", message: "Parsing archive" });
 
     const parsed = await this.parsePackage(buffer, (progress) =>
@@ -152,7 +153,9 @@ export class ImporterClient {
       })
     );
 
-    await this.setCurrentTarget(parsed.id, parsed.version);
+    if (options.asTarget) {
+      await this.setCurrentTarget(parsed.id, parsed.version);
+    }
 
     return await this.importParsedPackage(parsed, onProgress);
   }

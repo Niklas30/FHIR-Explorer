@@ -7,11 +7,20 @@ export type RegistryStrategy = {
 
 export class FhirPackageRegistry implements RegistryStrategy {
   name: string;
+  /**
+   * Whether the browser may fetch this registry's archives itself.
+   *
+   * Only registries that answer archive requests with CORS headers qualify.
+   * `packages2.fhir.org` does not: its download url redirects to a host that
+   * sends none, so a `fetch` there fails while a plain link still works.
+   */
+  readonly fetchable: boolean;
   private baseUrl: string;
 
-  constructor(name: string, baseUrl: string) {
+  constructor(name: string, baseUrl: string, options: { fetchable?: boolean } = {}) {
     this.name = name;
     this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.fetchable = options.fetchable ?? false;
   }
 
   buildDownloadUrl(id: PackageId, version: PackageVersion) {
@@ -31,7 +40,9 @@ export const SIMPLIFIER_REGISTRY_BASE = "https://packages.simplifier.net";
 export const registryStrategies = {
   hl7: new FhirPackageRegistry("HL7 Terminology", DEFAULT_REGISTRY_BASE),
   packages2: new FhirPackageRegistry("FHIR Packages2", PACKAGES2_REGISTRY_BASE),
-  simplifier: new FhirPackageRegistry("Simplifier", SIMPLIFIER_REGISTRY_BASE),
+  simplifier: new FhirPackageRegistry("Simplifier", SIMPLIFIER_REGISTRY_BASE, {
+    fetchable: true,
+  }),
 };
 
 export const defaultRegistry = registryStrategies.packages2;
@@ -55,6 +66,8 @@ export type RegistryVersionInfo = {
   version: PackageVersion;
   /** Registry the version was found in — the one whose download url works. */
   registry: string;
+  /** Whether the browser may fetch this entry's archive itself. */
+  fetchable: boolean;
   fhirVersion?: string;
   description?: string;
   /** Download url the registry declared, which need not be on its own host. */
@@ -63,7 +76,12 @@ export type RegistryVersionInfo = {
 
 export type PackageAvailability = {
   id: PackageId;
-  /** Every version any registry in the chain lists, newest-declared first. */
+  /**
+   * Every listing of every version, in chain order. A version carried by two
+   * registries appears twice on purpose: the first is the one to link to, and
+   * the first fetchable one is the one the browser can import by itself, and
+   * those are not always the same registry.
+   */
   versions: RegistryVersionInfo[];
   /** Version behind the `latest` tag, when a registry publishes one. */
   latest?: PackageVersion;
@@ -79,7 +97,7 @@ const asString = (value: unknown): string | undefined =>
 
 const readVersions = (
   raw: unknown,
-  registryName: string
+  registry: FhirPackageRegistry
 ): { versions: RegistryVersionInfo[]; latest?: string } => {
   if (!isRecord(raw)) return { versions: [] };
   const versions = isRecord(raw.versions) ? raw.versions : {};
@@ -92,7 +110,8 @@ const readVersions = (
       const dist = isRecord(record.dist) ? record.dist : undefined;
       return {
         version,
-        registry: registryName,
+        registry: registry.name,
+        fetchable: registry.fetchable,
         fhirVersion: asString(record.fhirVersion),
         description: asString(record.description),
         tarball: asString(dist?.tarball) ?? asString(record.url),
@@ -118,33 +137,46 @@ export const fetchPackageAvailability = async (
       try {
         const response = await fetchImpl(registry.buildMetadataUrl(id));
         if (!response.ok) return null;
-        return readVersions(await response.json(), registry.name);
+        return readVersions(await response.json(), registry);
       } catch {
         return null;
       }
     })
   );
 
-  const seen = new Map<string, RegistryVersionInfo>();
-  for (const response of responses) {
-    if (!response) continue;
-    for (const entry of response.versions) {
-      // The first registry that lists a version owns it: its download url is
-      // the one the rest of the chain would only duplicate.
-      if (!seen.has(entry.version)) seen.set(entry.version, entry);
-    }
-  }
-
   return {
     id,
-    versions: [...seen.values()],
+    versions: responses.flatMap((response) => response?.versions ?? []),
     latest: responses.find((response) => response?.latest)?.latest,
     offline: responses.every((response) => response === null),
   };
 };
 
+/** The distinct versions on offer, in chain order. */
+export const listAvailableVersions = (
+  availability: PackageAvailability
+): PackageVersion[] =>
+  Array.from(new Set(availability.versions.map((entry) => entry.version)));
+
+const urlOf = (
+  entry: RegistryVersionInfo,
+  id: PackageId,
+  version: PackageVersion,
+  chain: FhirPackageRegistry[]
+): string => {
+  const owner = chain.find((registry) => registry.name === entry.registry) ?? chain[0];
+  return entry.tarball ?? owner.buildDownloadUrl(id, version);
+};
+
+export type ResolvedSource = {
+  url: string;
+  registry: string;
+  /** False when no registry in the chain lists the version. */
+  found: boolean;
+};
+
 /**
- * The url a specific version can actually be downloaded from.
+ * Where a version can be downloaded from, for the link handed to the user.
  *
  * Falls back to the first registry's url when nothing could be looked up, so
  * a link is always offered — a stale link the user can retry is more use than
@@ -155,22 +187,34 @@ export const resolveDownloadUrl = async (
   version: PackageVersion,
   chain: FhirPackageRegistry[] = REGISTRY_CHAIN,
   fetchImpl: typeof fetch = fetch
-): Promise<{ url: string; registry: string; found: boolean }> => {
+): Promise<ResolvedSource> => {
   const availability = await fetchPackageAvailability(id, chain, fetchImpl);
   const match = availability.versions.find((entry) => entry.version === version);
 
   if (!match) {
-    return {
-      url: chain[0].buildDownloadUrl(id, version),
-      registry: chain[0].name,
-      found: false,
-    };
+    return { url: chain[0].buildDownloadUrl(id, version), registry: chain[0].name, found: false };
   }
+  return { url: urlOf(match, id, version, chain), registry: match.registry, found: true };
+};
 
-  const owner = chain.find((registry) => registry.name === match.registry) ?? chain[0];
-  return {
-    url: match.tarball ?? owner.buildDownloadUrl(id, version),
-    registry: match.registry,
-    found: true,
-  };
+/**
+ * Where a version can be fetched from by the browser itself.
+ *
+ * Deliberately not the same lookup as the download link: the registry that
+ * comes first in the chain may serve archives without CORS headers, and then
+ * only a later one can be read from script. Undefined means the user has to
+ * download and upload the package by hand after all.
+ */
+export const resolveImportUrl = async (
+  id: PackageId,
+  version: PackageVersion,
+  chain: FhirPackageRegistry[] = REGISTRY_CHAIN,
+  fetchImpl: typeof fetch = fetch
+): Promise<ResolvedSource | undefined> => {
+  const availability = await fetchPackageAvailability(id, chain, fetchImpl);
+  const match = availability.versions.find(
+    (entry) => entry.version === version && entry.fetchable
+  );
+  if (!match) return undefined;
+  return { url: urlOf(match, id, version, chain), registry: match.registry, found: true };
 };

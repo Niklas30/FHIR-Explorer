@@ -127,8 +127,17 @@ export const resolveDependencies = (
     let chosenVersion: string | undefined;
 
     if (exactVersions.length > 1) {
-      status = "conflict";
-      conflictReason = "Multiple exact versions required.";
+      // Two packages pinning different exact versions is a real disagreement,
+      // but a resolvable one: the user picks which of them to install, and
+      // that choice settles it. Without a choice it stays a conflict.
+      const picked = state.versionSelections[depId];
+      if (picked && exactVersions.includes(picked)) {
+        chosenVersion = picked;
+        status = importedList.includes(picked) ? "resolved" : "missing";
+      } else {
+        status = "conflict";
+        conflictReason = "Multiple exact versions required.";
+      }
     } else if (exactVersions.length === 1) {
       exactVersion = exactVersions[0];
       status = importedList.includes(exactVersion) ? "resolved" : "missing";

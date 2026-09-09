@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DependencyRequirement } from "@/lib/fhir-importer/types";
 import type { useImportWizardText } from "@/components/importer/import-wizard/text";
@@ -7,9 +8,11 @@ import type { useImportWizardText } from "@/components/importer/import-wizard/te
 export type ConflictsCardProps = {
   text: ReturnType<typeof useImportWizardText>["text"];
   conflicts: DependencyRequirement[];
+  /** Settles a conflict by pinning one of the versions that were asked for. */
+  onPickVersion: (depId: string, version: string) => void;
 };
 
-export const ConflictsCard = ({ text, conflicts }: ConflictsCardProps) => {
+export const ConflictsCard = ({ text, conflicts, onPickVersion }: ConflictsCardProps) => {
   if (conflicts.length === 0) return null;
 
   return (
@@ -28,6 +31,19 @@ export const ConflictsCard = ({ text, conflicts }: ConflictsCardProps) => {
             <p className="text-xs text-muted-foreground">
               {conflict.conflictReason ?? text.versionConflict}
             </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">{text.pickConflictVersion}</span>
+              {conflict.ranges.map((version) => (
+                <Button
+                  key={version}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onPickVersion(conflict.id, version)}
+                >
+                  {version}
+                </Button>
+              ))}
+            </div>
           </div>
         ))}
       </CardContent>

@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FhirPackageRegistry,
   fetchPackageAvailability,
+  listAvailableVersions,
   resolveDownloadUrl,
+  resolveImportUrl,
 } from "@/lib/fhir-importer/registry";
 
 /**
@@ -10,7 +12,9 @@ import {
  * only recent versions, and the publisher's own registry with the history.
  */
 const mirror = new FhirPackageRegistry("Mirror", "https://mirror.example/packages");
-const full = new FhirPackageRegistry("Full", "https://full.example");
+// Only the second one answers archive requests with CORS headers, so only it
+// can be read by the browser — exactly the split the real chain has.
+const full = new FhirPackageRegistry("Full", "https://full.example", { fetchable: true });
 const chain = [mirror, full];
 
 const stubFetch = (bodies: Record<string, unknown>) =>
@@ -40,10 +44,7 @@ describe("registry chain", () => {
       })
     );
 
-    expect(availability.versions.map((entry) => entry.version).sort()).toEqual([
-      "1.3.2",
-      "1.5.0",
-    ]);
+    expect(listAvailableVersions(availability).sort()).toEqual(["1.3.2", "1.5.0"]);
     expect(availability.offline).toBe(false);
   });
 
@@ -105,8 +106,35 @@ describe("registry chain", () => {
 
     const availability = await fetchPackageAvailability("de.basisprofil.r4", chain, failing);
 
-    expect(availability.versions.map((entry) => entry.version)).toEqual(["1.3.2"]);
+    expect(listAvailableVersions(availability)).toEqual(["1.3.2"]);
     expect(availability.offline).toBe(false);
+  });
+
+  it("imports from a registry the browser may read, not the first one", async () => {
+    const bodies = {
+      "https://mirror.example/packages/de.basisprofil.r4": metadata({ "1.5.0": {} }),
+      "https://full.example/de.basisprofil.r4": metadata({ "1.5.0": {} }),
+    };
+
+    // Both carry it, so the link points at the mirror — but the mirror serves
+    // archives without CORS headers, so the import has to come from the other.
+    const link = await resolveDownloadUrl("de.basisprofil.r4", "1.5.0", chain, stubFetch(bodies));
+    const source = await resolveImportUrl("de.basisprofil.r4", "1.5.0", chain, stubFetch(bodies));
+
+    expect(link.registry).toBe("Mirror");
+    expect(source?.registry).toBe("Full");
+    expect(source?.url).toBe("https://full.example/de.basisprofil.r4/1.5.0");
+  });
+
+  it("offers no direct import when no registry that has it may be read", async () => {
+    const source = await resolveImportUrl(
+      "de.basisprofil.r4",
+      "1.5.0",
+      [mirror],
+      stubFetch({ "https://mirror.example/packages/de.basisprofil.r4": metadata({ "1.5.0": {} }) })
+    );
+
+    expect(source).toBeUndefined();
   });
 
   it("says so when no registry could be reached at all", async () => {

@@ -23,6 +23,7 @@ export type TargetPackageCardProps = {
   onVersionChange: (next: string) => void;
   onSetTarget: (id: string, version: string) => void;
   onCopy: (link: string) => void;
+  onImportDirectly: () => void;
   onTargetUpload: (files: File[]) => void;
 };
 
@@ -41,6 +42,7 @@ export const TargetPackageCard = ({
   onVersionChange,
   onSetTarget,
   onCopy,
+  onImportDirectly,
   onTargetUpload,
 }: TargetPackageCardProps) => {
   if (isTargetReady && !allResolved) return null;
@@ -65,6 +67,11 @@ export const TargetPackageCard = ({
               </div>
               {targetDownloadUrl ? (
                 <div className="flex flex-wrap items-center gap-2">
+                  {isTargetReady ? null : (
+                    <Button size="sm" disabled={isUploading} onClick={onImportDirectly}>
+                      {text.importDirectly}
+                    </Button>
+                  )}
                   <Button asChild size="sm" variant="secondary">
                     <a href={targetDownloadUrl} target="_blank" rel="noreferrer">
                       {text.downloadPackages}

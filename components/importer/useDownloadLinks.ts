@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveDownloadUrl } from "@/lib/fhir-importer/registry";
-import type { PackageRef } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement, PackageRef } from "@/lib/fhir-importer/types";
 import { buildPackageKey } from "@/lib/fhir-importer/utils";
 
 /**
@@ -24,7 +24,8 @@ export type DownloadLink = {
 };
 
 export const useDownloadLinks = (
-  refs: PackageRef[],
+  currentTarget: PackageRef | undefined,
+  missing: DependencyRequirement[],
   fallback: (id: string, version: string) => string
 ): ((id: string, version: string) => string) => {
   const [links, setLinks] = useState<Record<string, DownloadLink>>({});
@@ -32,15 +33,19 @@ export const useDownloadLinks = (
   // without listing `links` as a dependency and re-running on its own writes.
   const resolved = useRef<Record<string, DownloadLink>>({});
 
-  // A stable identity for the set of references, so re-rendering with an
-  // equivalent array does not start the lookups over.
-  const wanted = useMemo(
-    () =>
-      Array.from(new Set(refs.map((ref) => buildPackageKey(ref.id, ref.version))))
-        .sort()
-        .join("\n"),
-    [refs]
-  );
+  // Every link on the page: the target, plus each missing dependency whose
+  // version is already settled. Reduced to one string so re-rendering with an
+  // equivalent set does not start the lookups over.
+  const wanted = useMemo(() => {
+    const refs: PackageRef[] = currentTarget ? [currentTarget] : [];
+    for (const dependency of missing) {
+      const version = dependency.exactVersion ?? dependency.chosenVersion;
+      if (version) refs.push({ id: dependency.id, version });
+    }
+    return Array.from(new Set(refs.map((ref) => buildPackageKey(ref.id, ref.version))))
+      .sort()
+      .join("\n");
+  }, [currentTarget, missing]);
 
   useEffect(() => {
     const keys = wanted ? wanted.split("\n") : [];

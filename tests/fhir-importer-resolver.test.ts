@@ -79,6 +79,48 @@ describe("resolveDependencies", () => {
     });
   });
 
+  it("settles an exact-version conflict once the user picks one of the versions", () => {
+    const packages = [
+      createPackage("example.target", "1.0.0", {
+        "example.dep.a": "1.0.0",
+        "example.dep.b": "1.0.0",
+      }),
+      createPackage("example.dep.a", "1.0.0", { "example.shared": "1.0.0" }),
+      createPackage("example.dep.b", "1.0.0", { "example.shared": "2.0.0" }),
+    ];
+
+    const picked = resolveDependencies(
+      packages,
+      createState({ id: "example.target", version: "1.0.0" }, { "example.shared": "2.0.0" })
+    );
+
+    expect(picked.conflicts).toHaveLength(0);
+    expect(picked.missing).toHaveLength(1);
+    expect(picked.missing[0]).toMatchObject({
+      id: "example.shared",
+      chosenVersion: "2.0.0",
+      status: "missing",
+    });
+  });
+
+  it("keeps reporting a conflict when the pick is not one of the required versions", () => {
+    const packages = [
+      createPackage("example.target", "1.0.0", {
+        "example.dep.a": "1.0.0",
+        "example.dep.b": "1.0.0",
+      }),
+      createPackage("example.dep.a", "1.0.0", { "example.shared": "1.0.0" }),
+      createPackage("example.dep.b", "1.0.0", { "example.shared": "2.0.0" }),
+    ];
+
+    const result = resolveDependencies(
+      packages,
+      createState({ id: "example.target", version: "1.0.0" }, { "example.shared": "3.0.0" })
+    );
+
+    expect(result.conflicts).toHaveLength(1);
+  });
+
   it("treats multi-version range dependencies as selectable instead of conflicting", () => {
     const packages = [
       createPackage("example.target", "1.0.0", { "example.range.dep": "^1.0.0" }),

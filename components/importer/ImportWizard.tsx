@@ -15,11 +15,12 @@ import { TargetPackageCard } from "@/components/importer/import-wizard/TargetPac
 import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
 import { usePageFileDrop } from "@/components/importer/import-wizard/usePageFileDrop";
+import { useRegistryImport } from "@/components/importer/import-wizard/useRegistryImport";
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
 import { useDownloadLinks } from "@/components/importer/useDownloadLinks";
 import { useImporter } from "@/components/importer/useImporter";
 import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
-import type { DependencyRequirement, PackageRecord, PackageRef } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement, PackageRecord } from "@/lib/fhir-importer/types";
 
 type ImportSummary = {
   targetKey: string;
@@ -45,8 +46,10 @@ export const ImportWizard = () => {
     clearVersionSelection,
     importFile,
     importTargetFile,
+    importFromRegistry,
     importComposeProject,
     addImportHistory,
+    refresh,
     getDownloadUrl: buildDownloadUrl,
   } = useImporter();
 
@@ -108,17 +111,9 @@ export const ImportWizard = () => {
   const targetKey = currentTarget ? `${currentTarget.id}@${currentTarget.version}` : null;
   const isTargetImported = targetKey ? packages.some((pkg) => pkg.key === targetKey) : false;
 
-  // Every link on the page, so each one points at a registry that has the
-  // version rather than at the default mirror, which carries only some of them.
-  const linkedRefs = useMemo<PackageRef[]>(() => {
-    const refs: PackageRef[] = currentTarget ? [currentTarget] : [];
-    for (const dependency of missing) {
-      const version = dependency.exactVersion ?? dependency.chosenVersion;
-      if (version) refs.push({ id: dependency.id, version });
-    }
-    return refs;
-  }, [currentTarget, missing]);
-  const getDownloadUrl = useDownloadLinks(linkedRefs, buildDownloadUrl);
+  // Links point at a registry that has the version, not at the default mirror,
+  // which carries only some of them.
+  const getDownloadUrl = useDownloadLinks(currentTarget, missing, buildDownloadUrl);
 
   const targetDownloadUrl = currentTarget ? getDownloadUrl(currentTarget.id, currentTarget.version) : null;
 
@@ -309,6 +304,17 @@ export const ImportWizard = () => {
     [importFinished, completedSummary, graph]
   );
 
+  const { handleImportFromRegistry, handleImportTarget, handleImportAllMissing } =
+    useRegistryImport({
+      importFromRegistry,
+      refresh,
+      currentTarget,
+      text,
+      format,
+      setUploadNotice,
+      setIsUploading,
+    });
+
   const handleResolveMissing = useCallback((dependencyId: string) => {
     setGraphDialogRootKey(null);
     setHighlightDependencyId(dependencyId);
@@ -402,6 +408,7 @@ export const ImportWizard = () => {
             onVersionChange={setVersion}
             onSetTarget={(id, version) => void setTarget(id, version)}
             onCopy={(link) => void handleCopy(link)}
+            onImportDirectly={handleImportTarget}
             onTargetUpload={(files) => void handleTargetUpload(files)}
           />
 
@@ -436,10 +443,16 @@ export const ImportWizard = () => {
             onClearVersion={(depId) => void clearVersionSelection(depId)}
             onCopy={(link) => void handleCopy(link)}
             getDownloadUrl={getDownloadUrl}
+            onImportDirectly={(id, version) => void handleImportFromRegistry(id, version)}
+            onImportAllMissing={() => void handleImportAllMissing()}
             onUpload={(files) => void handleUpload(files)}
           />
 
-          <ConflictsCard text={text} conflicts={conflicts} />
+          <ConflictsCard
+            text={text}
+            conflicts={conflicts}
+            onPickVersion={(depId, value) => void setVersionSelection(depId, value)}
+          />
 
           <ImportHistoryCard text={text} importHistory={importHistory} show={!currentTarget} />
 

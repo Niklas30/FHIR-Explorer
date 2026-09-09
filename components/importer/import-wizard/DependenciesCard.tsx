@@ -25,6 +25,8 @@ export type DependenciesCardProps = {
   onClearVersion: (depId: string) => void;
   onCopy: (link: string) => void;
   getDownloadUrl: (id: string, version: string) => string;
+  onImportDirectly: (id: string, version: string) => void;
+  onImportAllMissing: () => void;
   onUpload: (files: File[]) => void;
 };
 
@@ -43,6 +45,8 @@ export const DependenciesCard = ({
   onClearVersion,
   onCopy,
   getDownloadUrl,
+  onImportDirectly,
+  onImportAllMissing,
   onUpload,
 }: DependenciesCardProps) => {
   if (!currentTarget || allResolved) return null;
@@ -64,6 +68,15 @@ export const DependenciesCard = ({
           </div>
         ) : (
           <div className="grid gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                disabled={isUploading || !missing.some((entry) => entry.exactVersion ?? entry.chosenVersion)}
+                onClick={onImportAllMissing}
+              >
+                {format(text.importAllMissing, { count: missing.length })}
+              </Button>
+            </div>
             {missing.map((dependency) => {
               const selectedVersion = dependency.exactVersion ?? dependency.chosenVersion;
               const link = selectedVersion
@@ -128,6 +141,15 @@ export const DependenciesCard = ({
                       <span className="text-muted-foreground">{link ?? text.selectVersionForLink}</span>
                       {link ? (
                         <div className="flex flex-wrap items-center gap-2">
+                          {selectedVersion ? (
+                            <Button
+                              size="sm"
+                              disabled={isUploading}
+                              onClick={() => onImportDirectly(dependency.id, selectedVersion)}
+                            >
+                              {text.importDirectly}
+                            </Button>
+                          ) : null}
                           <Button asChild size="sm" variant="secondary">
                             <a href={link} target="_blank" rel="noreferrer">
                               {text.openLink}
