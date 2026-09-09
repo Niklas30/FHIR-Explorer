@@ -29,6 +29,25 @@ This application is designed for **local-first** usage:
 
 If you work with sensitive data, treat your browser storage like any other local persistence layer.
 
+### Outbound requests
+
+Nothing you import is sent to a server of ours — there is none. Package
+archives are fetched by **your browser, directly from the package registry**,
+so the only parties that see which packages you are interested in are the
+registries themselves:
+
+| Host | What it is asked for |
+| --- | --- |
+| `packages2.fhir.org` | Package metadata, and download links for versions it carries. |
+| `packages.simplifier.net` | Metadata, and the package archives themselves — it is the registry whose archives a browser is allowed to read. |
+
+Metadata is requested for any package id you type or that a dependency names.
+Archives are only fetched when you import one.
+
+A terminology server is contacted **only** if you configure one in the
+settings, and only to `$expand` a value set that the imported packages cannot
+expand on their own.
+
 ## Tech stack
 
 - Next.js (App Router), React, TypeScript
