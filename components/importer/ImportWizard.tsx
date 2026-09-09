@@ -16,9 +16,10 @@ import { useImportWizardText } from "@/components/importer/import-wizard/text";
 import { WizardHeader } from "@/components/importer/import-wizard/WizardHeader";
 import { usePageFileDrop } from "@/components/importer/import-wizard/usePageFileDrop";
 import { DependencyGraphDialog } from "@/components/dependency-graph/DependencyGraphDialog";
+import { useDownloadLinks } from "@/components/importer/useDownloadLinks";
 import { useImporter } from "@/components/importer/useImporter";
 import { buildDependencyGraph, collectDependencies } from "@/lib/fhir-importer/dependency-graph";
-import type { DependencyRequirement, PackageRecord } from "@/lib/fhir-importer/types";
+import type { DependencyRequirement, PackageRecord, PackageRef } from "@/lib/fhir-importer/types";
 
 type ImportSummary = {
   targetKey: string;
@@ -46,7 +47,7 @@ export const ImportWizard = () => {
     importTargetFile,
     importComposeProject,
     addImportHistory,
-    getDownloadUrl,
+    getDownloadUrl: buildDownloadUrl,
   } = useImporter();
 
   const searchParams = useSearchParams();
@@ -106,6 +107,19 @@ export const ImportWizard = () => {
 
   const targetKey = currentTarget ? `${currentTarget.id}@${currentTarget.version}` : null;
   const isTargetImported = targetKey ? packages.some((pkg) => pkg.key === targetKey) : false;
+
+  // Every link on the page, so each one points at a registry that has the
+  // version rather than at the default mirror, which carries only some of them.
+  const linkedRefs = useMemo<PackageRef[]>(() => {
+    const refs: PackageRef[] = currentTarget ? [currentTarget] : [];
+    for (const dependency of missing) {
+      const version = dependency.exactVersion ?? dependency.chosenVersion;
+      if (version) refs.push({ id: dependency.id, version });
+    }
+    return refs;
+  }, [currentTarget, missing]);
+  const getDownloadUrl = useDownloadLinks(linkedRefs, buildDownloadUrl);
+
   const targetDownloadUrl = currentTarget ? getDownloadUrl(currentTarget.id, currentTarget.version) : null;
 
   const missingCount = missing.length;
