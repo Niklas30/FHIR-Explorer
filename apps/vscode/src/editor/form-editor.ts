@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { collectProfileClosure } from "@fhir-explorer/core/fhir-editor/closure";
 import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles/resolve";
 import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
-import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
 import { nodeHttpClient } from "@/adapters/node-http-client";
+import { hostLocale } from "@/l10n/locale";
 import type { FhirIndex, FhirIndexSnapshot } from "@/language/fhir-index";
 import { renderWebviewHtml } from "@/webview/html";
 import {
@@ -39,11 +39,6 @@ const parseResource = (text: string): Record<string, unknown> | null => {
   } catch {
     return null;
   }
-};
-
-const hostLocale = (): Locale => {
-  const language = vscode.env.language.split("-")[0];
-  return isLocale(language) ? language : "en";
 };
 
 /**

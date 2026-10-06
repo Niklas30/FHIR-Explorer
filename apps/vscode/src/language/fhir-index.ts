@@ -40,6 +40,8 @@ export type FhirIndexSnapshot = {
   origins: Map<string, string>;
   /** `ResourceType/id` -> file, for jumping from a Reference to its target. */
   instances: Map<string, vscode.Uri>;
+  /** Authored resources per project root, as read for this snapshot. */
+  projectResources: Map<string, AuthoredResource[]>;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -111,6 +113,7 @@ export class FhirIndex {
     const instances = new Map<string, vscode.Uri>();
     const origins = new Map<string, string>();
     const workspacePayloads: ResourcePayload[] = [];
+    const projectResources = new Map<string, AuthoredResource[]>();
 
     for (const payload of packagePayloads) {
       if (payload.url) origins.set(normalizeCanonical(payload.url), payload.packageKey);
@@ -118,6 +121,7 @@ export class FhirIndex {
 
     for (const project of projects) {
       const resources = await this.resourceStore.load(project.root.toString());
+      projectResources.set(project.root.toString(), resources);
       for (const resource of resources) {
         workspacePayloads.push(toPayload(project, resource));
 
@@ -151,6 +155,7 @@ export class FhirIndex {
       references,
       origins,
       instances,
+      projectResources,
     };
   }
 }

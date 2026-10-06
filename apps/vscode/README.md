@@ -46,7 +46,10 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
 - **Problems** — profile-driven validation of every resource in the workspace:
   cardinalities, required elements, fixed and pattern values, bindings,
   primitive formats, unknown elements, broken local references and the
-  profile's FHIRPath invariants.
+  profile's FHIRPath invariants. On top, the project as a whole is checked
+  the way the web editor does it: a base definition or bound value set that
+  does not resolve, a canonical outside the project's base, two files
+  claiming one url, a project without `hl7.fhir.r4.core`.
 - **Hover** on a canonical url resolves it to the profile, value set or code
   system it names, and says which package it came from.
 - **Go to definition** from a canonical or a `ResourceType/id` reference to the

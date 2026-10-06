@@ -35,6 +35,7 @@ import { FormEditorProvider } from "@/editor/form-editor";
 import { createCompletionProvider } from "@/language/completion";
 import { createDefinitionProvider } from "@/language/definition";
 import { FhirDiagnostics } from "@/language/diagnostics";
+import { ProjectDiagnostics } from "@/language/project-diagnostics";
 import { FhirIndex } from "@/language/fhir-index";
 import { createHoverProvider } from "@/language/hover";
 import {
@@ -59,6 +60,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
   const packageStore = new GlobalPackageStore(context.globalStorageUri);
   const index = new FhirIndex(packageStore, store, projects);
   const diagnostics = new FhirDiagnostics(index);
+  const projectDiagnostics = new ProjectDiagnostics(index);
 
   const tree = new ProjectTreeProvider(store, projects);
   const refresh = () => {
@@ -135,6 +137,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
     watcher,
     projects,
     diagnostics,
+    projectDiagnostics,
     vscode.window.registerCustomEditorProvider(
       FormEditorProvider.viewType,
       new FormEditorProvider(context, index),
@@ -350,6 +353,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
   // First pass over the whole workspace, so Problems is populated before the
   // user opens anything.
   void diagnostics.validateWorkspace();
+  void projectDiagnostics.analyze();
 
   // A fresh clone declares dependencies it does not have yet.
   void (async () => {
