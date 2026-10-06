@@ -110,6 +110,13 @@ export const createVscodeStub = () => {
       activeTextEditor: undefined as unknown,
     },
     env: { language: "en" },
+    l10n: {
+      // English is the source text; fill the {0} placeholders like VS Code does.
+      t: (message: string, ...args: unknown[]) =>
+        message.replace(/\{(\d+)\}/g, (match, index: string) =>
+          index in args ? String(args[Number(index)]) : match
+        ),
+    },
     workspace: {
       fs: {
         readFile: async () => new Uint8Array(),

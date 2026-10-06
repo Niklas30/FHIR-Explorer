@@ -137,7 +137,7 @@ export class PackageInstaller {
           // Already extracted on this machine — read it rather than download.
           await this.client.importParsed(await readCachedPackage(cached));
           outcome.reused.push(entry.key);
-          step(`Read ${entry.key} from the local cache`);
+          step(vscode.l10n.t("Read {0} from the local cache", entry.key));
           return;
         }
 
@@ -161,13 +161,13 @@ export class PackageInstaller {
         }
 
         outcome.installed.push(entry.key);
-        step(`Installed ${entry.key}`);
+        step(vscode.l10n.t("Installed {0}", entry.key));
       } catch (error) {
         outcome.failed.push({
           key: entry.key,
           message: error instanceof Error ? error.message : String(error),
         });
-        step(`Failed ${entry.key}`);
+        step(vscode.l10n.t("Failed {0}", entry.key));
       }
     });
 

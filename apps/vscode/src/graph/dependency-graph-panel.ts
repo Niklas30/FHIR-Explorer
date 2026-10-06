@@ -71,7 +71,7 @@ export class DependencyGraphPanel {
 
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
-      "FHIR Dependencies",
+      vscode.l10n.t("FHIR Dependencies"),
       column,
       { enableScripts: true, retainContextWhenHidden: true }
     );

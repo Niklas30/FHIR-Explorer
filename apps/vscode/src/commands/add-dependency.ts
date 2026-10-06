@@ -27,8 +27,8 @@ type PackagePick = vscode.QuickPickItem & { packageId?: string };
 /** Live search against the registry catalogue, with manual entry as a fallback. */
 const pickPackageId = async (registry: PackageRegistryApi): Promise<string | undefined> => {
   const quickPick = vscode.window.createQuickPick<PackagePick>();
-  quickPick.title = "Add FHIR Dependency";
-  quickPick.placeholder = "Search the registry, or type a package id";
+  quickPick.title = vscode.l10n.t("Add FHIR Dependency");
+  quickPick.placeholder = vscode.l10n.t("Search the registry, or type a package id");
   quickPick.matchOnDescription = true;
   // Results come from the registry, already filtered — filtering them again
   // locally would hide hits whose relevance the registry judged differently.
@@ -63,8 +63,8 @@ const pickPackageId = async (registry: PackageRegistryApi): Promise<string | und
           ? []
           : [
               {
-                label: `$(arrow-right) Use "${query}"`,
-                detail: "Install this package id even though the search did not list it",
+                label: `$(arrow-right) ${vscode.l10n.t('Use "{0}"', query)}`,
+                detail: vscode.l10n.t("Install this package id even though the search did not list it"),
                 packageId: query,
                 alwaysShow: true,
               },
@@ -94,14 +94,14 @@ const pickVersion = async (
   id: string
 ): Promise<string | undefined> => {
   const metadata = await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Window, title: `Loading versions of ${id}` },
+    { location: vscode.ProgressLocation.Window, title: vscode.l10n.t("Loading versions of {0}", id) },
     () => registry.metadata(id)
   );
 
   if (!metadata || metadata.versions.length === 0) {
     const typed = await vscode.window.showInputBox({
-      title: `Version of ${id}`,
-      prompt: "The registry did not list any versions — enter one manually",
+      title: vscode.l10n.t("Version of {0}", id),
+      prompt: vscode.l10n.t("The registry did not list any versions — enter one manually"),
       ignoreFocusOut: true,
     });
     return typed?.trim() || undefined;
@@ -112,7 +112,7 @@ const pickVersion = async (
     (version) => {
       const entry = byVersion.get(version);
       const tags = [
-        version === metadata.latest ? "latest" : undefined,
+        version === metadata.latest ? vscode.l10n.t("latest") : undefined,
         entry?.fhirVersion ? `FHIR ${entry.fhirVersion}` : undefined,
       ].filter(Boolean);
       return {
@@ -124,8 +124,10 @@ const pickVersion = async (
   );
 
   const picked = await vscode.window.showQuickPick(items, {
-    title: `Version of ${id}`,
-    placeHolder: metadata.latest ? `latest is ${metadata.latest}` : "Pick a version",
+    title: vscode.l10n.t("Version of {0}", id),
+    placeHolder: metadata.latest
+      ? vscode.l10n.t("latest is {0}", metadata.latest)
+      : vscode.l10n.t("Pick a version"),
   });
   return picked?.label;
 };
@@ -140,12 +142,16 @@ const resolveConflicts = async (
     const picked = await vscode.window.showQuickPick(
       conflict.requested.map((entry) => ({
         label: entry.version,
-        description: entry.version === conflict.chosen ? "newest — default" : undefined,
-        detail: `Required by ${entry.requestedBy.join(", ") || "your project"}`,
+        description:
+          entry.version === conflict.chosen ? vscode.l10n.t("newest — default") : undefined,
+        detail: vscode.l10n.t(
+          "Required by {0}",
+          entry.requestedBy.join(", ") || vscode.l10n.t("your project")
+        ),
       })),
       {
-        title: `Version conflict: ${conflict.id}`,
-        placeHolder: "Two packages disagree — pick the version to install",
+        title: vscode.l10n.t("Version conflict: {0}", conflict.id),
+        placeHolder: vscode.l10n.t("Two packages disagree — pick the version to install"),
       }
     );
     if (!picked) return undefined; // cancelled
@@ -161,19 +167,25 @@ const describePlan = (plan: InstallPlan): string => {
 
   const lines = [
     toInstall.length === 1
-      ? "1 package will be installed:"
-      : `${toInstall.length} packages will be installed:`,
-    ...toInstall.map((entry) => `  ${entry.key}${entry.direct ? "" : "  (dependency)"}`),
+      ? vscode.l10n.t("1 package will be installed:")
+      : vscode.l10n.t("{0} packages will be installed:", toInstall.length),
+    ...toInstall.map(
+      (entry) => `  ${entry.key}${entry.direct ? "" : `  (${vscode.l10n.t("dependency")})`}`
+    ),
   ];
-  if (present > 0) lines.push(`${present} already available and will be reused.`);
+  if (present > 0) {
+    lines.push(vscode.l10n.t("{0} already available and will be reused.", present));
+  }
   if (plan.unresolved.length > 0) {
     lines.push(
       "",
-      "Not found in the registry:",
+      vscode.l10n.t("Not found in the registry:"),
       ...plan.unresolved.map(
         (entry) =>
           `  ${entry.id}@${entry.range}${
-            entry.requestedBy.length ? ` (required by ${entry.requestedBy.join(", ")})` : ""
+            entry.requestedBy.length
+              ? ` (${vscode.l10n.t("required by {0}", entry.requestedBy.join(", "))})`
+              : ""
           }`
       )
     );
@@ -196,16 +208,17 @@ export const resolveAndInstall = async (
   let plan: InstallPlan;
   try {
     plan = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Window, title: "Resolving dependencies" },
+      { location: vscode.ProgressLocation.Window, title: vscode.l10n.t("Resolving dependencies") },
       () => resolve()
     );
   } catch (error) {
     // A registry that cannot be reached must not turn into a plan that claims
     // the packages do not exist.
     vscode.window.showErrorMessage(
-      `Could not reach the package registry: ${
+      vscode.l10n.t(
+        "Could not reach the package registry: {0}",
         error instanceof Error ? error.message : String(error)
-      }`
+      )
     );
     return false;
   }
@@ -218,21 +231,22 @@ export const resolveAndInstall = async (
 
   const pending = plan.packages.filter((entry) => !entry.satisfied);
   if (pending.length === 0 && plan.unresolved.length === 0) {
-    vscode.window.showInformationMessage("Everything is already installed.");
+    vscode.window.showInformationMessage(vscode.l10n.t("Everything is already installed."));
     return true;
   }
 
+  const install = vscode.l10n.t("Install");
   const confirmed = await vscode.window.showInformationMessage(
     title,
     { modal: true, detail: describePlan(plan) },
-    "Install"
+    install
   );
-  if (confirmed !== "Install") return false;
+  if (confirmed !== install) return false;
 
   const outcome = await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Installing FHIR packages",
+      title: vscode.l10n.t("Installing FHIR packages"),
       cancellable: true,
     },
     (progress, token) =>
@@ -250,14 +264,15 @@ export const resolveAndInstall = async (
   const total = outcome.installed.length + outcome.reused.length;
   if (outcome.failed.length > 0) {
     vscode.window.showWarningMessage(
-      `Installed ${total} package${total === 1 ? "" : "s"}, ${outcome.failed.length} failed: ${outcome.failed
-        .map((entry) => `${entry.key} (${entry.message})`)
-        .join(", ")}`
+      vscode.l10n.t(
+        "Installed {0} package(s), {1} failed: {2}",
+        total,
+        outcome.failed.length,
+        outcome.failed.map((entry) => `${entry.key} (${entry.message})`).join(", ")
+      )
     );
   } else {
-    vscode.window.showInformationMessage(
-      `Installed ${total} package${total === 1 ? "" : "s"}.`
-    );
+    vscode.window.showInformationMessage(vscode.l10n.t("Installed {0} package(s).", total));
   }
 
   return outcome.installed.length > 0 || outcome.reused.length > 0;
@@ -279,7 +294,7 @@ export const addDependencyCommand = async (
   const changed = await resolveAndInstall(
     session,
     [{ id, version }],
-    `Add ${buildPackageKey(id, version)}`
+    vscode.l10n.t("Add {0}", buildPackageKey(id, version))
   );
   if (!changed) return;
 
@@ -292,10 +307,12 @@ export const addDependencyCommand = async (
       const detail =
         error instanceof ManifestNotWritable
           ? error.message
-          : `could not write ${project.manifestFile.path.split("/").pop()}: ${
+          : vscode.l10n.t(
+              "could not write {0}: {1}",
+              project.manifestFile.path.split("/").pop() ?? "",
               error instanceof Error ? error.message : String(error)
-            }`;
-      vscode.window.showWarningMessage(`Installed ${id}, but ${detail}`);
+            );
+      vscode.window.showWarningMessage(vscode.l10n.t("Installed {0}, but {1}", id, detail));
     }
   }
 

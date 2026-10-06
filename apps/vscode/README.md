@@ -104,6 +104,16 @@ or do it by hand:
    it conforms to — your own profiles first, then the ones your dependencies
    bring, then the base FHIR resources.
 
+## Languages
+
+The extension follows VS Code's display language: English, German, French,
+Spanish and Italian. That covers commands, views, messages, the Problems
+panel and the form editor. The walkthrough pages are English only for now.
+Strings live in `l10n/bundle.l10n.*.json` and `package.nls.*.json`. After
+adding a `vscode.l10n.t` call, regenerate the source bundle with
+`npx @vscode/l10n-dev export -o l10n src` and translate the new keys. A test
+fails until every bundle has them.
+
 ## Settings
 
 | Setting | Purpose |

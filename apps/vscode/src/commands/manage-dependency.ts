@@ -20,31 +20,35 @@ import type { WorkspaceProject } from "@/workspace/project-discovery";
 const notWritable = (project: WorkspaceProject, error: unknown): string =>
   error instanceof ManifestNotWritable
     ? error.message
-    : `could not write ${project.manifestFile.path.split("/").pop()}: ${
+    : vscode.l10n.t(
+        "could not write {0}: {1}",
+        project.manifestFile.path.split("/").pop() ?? "",
         error instanceof Error ? error.message : String(error)
-      }`;
+      );
 
 export const removeDependencyCommand = async (
   project: WorkspaceProject,
   id: string,
   onChanged: () => void
 ): Promise<void> => {
+  const remove = vscode.l10n.t("Remove");
   const confirmed = await vscode.window.showWarningMessage(
-    `Remove ${id} from ${project.manifest.name}?`,
+    vscode.l10n.t("Remove {0} from {1}?", id, project.manifest.name),
     {
       modal: true,
-      detail:
-        "The declaration is removed from the manifest. The downloaded package stays in the local cache, so other projects keep working and nothing has to be fetched again.",
+      detail: vscode.l10n.t(
+        "The declaration is removed from the manifest. The downloaded package stays in the local cache, so other projects keep working and nothing has to be fetched again."
+      ),
     },
-    "Remove"
+    remove
   );
-  if (confirmed !== "Remove") return;
+  if (confirmed !== remove) return;
 
   try {
     await removeDependencyFromManifest(project, id);
     onChanged();
   } catch (error) {
-    vscode.window.showWarningMessage(`Not removed: ${notWritable(project, error)}`);
+    vscode.window.showWarningMessage(vscode.l10n.t("Not removed: {0}", notWritable(project, error)));
   }
 };
 
@@ -60,20 +64,23 @@ export const updateDependencyCommand = async (
   let metadata;
   try {
     metadata = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Window, title: `Checking ${id} for updates` },
+      { location: vscode.ProgressLocation.Window, title: vscode.l10n.t("Checking {0} for updates", id) },
       () => session.registry.metadata(id)
     );
   } catch (error) {
     vscode.window.showErrorMessage(
-      `Could not reach the package registry: ${
+      vscode.l10n.t(
+        "Could not reach the package registry: {0}",
         error instanceof Error ? error.message : String(error)
-      }`
+      )
     );
     return;
   }
 
   if (!metadata || metadata.versions.length === 0) {
-    vscode.window.showWarningMessage(`The registry does not list any versions of ${id}.`);
+    vscode.window.showWarningMessage(
+      vscode.l10n.t("The registry does not list any versions of {0}.", id)
+    );
     return;
   }
 
@@ -83,7 +90,7 @@ export const updateDependencyCommand = async (
   const newer = versions.filter((version) => compareVersions(version, current) > 0);
 
   if (newer.length === 0) {
-    vscode.window.showInformationMessage(`${id} is already at the newest version.`);
+    vscode.window.showInformationMessage(vscode.l10n.t("{0} is already at the newest version.", id));
     return;
   }
 
@@ -93,21 +100,24 @@ export const updateDependencyCommand = async (
     versions.map((version) => ({
       label: version,
       description: [
-        version === current ? "current" : undefined,
-        version === metadata.latest ? "latest" : undefined,
-        compareVersions(version, current) < 0 ? "downgrade" : undefined,
+        version === current ? vscode.l10n.t("current") : undefined,
+        version === metadata.latest ? vscode.l10n.t("latest") : undefined,
+        compareVersions(version, current) < 0 ? vscode.l10n.t("downgrade") : undefined,
       ]
         .filter(Boolean)
         .join(" · "),
     })),
-    { title: `Update ${id} (currently ${current})`, placeHolder: "Pick a version" }
+    {
+      title: vscode.l10n.t("Update {0} (currently {1})", id, current),
+      placeHolder: vscode.l10n.t("Pick a version"),
+    }
   );
   if (!picked || picked.label === current) return;
 
   const changed = await resolveAndInstall(
     session,
     [{ id, version: picked.label }],
-    `Update ${id} to ${picked.label}`
+    vscode.l10n.t("Update {0} to {1}", id, picked.label)
   );
   if (!changed) return;
 
@@ -115,7 +125,7 @@ export const updateDependencyCommand = async (
     await addDependencyToManifest(project, id, picked.label);
   } catch (error) {
     vscode.window.showWarningMessage(
-      `Installed ${id}@${picked.label}, but ${notWritable(project, error)}`
+      vscode.l10n.t("Installed {0}, but {1}", `${id}@${picked.label}`, notWritable(project, error))
     );
   }
   onChanged();

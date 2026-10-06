@@ -76,11 +76,11 @@ export const pickProject = async (
       ? [{ label: "", kind: vscode.QuickPickItemKind.Separator } as ProjectPick]
       : []),
     {
-      label: "$(new-folder) Create a new project…",
+      label: `$(new-folder) ${vscode.l10n.t("Create a new project…")}`,
       detail:
         projects.length === 0
-          ? "No FHIR project in this workspace yet"
-          : "Opens the new project form",
+          ? vscode.l10n.t("No FHIR project in this workspace yet")
+          : vscode.l10n.t("Opens the new project form"),
       create: true,
       alwaysShow: true,
     },
@@ -90,8 +90,8 @@ export const pickProject = async (
     title,
     placeHolder:
       projects.length === 0
-        ? "No project found — create one"
-        : "Select a FHIR project",
+        ? vscode.l10n.t("No project found — create one")
+        : vscode.l10n.t("Select a FHIR project"),
   });
 
   if (picked?.create) {

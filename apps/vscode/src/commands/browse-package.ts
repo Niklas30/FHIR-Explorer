@@ -48,7 +48,7 @@ export const browsePackageCommand = async (index: FhirIndex): Promise<void> => {
 
   if (entries.length === 0) {
     vscode.window.showInformationMessage(
-      "No packages imported yet. Use FHIR Explorer: Add Dependency."
+      vscode.l10n.t("No packages imported yet. Use FHIR Explorer: Add Dependency.")
     );
     return;
   }
@@ -57,7 +57,7 @@ export const browsePackageCommand = async (index: FhirIndex): Promise<void> => {
   // being asked — the flat list would be tens of thousands of entries.
   const byOrigin = new Map<string, Entry[]>();
   for (const entry of entries) {
-    const origin = origins.get(entry.canonical) ?? "Unknown origin";
+    const origin = origins.get(entry.canonical) ?? vscode.l10n.t("Unknown origin");
     byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), entry]);
   }
 
@@ -82,8 +82,8 @@ export const browsePackageCommand = async (index: FhirIndex): Promise<void> => {
   }
 
   const picked = await vscode.window.showQuickPick(items, {
-    title: "Browse imported FHIR packages",
-    placeHolder: "Search by name, type or canonical url",
+    title: vscode.l10n.t("Browse imported FHIR packages"),
+    placeHolder: vscode.l10n.t("Search by name, type or canonical url"),
     matchOnDescription: true,
     matchOnDetail: true,
   });

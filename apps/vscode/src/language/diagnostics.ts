@@ -9,6 +9,7 @@ import {
 } from "@fhir-explorer/core/fhir-editor/schema";
 import type { FhirIndex, FhirIndexSnapshot } from "@/language/fhir-index";
 import { rangeForPath } from "@/language/json-path";
+import { hostLocale } from "@/l10n/locale";
 import { isProjectResource, projectForUri } from "@/workspace/project-discovery";
 
 /**
@@ -55,7 +56,7 @@ const syntaxDiagnostics = (
     );
     const diagnostic = new vscode.Diagnostic(
       range,
-      "Invalid JSON — the resource cannot be validated until it parses.",
+      vscode.l10n.t("Invalid JSON — the resource cannot be validated until it parses."),
       vscode.DiagnosticSeverity.Error
     );
     diagnostic.source = "FHIR Explorer";
@@ -75,9 +76,14 @@ const validationDiagnostics = async (
     // Saying so beats silently reporting a clean file.
     const diagnostic = new vscode.Diagnostic(
       rangeForPath(document, root, "resourceType"),
-      `No StructureDefinition found for ${
-        typeof content.resourceType === "string" ? content.resourceType : "this resource"
-      }. Import the package that defines it.`,
+      typeof content.resourceType === "string"
+        ? vscode.l10n.t(
+            "No StructureDefinition found for {0}. Import the package that defines it.",
+            content.resourceType
+          )
+        : vscode.l10n.t(
+            "No StructureDefinition found for this resource. Import the package that defines it."
+          ),
       vscode.DiagnosticSeverity.Information
     );
     diagnostic.source = "FHIR Explorer";
@@ -91,6 +97,7 @@ const validationDiagnostics = async (
   const issues = [
     ...validateResource(content, tree, snapshot.ctx, {
       existingReferences: snapshot.references,
+      locale: hostLocale(),
     }),
     // Async because the fhirpath engine is loaded on first use. An expression
     // the engine cannot evaluate is skipped rather than reported.
@@ -177,7 +184,10 @@ export class FhirDiagnostics {
       // A schema we cannot resolve must not take down the whole pass.
       const diagnostic = new vscode.Diagnostic(
         new vscode.Range(0, 0, 0, 0),
-        `Validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        vscode.l10n.t(
+          "Validation failed: {0}",
+          error instanceof Error ? error.message : String(error)
+        ),
         vscode.DiagnosticSeverity.Warning
       );
       diagnostic.source = "FHIR Explorer";

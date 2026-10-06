@@ -1,7 +1,7 @@
 {
   "name": "fhir-explorer",
   "displayName": "FHIR Explorer",
-  "description": "Author FHIR profiles, value sets and examples directly in your workspace.",
+  "description": "%extension.description%",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -34,17 +34,17 @@
       "fhirExplorer": [
         {
           "id": "fhirExplorer.projects",
-          "name": "Projects",
+          "name": "%view.projects%",
           "icon": "media/activity-bar.svg"
         },
         {
           "id": "fhirExplorer.dependencies",
-          "name": "Dependencies",
+          "name": "%view.dependencies%",
           "icon": "media/activity-bar.svg"
         },
         {
           "id": "fhirExplorer.packages",
-          "name": "Imported Packages",
+          "name": "%view.packages%",
           "icon": "media/activity-bar.svg"
         }
       ]
@@ -52,126 +52,126 @@
     "viewsWelcome": [
       {
         "view": "fhirExplorer.projects",
-        "contents": "No FHIR project found in this workspace.\n\nA project is a folder with a sushi-config.yaml, an ig.ini, or a package.json carrying a FHIR manifest. Imported packages appear under Imported Packages and can be used as a starting point.\n\n[Create FHIR project](command:fhirExplorer.createProject)\n[Add FHIR dependency](command:fhirExplorer.addDependency)"
+        "contents": "%viewsWelcome.projects%"
       },
       {
         "view": "fhirExplorer.dependencies",
-        "contents": "No FHIR project found in this workspace.\n\n[Create FHIR project](command:fhirExplorer.createProject)"
+        "contents": "%viewsWelcome.dependencies%"
       },
       {
         "view": "fhirExplorer.packages",
-        "contents": "No FHIR packages imported yet.\n\nImport one to get profiles, value sets and validation.\n\n[Add dependency](command:fhirExplorer.addDependency)\n[Import package from file](command:fhirExplorer.importPackageFile)"
+        "contents": "%viewsWelcome.packages%"
       }
     ],
     "commands": [
       {
         "command": "fhirExplorer.refresh",
-        "title": "Refresh",
+        "title": "%command.refresh%",
         "category": "FHIR Explorer",
         "icon": "$(refresh)"
       },
       {
         "command": "fhirExplorer.createProject",
-        "title": "Create FHIR Project",
+        "title": "%command.createProject%",
         "category": "FHIR Explorer",
         "icon": "$(new-folder)"
       },
       {
         "command": "fhirExplorer.newResource",
-        "title": "New Resource",
+        "title": "%command.newResource%",
         "category": "FHIR Explorer",
         "icon": "$(add)"
       },
       {
         "command": "fhirExplorer.openResource",
-        "title": "Open Resource",
+        "title": "%command.openResource%",
         "category": "FHIR Explorer"
       },
       {
         "command": "fhirExplorer.deleteResource",
-        "title": "Delete Resource",
+        "title": "%command.deleteResource%",
         "category": "FHIR Explorer",
         "icon": "$(trash)"
       },
       {
         "command": "fhirExplorer.revealInExplorer",
-        "title": "Reveal in Explorer View",
+        "title": "%command.revealInExplorer%",
         "category": "FHIR Explorer"
       },
       {
         "command": "fhirExplorer.openInFormEditor",
-        "title": "Open in FHIR Form Editor",
+        "title": "%command.openInFormEditor%",
         "category": "FHIR Explorer",
         "icon": "$(preview)"
       },
       {
         "command": "fhirExplorer.addDependency",
-        "title": "Add Dependency",
+        "title": "%command.addDependency%",
         "category": "FHIR Explorer",
         "icon": "$(add)"
       },
       {
         "command": "fhirExplorer.installDependencies",
-        "title": "Install Dependencies",
+        "title": "%command.installDependencies%",
         "category": "FHIR Explorer",
         "icon": "$(cloud-download)"
       },
       {
         "command": "fhirExplorer.importPackageFile",
-        "title": "Import Package from File",
+        "title": "%command.importPackageFile%",
         "category": "FHIR Explorer",
         "icon": "$(file-zip)"
       },
       {
         "command": "fhirExplorer.showDependencyGraph",
-        "title": "Show Dependency Graph",
+        "title": "%command.showDependencyGraph%",
         "category": "FHIR Explorer",
         "icon": "$(type-hierarchy)"
       },
       {
         "command": "fhirExplorer.installMissingDependency",
-        "title": "Install This Dependency",
+        "title": "%command.installMissingDependency%",
         "category": "FHIR Explorer",
         "icon": "$(cloud-download)"
       },
       {
         "command": "fhirExplorer.browsePackages",
-        "title": "Browse Imported Packages",
+        "title": "%command.browsePackages%",
         "category": "FHIR Explorer",
         "icon": "$(library)"
       },
       {
         "command": "fhirExplorer.removeDependency",
-        "title": "Remove Dependency",
+        "title": "%command.removeDependency%",
         "category": "FHIR Explorer",
         "icon": "$(trash)"
       },
       {
         "command": "fhirExplorer.updateDependency",
-        "title": "Update Dependency",
+        "title": "%command.updateDependency%",
         "category": "FHIR Explorer",
         "icon": "$(arrow-up)"
       },
       {
         "command": "fhirExplorer.createProjectFromPackage",
-        "title": "Create Project Using This Package",
+        "title": "%command.createProjectFromPackage%",
         "category": "FHIR Explorer",
         "icon": "$(new-folder)"
       },
       {
         "command": "fhirExplorer.focusPackages",
-        "title": "Show Imported Packages",
+        "title": "%command.focusPackages%",
         "category": "FHIR Explorer"
       },
       {
         "command": "fhirExplorer.projectSettings",
-        "title": "Project Settings",
+        "title": "%command.projectSettings%",
         "category": "FHIR Explorer",
         "icon": "$(settings-gear)"
       },
       {
         "command": "fhirExplorer.clonePackageAsProject",
-        "title": "Clone as Editable Project",
+        "title": "%command.clonePackageAsProject%",
         "category": "FHIR Explorer",
         "icon": "$(repo-forked)"
       }
@@ -358,11 +358,11 @@
         "fhirExplorer.packageCache.useFhirHome": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Read from and write to the shared `~/.fhir/packages` cache, so the IG Publisher, Sushi and this extension reuse each other's downloads."
+          "markdownDescription": "%config.packageCache.useFhirHome%"
         },
         "fhirExplorer.registry.sources": {
           "type": "array",
-          "markdownDescription": "Registries searched for packages, in order. No single registry has every version: `packages2.fhir.org` publishes each version's `dependencies` but mirrors only a slice of what publishers released, while `packages.simplifier.net` keeps the full history and has its dependencies read out of the package archive instead.",
+          "markdownDescription": "%config.registry.sources%",
           "items": {
             "type": "object",
             "required": [
@@ -371,11 +371,11 @@
             "properties": {
               "url": {
                 "type": "string",
-                "markdownDescription": "Registry serving npm-style package metadata at `/{id}`."
+                "markdownDescription": "%config.registry.sources.url%"
               },
               "searchUrl": {
                 "type": "string",
-                "markdownDescription": "Registry serving `/catalog?op=find` for package search. Optional: a registry without one simply contributes no search results."
+                "markdownDescription": "%config.registry.sources.searchUrl%"
               }
             },
             "additionalProperties": false
@@ -394,14 +394,14 @@
         "fhirExplorer.terminologyServer.url": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Optional terminology server used to `$expand` value sets that the imported packages cannot expand. Leave empty to disable."
+          "markdownDescription": "%config.terminologyServer.url%"
         }
       }
     },
     "customEditors": [
       {
         "viewType": "fhirExplorer.formEditor",
-        "displayName": "FHIR Form Editor",
+        "displayName": "%customEditor.formEditor%",
         "selector": [
           {
             "filenamePattern": "**/input/capabilities/*.json"
@@ -440,13 +440,13 @@
     "walkthroughs": [
       {
         "id": "fhirExplorer.gettingStarted",
-        "title": "Get started with FHIR Explorer",
-        "description": "Import the definitions you build on, create a project, and author against your own profiles.",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
         "steps": [
           {
             "id": "import",
-            "title": "Import a FHIR package",
-            "description": "Validation needs StructureDefinitions. Start with hl7.fhir.r4.core \u2014 its dependencies come along.\n[Add Dependency](command:fhirExplorer.addDependency)",
+            "title": "%walkthrough.import.title%",
+            "description": "%walkthrough.import.description%",
             "media": {
               "markdown": "media/walkthrough/import.md"
             },
@@ -456,8 +456,8 @@
           },
           {
             "id": "project",
-            "title": "Create or open a project",
-            "description": "A project is a folder with a FHIR manifest. Existing Sushi and IG Publisher repos are recognised as they are.\n[Create FHIR Project](command:fhirExplorer.createProject)",
+            "title": "%walkthrough.project.title%",
+            "description": "%walkthrough.project.description%",
             "media": {
               "markdown": "media/walkthrough/project.md"
             },
@@ -467,8 +467,8 @@
           },
           {
             "id": "author",
-            "title": "Add a resource",
-            "description": "Pick the profile an instance conforms to, then edit it as a form or as JSON.\n[New Resource](command:fhirExplorer.newResource)",
+            "title": "%walkthrough.author.title%",
+            "description": "%walkthrough.author.description%",
             "media": {
               "markdown": "media/walkthrough/author.md"
             },
@@ -478,8 +478,8 @@
           },
           {
             "id": "validate",
-            "title": "See what the editor already knows",
-            "description": "Problems, hover, go to definition and completion work on every resource file \u2014 no command needed.\n[Show Dependency Graph](command:fhirExplorer.showDependencyGraph)",
+            "title": "%walkthrough.validate.title%",
+            "description": "%walkthrough.validate.description%",
             "media": {
               "markdown": "media/walkthrough/validate.md"
             },
@@ -533,5 +533,6 @@
     "healthcare",
     "structuredefinition",
     "implementation guide"
-  ]
+  ],
+  "l10n": "./l10n"
 }

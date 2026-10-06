@@ -15,12 +15,13 @@ import type { ProjectRegistry } from "@/workspace/project-registry";
  * VS Code, and every leaf is a real file the user can also open as text.
  */
 
-const CATEGORIES: { kind: AuthoredResourceKind; label: string; icon: string }[] = [
-  { kind: "profile", label: "Profiles", icon: "symbol-class" },
-  { kind: "extension", label: "Extensions", icon: "symbol-interface" },
-  { kind: "valueset", label: "ValueSets", icon: "symbol-enum" },
-  { kind: "codesystem", label: "CodeSystems", icon: "symbol-enum-member" },
-  { kind: "example", label: "Examples", icon: "beaker" },
+// Labels are thunks so l10n.t runs at render time, not at module load.
+const CATEGORIES: { kind: AuthoredResourceKind; label: () => string; icon: string }[] = [
+  { kind: "profile", label: () => vscode.l10n.t("Profiles"), icon: "symbol-class" },
+  { kind: "extension", label: () => vscode.l10n.t("Extensions"), icon: "symbol-interface" },
+  { kind: "valueset", label: () => "ValueSets", icon: "symbol-enum" },
+  { kind: "codesystem", label: () => "CodeSystems", icon: "symbol-enum-member" },
+  { kind: "example", label: () => vscode.l10n.t("Examples"), icon: "beaker" },
 ];
 
 export type ProjectNode = { type: "project"; project: WorkspaceProject };
@@ -106,7 +107,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.resourceUri = resourceUri(node);
     item.command = {
       command: "vscode.open",
-      title: "Open Resource",
+      title: vscode.l10n.t("Open Resource"),
       arguments: [item.resourceUri],
     };
     return item;
@@ -144,7 +145,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       type: "category",
       project,
       kind,
-      label,
+      label: label(),
       icon,
     }));
   }

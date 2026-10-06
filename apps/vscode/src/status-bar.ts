@@ -29,17 +29,23 @@ export class FhirStatusBar {
     ]);
 
     if (packages.length === 0 && projects.length === 0) {
-      this.item.text = "$(package) FHIR: nothing imported";
-      this.item.tooltip = "No FHIR packages and no project yet — click to get started.";
+      this.item.text = `$(package) ${vscode.l10n.t("FHIR: nothing imported")}`;
+      this.item.tooltip = vscode.l10n.t(
+        "No FHIR packages and no project yet — click to get started."
+      );
       this.item.command = "fhirExplorer.addDependency";
       return;
     }
 
     const parts = [
-      `${packages.length} package${packages.length === 1 ? "" : "s"}`,
-      projects.length > 0
-        ? `${projects.length} project${projects.length === 1 ? "" : "s"}`
-        : "no project",
+      packages.length === 1
+        ? vscode.l10n.t("1 package")
+        : vscode.l10n.t("{0} packages", packages.length),
+      projects.length === 0
+        ? vscode.l10n.t("no project")
+        : projects.length === 1
+          ? vscode.l10n.t("1 project")
+          : vscode.l10n.t("{0} projects", projects.length),
     ];
     this.item.text = `$(package) FHIR: ${parts.join(", ")}`;
     this.item.command = "fhirExplorer.focusPackages";
@@ -47,16 +53,21 @@ export class FhirStatusBar {
     this.item.tooltip = new vscode.MarkdownString(
       projects.length === 0
         ? [
-            `**${packages.length} package(s) imported**, but no project in this workspace.`,
+            vscode.l10n.t(
+              "**{0} package(s) imported**, but no project in this workspace.",
+              packages.length
+            ),
             "",
-            "Packages on their own only supply definitions. Create a project to author against them.",
+            vscode.l10n.t(
+              "Packages on their own only supply definitions. Create a project to author against them."
+            ),
           ].join("\n")
         : [
             ...projects.map(
               (project) => `- ${project.manifest.name}@${project.manifest.version}`
             ),
             "",
-            `${packages.length} package(s) imported.`,
+            vscode.l10n.t("{0} package(s) imported.", packages.length),
           ].join("\n")
     );
   }

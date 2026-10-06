@@ -241,7 +241,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.commands.registerCommand("fhirExplorer.addDependency", async () => {
       const project = await requireProject(
         undefined,
-        "Which project should declare the dependency?"
+        vscode.l10n.t("Which project should declare the dependency?")
       );
       if (!project) return;
       await addDependencyCommand(context, project, afterPackagesChanged);
@@ -251,7 +251,11 @@ export const activate = (context: vscode.ExtensionContext): void => {
       async (node?: { project?: WorkspaceProject }) => {
         const project =
           node?.project ??
-          (await pickProject(projects, "Settings of which project?", openProjectForm));
+          (await pickProject(
+            projects,
+            vscode.l10n.t("Settings of which project?"),
+            openProjectForm
+          ));
         if (!project) return;
         ProjectFormPanel.edit(context, project, afterPackagesChanged);
       }
@@ -297,7 +301,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
       async (node?: DependencyTreeNode) => {
         const project =
           node?.project ??
-          (await pickProject(projects, "Which project?", openProjectForm));
+          (await pickProject(projects, vscode.l10n.t("Which project?"), openProjectForm));
         if (!project) return;
         DependencyGraphPanel.show(context, project, (id, requirement) =>
           void installMissingDependency(context, id, requirement, afterPackagesChanged)
@@ -320,7 +324,10 @@ export const activate = (context: vscode.ExtensionContext): void => {
     vscode.commands.registerCommand(
       "fhirExplorer.newResource",
       async (node?: CategoryNode) => {
-        const project = await requireProject(node, "Add a resource to which project?");
+        const project = await requireProject(
+          node,
+          vscode.l10n.t("Add a resource to which project?")
+        );
         if (!project) return;
         await newResourceCommand(project, node?.kind, index, refresh);
       }
@@ -335,12 +342,13 @@ export const activate = (context: vscode.ExtensionContext): void => {
       "fhirExplorer.deleteResource",
       async (node: ResourceNode) => {
         const uri = resourceUri(node);
+        const moveToTrash = vscode.l10n.t("Move to Trash");
         const answer = await vscode.window.showWarningMessage(
-          `Delete ${node.resource.title ?? node.resource.id}?`,
+          vscode.l10n.t("Delete {0}?", node.resource.title ?? node.resource.id),
           { modal: true, detail: uri.fsPath },
-          "Move to Trash"
+          moveToTrash
         );
-        if (answer !== "Move to Trash") return;
+        if (answer !== moveToTrash) return;
         await vscode.workspace.fs.delete(uri, { useTrash: true });
         refresh();
       }

@@ -29,10 +29,25 @@ const isBaseResource = (summary: ProfileSummary): boolean =>
 
 type ProfilePick = vscode.QuickPickItem & { choice?: ProfileChoice };
 
-const groupLabel = (origin: string | undefined, project: string | undefined): string => {
-  if (!origin) return "Other";
-  if (origin === project) return "This project";
+/**
+ * Group keys stay language-neutral so ordering does not depend on how a label
+ * happens to read in the user's language; labels are applied at the end.
+ */
+const PROJECT_GROUP = "\u0000project";
+const BASE_GROUP = "\u0000base";
+const OTHER_GROUP = "\u0000other";
+
+const groupKey = (origin: string | undefined, project: string | undefined): string => {
+  if (!origin) return OTHER_GROUP;
+  if (origin === project) return PROJECT_GROUP;
   return origin;
+};
+
+const groupLabel = (key: string): string => {
+  if (key === PROJECT_GROUP) return vscode.l10n.t("This project");
+  if (key === BASE_GROUP) return vscode.l10n.t("Base FHIR resources");
+  if (key === OTHER_GROUP) return vscode.l10n.t("Other");
+  return key;
 };
 
 export const pickProfile = async (
@@ -43,7 +58,9 @@ export const pickProfile = async (
   const summaries = getProfileSummaries(snapshot.registry);
   if (summaries.length === 0) {
     vscode.window.showWarningMessage(
-      "No StructureDefinitions available. Add a dependency such as hl7.fhir.r4.core first."
+      vscode.l10n.t(
+        "No StructureDefinitions available. Add a dependency such as hl7.fhir.r4.core first."
+      )
     );
     return undefined;
   }
@@ -53,21 +70,19 @@ export const pickProfile = async (
   const byGroup = new Map<string, ProfileSummary[]>();
   for (const summary of summaries) {
     const origin = snapshot.origins.get(summary.url);
-    const group = isBaseResource(summary)
-      ? "Base FHIR resources"
-      : groupLabel(origin, projectKey);
+    const group = isBaseResource(summary) ? BASE_GROUP : groupKey(origin, projectKey);
     byGroup.set(group, [...(byGroup.get(group) ?? []), summary]);
   }
 
   const order = [...byGroup.keys()].sort((a, b) => {
     const rank = (value: string) =>
-      value === "This project" ? 0 : value === "Base FHIR resources" ? 2 : 1;
+      value === PROJECT_GROUP ? 0 : value === BASE_GROUP ? 2 : 1;
     return rank(a) - rank(b) || a.localeCompare(b);
   });
 
   const items: ProfilePick[] = [];
   for (const group of order) {
-    items.push({ label: group, kind: vscode.QuickPickItemKind.Separator });
+    items.push({ label: groupLabel(group), kind: vscode.QuickPickItemKind.Separator });
     for (const summary of byGroup.get(group) ?? []) {
       items.push({
         label: summary.title ?? summary.name,
@@ -83,7 +98,7 @@ export const pickProfile = async (
 
   const picked = await vscode.window.showQuickPick(items, {
     title,
-    placeHolder: "Search by name, resource type or canonical url",
+    placeHolder: vscode.l10n.t("Search by name, resource type or canonical url"),
     matchOnDescription: true,
     matchOnDetail: true,
   });

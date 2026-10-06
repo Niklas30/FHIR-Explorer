@@ -14,10 +14,10 @@ export const importPackageFileCommand = async (
   onImported: () => void
 ): Promise<void> => {
   const picked = await vscode.window.showOpenDialog({
-    title: "Import FHIR Package",
-    openLabel: "Import",
+    title: vscode.l10n.t("Import FHIR Package"),
+    openLabel: vscode.l10n.t("Import"),
     canSelectMany: false,
-    filters: { "FHIR package": ["tgz", "gz", "tar", "zip"] },
+    filters: { [vscode.l10n.t("FHIR package")]: ["tgz", "gz", "tar", "zip"] },
   });
   const file = picked?.[0];
   if (!file) return;
@@ -30,7 +30,7 @@ export const importPackageFileCommand = async (
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `Importing ${file.path.split("/").pop()}`,
+      title: vscode.l10n.t("Importing {0}", file.path.split("/").pop() ?? ""),
     },
     async (progress) => {
       try {
@@ -48,24 +48,30 @@ export const importPackageFileCommand = async (
 
         const { missing } = (await client.loadSnapshot()).dependencyState;
         if (missing.length === 0) {
-          vscode.window.showInformationMessage(`Imported ${result.packageKey}.`);
+          vscode.window.showInformationMessage(vscode.l10n.t("Imported {0}.", result.packageKey));
           return;
         }
 
         // The archive brings no dependency closure with it, but the registry
         // can supply one — so point at the command that does.
+        const addDependency = vscode.l10n.t("Add Dependency");
         const answer = await vscode.window.showWarningMessage(
-          `Imported ${result.packageKey}. Missing ${missing.length} ${
-            missing.length === 1 ? "dependency" : "dependencies"
-          }: ${missing.map((entry) => entry.id).join(", ")}`,
-          "Add Dependency"
+          vscode.l10n.t(
+            "Imported {0}. Missing dependencies: {1}",
+            result.packageKey,
+            missing.map((entry) => entry.id).join(", ")
+          ),
+          addDependency
         );
-        if (answer === "Add Dependency") {
+        if (answer === addDependency) {
           await vscode.commands.executeCommand("fhirExplorer.addDependency");
         }
       } catch (error) {
         vscode.window.showErrorMessage(
-          `Import failed: ${error instanceof Error ? error.message : String(error)}`
+          vscode.l10n.t(
+            "Import failed: {0}",
+            error instanceof Error ? error.message : String(error)
+          )
         );
       }
     }

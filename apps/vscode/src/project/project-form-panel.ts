@@ -32,10 +32,10 @@ const titleFor = (
   cloning: ProjectFormCloning | undefined
 ): string =>
   editing
-    ? "FHIR project settings"
+    ? vscode.l10n.t("FHIR project settings")
     : cloning
-      ? `Clone ${cloning.sourceId}`
-      : "New FHIR project";
+      ? vscode.l10n.t("Clone {0}", cloning.sourceId)
+      : vscode.l10n.t("New FHIR project");
 
 /**
  * The package a new project is built on.
@@ -270,16 +270,21 @@ export class ProjectFormPanel {
 
       if (skipped.length > 0) {
         vscode.window.showWarningMessage(
-          `Saved, except ${skipped.join(", ")} — ${project.manifestFile.path
-            .split("/")
-            .pop()} has no field for it.`
+          vscode.l10n.t(
+            "Saved, except {0} — {1} has no field for it.",
+            skipped.join(", "),
+            project.manifestFile.path.split("/").pop() ?? ""
+          )
         );
       }
     } catch (error) {
       vscode.window.showErrorMessage(
         error instanceof ManifestNotWritable
           ? error.message
-          : `Could not save: ${error instanceof Error ? error.message : String(error)}`
+          : vscode.l10n.t(
+              "Could not save: {0}",
+              error instanceof Error ? error.message : String(error)
+            )
       );
       return;
     }
@@ -293,7 +298,7 @@ export class ProjectFormPanel {
       .map(([id, version]) => ({ id, version }));
     if (added.length > 0) {
       const session = await createImportSession(this.context);
-      await resolveAndInstall(session, added, `Install new dependencies`);
+      await resolveAndInstall(session, added, vscode.l10n.t("Install new dependencies"));
       this.onCreated();
     }
   }
@@ -304,7 +309,7 @@ export class ProjectFormPanel {
    */
   private async create(value: CreateValue): Promise<void> {
     if (!PACKAGE_ID.test(value.name) || !/^\d+\.\d+\.\d+/.test(value.version)) {
-      vscode.window.showErrorMessage("The project id or version is not valid.");
+      vscode.window.showErrorMessage(vscode.l10n.t("The project id or version is not valid."));
       return;
     }
 
@@ -312,7 +317,7 @@ export class ProjectFormPanel {
       (entry) => entry.uri.toString() === value.folder
     );
     if (!parent) {
-      vscode.window.showErrorMessage("Open a folder before creating a FHIR project.");
+      vscode.window.showErrorMessage(vscode.l10n.t("Open a folder before creating a FHIR project."));
       return;
     }
 
@@ -323,7 +328,7 @@ export class ProjectFormPanel {
       () => false
     );
     if (exists) {
-      vscode.window.showErrorMessage(`${manifestUri.fsPath} already exists.`);
+      vscode.window.showErrorMessage(vscode.l10n.t("{0} already exists.", manifestUri.fsPath));
       return;
     }
 
@@ -372,7 +377,7 @@ export class ProjectFormPanel {
       const outcome = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: `Cloning ${this.cloning.sourceId} into ${value.name}`,
+          title: vscode.l10n.t("Cloning {0} into {1}", this.cloning.sourceId, value.name),
         },
         (progress) =>
           clonePackageResources(root, payloads, (completed, total) =>
@@ -382,8 +387,15 @@ export class ProjectFormPanel {
 
       vscode.window.showInformationMessage(
         outcome.skipped > 0
-          ? `Copied ${outcome.written} resources, skipped ${outcome.skipped} that carry no resourceType.`
-          : `Copied ${outcome.written} resources. Canonicals are unchanged — adjust the ones you want to own.`
+          ? vscode.l10n.t(
+              "Copied {0} resources, skipped {1} that carry no resourceType.",
+              outcome.written,
+              outcome.skipped
+            )
+          : vscode.l10n.t(
+              "Copied {0} resources. Canonicals are unchanged — adjust the ones you want to own.",
+              outcome.written
+            )
       );
     }
 
@@ -395,7 +407,11 @@ export class ProjectFormPanel {
     const roots = Object.entries(dependencies).map(([id, version]) => ({ id, version }));
     if (roots.length > 0) {
       const session = await createImportSession(this.context);
-      await resolveAndInstall(session, roots, `Install dependencies of ${value.name}`);
+      await resolveAndInstall(
+        session,
+        roots,
+        vscode.l10n.t("Install dependencies of {0}", value.name)
+      );
       this.onCreated();
     }
 

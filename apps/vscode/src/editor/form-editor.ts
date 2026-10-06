@@ -209,7 +209,7 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
         }
 
         if (message.type === "error") {
-          vscode.window.showErrorMessage(`FHIR form editor: ${message.message}`);
+          vscode.window.showErrorMessage(vscode.l10n.t("FHIR form editor: {0}", message.message));
         }
       }
     );
@@ -239,7 +239,7 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
       // The file does not parse; a structural edit would destroy whatever the
       // user is in the middle of typing in the text editor.
       vscode.window.showWarningMessage(
-        "The file is not valid JSON right now — the form change was not applied."
+        vscode.l10n.t("The file is not valid JSON right now — the form change was not applied.")
       );
       return;
     }
@@ -271,10 +271,14 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
  * Plain HTML with no script: there is nothing to interact with, and the point
  * is to send the user to the file that is actually the source.
  */
+const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
+
 const generatedNotice = (uri: vscode.Uri): string => {
-  const name = uri.path.split("/").pop() ?? "This file";
+  const name = escapeHtml(uri.path.split("/").pop() ?? "");
+  const code = (value: string) => `<code>${value}</code>`;
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHtml(vscode.env.language)}">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'" />
@@ -286,13 +290,13 @@ const generatedNotice = (uri: vscode.Uri): string => {
     </style>
   </head>
   <body>
-    <h2>${name} is generated</h2>
-    <p>
-      It sits under <code>fsh-generated/</code>, which Sushi rewrites on every
-      build. Editing it here would lose the change on the next run.
-    </p>
-    <p>Edit the <code>.fsh</code> source under <code>input/fsh/</code> instead.</p>
-    <p>Validation, hover and go-to-definition still work on this file.</p>
+    <h2>${vscode.l10n.t("{0} is generated", name)}</h2>
+    <p>${vscode.l10n.t(
+      "It sits under {0}, which Sushi rewrites on every build. Editing it here would lose the change on the next run.",
+      code("fsh-generated/")
+    )}</p>
+    <p>${vscode.l10n.t("Edit the {0} source under {1} instead.", code(".fsh"), code("input/fsh/"))}</p>
+    <p>${vscode.l10n.t("Validation, hover and go-to-definition still work on this file.")}</p>
   </body>
 </html>`;
 };

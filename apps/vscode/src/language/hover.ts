@@ -33,9 +33,14 @@ const resolveCanonical = (
       title: asString(definition.title) ?? asString(definition.name) ?? canonical,
       description: asString(definition.description),
       detail: [
-        definition.type ? `type \`${definition.type}\`` : undefined,
+        definition.type
+          ? vscode.l10n.t("type {0}", `\`${String(definition.type)}\``)
+          : undefined,
         definition.baseDefinition
-          ? `derived from \`${normalizeCanonical(String(definition.baseDefinition))}\``
+          ? vscode.l10n.t(
+              "derived from {0}",
+              `\`${normalizeCanonical(String(definition.baseDefinition))}\``
+            )
           : undefined,
       ]
         .filter(Boolean)
@@ -78,10 +83,10 @@ const renderHover = (
   const isLocal = snapshot.definitions.has(canonical);
   markdown.appendMarkdown(
     isLocal
-      ? `_Defined in this workspace_`
+      ? `_${vscode.l10n.t("Defined in this workspace")}_`
       : origin
-        ? `_From \`${origin}\`_`
-        : `_Source unknown_`
+        ? `_${vscode.l10n.t("From {0}", `\`${origin}\``)}_`
+        : `_${vscode.l10n.t("Source unknown")}_`
   );
   return markdown;
 };
@@ -104,7 +109,7 @@ export const createHoverProvider = (index: FhirIndex): vscode.HoverProvider => (
     if (target) {
       const markdown = new vscode.MarkdownString();
       markdown.appendMarkdown(
-        `**${found.value}**\n\n_Instance in this workspace_\n\n${vscode.workspace.asRelativePath(target)}`
+        `**${found.value}**\n\n_${vscode.l10n.t("Instance in this workspace")}_\n\n${vscode.workspace.asRelativePath(target)}`
       );
       return new vscode.Hover(markdown, found.range);
     }
@@ -114,7 +119,7 @@ export const createHoverProvider = (index: FhirIndex): vscode.HoverProvider => (
     if (found.value.startsWith("http://") || found.value.startsWith("https://")) {
       const markdown = new vscode.MarkdownString();
       markdown.appendMarkdown(
-        `\`${canonical}\`\n\n_Not found in the imported packages or this workspace._`
+        `\`${canonical}\`\n\n_${vscode.l10n.t("Not found in the imported packages or this workspace.")}_`
       );
       return new vscode.Hover(markdown, found.range);
     }

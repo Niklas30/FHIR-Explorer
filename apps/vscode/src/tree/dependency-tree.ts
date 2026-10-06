@@ -73,10 +73,14 @@ export class DependencyTreeProvider
     );
     item.description = dependency.resolved
       ? dependency.version
-      : `${dependency.version} — not installed`;
+      : vscode.l10n.t("{0} — not installed", dependency.version);
     item.tooltip = dependency.resolved
       ? `${dependency.title}\n${dependency.key}`
-      : `${dependency.id} ${dependency.version} is required but not installed`;
+      : vscode.l10n.t(
+          "{0} {1} is required but not installed",
+          dependency.id,
+          dependency.version
+        );
     item.iconPath = dependency.resolved
       ? new vscode.ThemeIcon("library")
       : new vscode.ThemeIcon(

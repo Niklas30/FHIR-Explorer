@@ -30,11 +30,10 @@ type PackageEntry = { canonical: string; label: string; name: string };
 
 const KIND_ORDER: ResourceKind[] = ["StructureDefinition", "ValueSet", "CodeSystem"];
 
-const KIND_LABELS: Record<ResourceKind, string> = {
-  StructureDefinition: "Profiles & types",
-  ValueSet: "ValueSets",
-  CodeSystem: "CodeSystems",
-};
+// A function, not a table: l10n.t has to run after activation to see the
+// display language. ValueSet and CodeSystem are FHIR names and stay as they are.
+const kindLabel = (kind: ResourceKind): string =>
+  kind === "StructureDefinition" ? vscode.l10n.t("Profiles & types") : `${kind}s`;
 
 const KIND_ICONS: Record<ResourceKind, string> = {
   StructureDefinition: "symbol-class",
@@ -79,14 +78,20 @@ export class PackageTreeProvider implements vscode.TreeDataProvider<PackageTreeN
         record.manifest.title ?? record.id,
         vscode.TreeItemCollapsibleState.Collapsed
       );
-      item.description = `${record.version} · ${record.resourceCount} resources`;
+      item.description = vscode.l10n.t(
+        "{0} · {1} resources",
+        record.version,
+        record.resourceCount
+      );
       item.tooltip = new vscode.MarkdownString(
         [
           `**${record.manifest.title ?? record.id}**`,
           record.manifest.description ?? "",
           "",
           `\`${record.key}\``,
-          record.manifest.canonical ? `Canonical: ${record.manifest.canonical}` : "",
+          record.manifest.canonical
+            ? vscode.l10n.t("Canonical: {0}", record.manifest.canonical)
+            : "",
         ]
           .filter(Boolean)
           .join("\n\n")
@@ -98,7 +103,7 @@ export class PackageTreeProvider implements vscode.TreeDataProvider<PackageTreeN
 
     if (node.type === "kind") {
       const item = new vscode.TreeItem(
-        KIND_LABELS[node.kind],
+        kindLabel(node.kind),
         vscode.TreeItemCollapsibleState.Collapsed
       );
       item.description = String(node.entries.length);
@@ -114,7 +119,7 @@ export class PackageTreeProvider implements vscode.TreeDataProvider<PackageTreeN
     // Opens the read-only virtual document, the same one go-to-definition uses.
     item.command = {
       command: "vscode.open",
-      title: "Open",
+      title: vscode.l10n.t("Open"),
       arguments: [
         packageDocumentUri(node.entry.canonical, node.packageKey, node.entry.name),
       ],

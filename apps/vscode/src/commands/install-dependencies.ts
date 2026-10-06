@@ -36,7 +36,7 @@ export const installDependenciesCommand = async (
   const roots = rootsOf(projects);
   if (roots.length === 0) {
     vscode.window.showInformationMessage(
-      "No dependencies declared. Use FHIR Explorer: Add Dependency to add one."
+      vscode.l10n.t("No dependencies declared. Use FHIR Explorer: Add Dependency to add one.")
     );
     return;
   }
@@ -45,7 +45,7 @@ export const installDependenciesCommand = async (
   const changed = await resolveAndInstall(
     session,
     roots,
-    "Install declared dependencies"
+    vscode.l10n.t("Install declared dependencies")
   );
   if (changed) onInstalled();
 };
@@ -73,19 +73,20 @@ export const offerMissingDependencies = async (
 
   // Resolving first would mean network round trips before the user has shown
   // any interest, so this counts only the direct declarations.
+  const install = vscode.l10n.t("Install");
   const answer = await vscode.window.showInformationMessage(
     missing.length === 1
-      ? `The FHIR dependency ${missing[0].id} is not installed.`
-      : `${missing.length} FHIR dependencies are not installed.`,
-    "Install",
-    "Not now"
+      ? vscode.l10n.t("The FHIR dependency {0} is not installed.", missing[0].id)
+      : vscode.l10n.t("{0} FHIR dependencies are not installed.", missing.length),
+    install,
+    vscode.l10n.t("Not now")
   );
-  if (answer !== "Install") return;
+  if (answer !== install) return;
 
   const changed = await resolveAndInstall(
     session,
     roots,
-    "Install declared dependencies"
+    vscode.l10n.t("Install declared dependencies")
   );
   if (changed) onInstalled();
 };

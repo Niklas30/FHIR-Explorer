@@ -118,7 +118,10 @@ export const addDependencyToManifest = async (
   // An ig.ini pointing at an XML ImplementationGuide. The package is installed
   // either way; we just cannot record it without an XML writer.
   throw new ManifestNotWritable(
-    `Cannot record the dependency in ${file.path.split("/").pop()} — add it to the ImplementationGuide by hand.`
+    vscode.l10n.t(
+      "Cannot record the dependency in {0} — add it to the ImplementationGuide by hand.",
+      file.path.split("/").pop() ?? ""
+    )
   );
 };
 
@@ -186,7 +189,10 @@ export const removeDependencyFromManifest = async (
   }
 
   throw new ManifestNotWritable(
-    `Cannot edit ${file.path.split("/").pop()} — remove the dependency by hand.`
+    vscode.l10n.t(
+      "Cannot edit {0} — remove the dependency by hand.",
+      file.path.split("/").pop() ?? ""
+    )
   );
 };
 
@@ -245,7 +251,10 @@ export const updateManifestFields = async (
   const isPackageJson = file.path.endsWith("/package.json");
   if (!isSushi && !isPackageJson && !file.path.endsWith(".json")) {
     throw new ManifestNotWritable(
-      `Cannot edit ${file.path.split("/").pop()} — change the project details by hand.`
+      vscode.l10n.t(
+        "Cannot edit {0} — change the project details by hand.",
+        file.path.split("/").pop() ?? ""
+      )
     );
   }
 

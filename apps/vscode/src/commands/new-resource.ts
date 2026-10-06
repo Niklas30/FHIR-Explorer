@@ -12,12 +12,22 @@ import {
 
 const encoder = new TextEncoder();
 
-const KIND_LABELS: Record<AuthoredResourceKind, string> = {
-  profile: "Profile",
-  extension: "Extension",
-  valueset: "ValueSet",
-  codesystem: "CodeSystem",
-  example: "Example instance",
+const KINDS: AuthoredResourceKind[] = ["profile", "extension", "valueset", "codesystem", "example"];
+
+/** A function, not a table: the display language is only known at runtime. */
+const kindLabel = (kind: AuthoredResourceKind): string => {
+  switch (kind) {
+    case "profile":
+      return vscode.l10n.t("Profile");
+    case "extension":
+      return vscode.l10n.t("Extension");
+    case "valueset":
+      return "ValueSet";
+    case "codesystem":
+      return "CodeSystem";
+    case "example":
+      return vscode.l10n.t("Example instance");
+  }
 };
 
 const NAME = /^[A-Za-z][A-Za-z0-9-]*$/;
@@ -26,12 +36,13 @@ const NAME = /^[A-Za-z][A-Za-z0-9-]*$/;
 type KindPick = vscode.QuickPickItem & { resourceKind: AuthoredResourceKind };
 
 const pickKind = async (): Promise<AuthoredResourceKind | undefined> => {
-  const items: KindPick[] = (Object.keys(KIND_LABELS) as AuthoredResourceKind[]).map(
-    (resourceKind) => ({ label: KIND_LABELS[resourceKind], resourceKind })
-  );
+  const items: KindPick[] = KINDS.map((resourceKind) => ({
+    label: kindLabel(resourceKind),
+    resourceKind,
+  }));
   const picked = await vscode.window.showQuickPick(items, {
-    title: "New FHIR Resource",
-    placeHolder: "What do you want to create?",
+    title: vscode.l10n.t("New FHIR Resource"),
+    placeHolder: vscode.l10n.t("What do you want to create?"),
   });
   return picked?.resourceKind;
 };
@@ -61,7 +72,7 @@ export const newResourceCommand = async (
     const choice = await pickProfile(
       snapshot,
       project.key,
-      "New Example instance — which profile?"
+      vscode.l10n.t("New Example instance — which profile?")
     );
     if (!choice) return;
     profileUrl = choice.profileUrl;
@@ -69,8 +80,11 @@ export const newResourceCommand = async (
   }
 
   const name = await vscode.window.showInputBox({
-    title: `New ${KIND_LABELS[kind]}`,
-    prompt: kind === "example" ? "Instance id" : "Resource name (PascalCase)",
+    title: vscode.l10n.t("New {0}", kindLabel(kind)),
+    prompt:
+      kind === "example"
+        ? vscode.l10n.t("Instance id")
+        : vscode.l10n.t("Resource name (PascalCase)"),
     placeHolder:
       kind === "example"
         ? `${exampleResourceType?.toLowerCase() ?? "patient"}-example`
@@ -79,7 +93,7 @@ export const newResourceCommand = async (
     validateInput: (value) =>
       NAME.test(value.trim())
         ? undefined
-        : "Letters, digits and hyphens, starting with a letter",
+        : vscode.l10n.t("Letters, digits and hyphens, starting with a letter"),
   });
   if (!name) return;
 
@@ -107,7 +121,7 @@ export const newResourceCommand = async (
     () => false
   );
   if (exists) {
-    vscode.window.showErrorMessage(`${target.fsPath} already exists.`);
+    vscode.window.showErrorMessage(vscode.l10n.t("{0} already exists.", target.fsPath));
     return;
   }
 
