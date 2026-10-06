@@ -1,11 +1,7 @@
-import { extractArchiveEntries } from "@fhir-explorer/core/fhir-importer/parser";
-import { HttpError, type HttpClient } from "@fhir-explorer/core/ports";
-import type {
-  PackageRegistryApi,
-  RegistryPackage,
-  RegistrySearchHit,
-  RegistryVersion,
-} from "@/registry/types";
+import { extractArchiveEntries } from "./parser";
+import { HttpError, type HttpClient } from "../ports";
+import type { PackageRegistryApi, RegistryPackage, RegistrySearchHit } from "./registry-api";
+import { asDependencies, asString, isRecord, parseRegistryPackage } from "./registry-metadata";
 
 /**
  * Client for an npm-shaped FHIR package registry.
@@ -13,48 +9,6 @@ import type {
  * Metadata is cached for the session: resolving a dependency tree asks for the
  * same core packages over and over, and every one of those is a round trip.
  */
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value && typeof value === "object" && !Array.isArray(value));
-
-const asString = (value: unknown): string | undefined =>
-  typeof value === "string" && value.trim() ? value.trim() : undefined;
-
-const asDependencies = (value: unknown): Record<string, string> | undefined => {
-  if (!isRecord(value)) return undefined;
-  const entries = Object.entries(value).filter(
-    (entry): entry is [string, string] => typeof entry[1] === "string"
-  );
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
-};
-
-const toVersion = (version: string, raw: unknown): RegistryVersion => {
-  const record = isRecord(raw) ? raw : {};
-  const dist = isRecord(record.dist) ? record.dist : undefined;
-  return {
-    version,
-    fhirVersion: asString(record.fhirVersion),
-    description: asString(record.description),
-    date: asString(record.date),
-    dependencies: asDependencies(record.dependencies),
-    tarball: asString(dist?.tarball) ?? asString(record.url),
-  };
-};
-
-const toPackage = (id: string, raw: unknown): RegistryPackage | undefined => {
-  if (!isRecord(raw)) return undefined;
-  const versions = isRecord(raw.versions) ? raw.versions : {};
-  const distTags = isRecord(raw["dist-tags"]) ? raw["dist-tags"] : undefined;
-
-  return {
-    name: asString(raw.name) ?? id,
-    description: asString(raw.description),
-    latest: asString(distTags?.latest),
-    versions: Object.entries(versions).map(([version, entry]) =>
-      toVersion(version, entry)
-    ),
-  };
-};
 
 /**
  * Read `dependencies` out of the manifest inside a package archive.
@@ -134,7 +88,7 @@ export class RegistryClient implements PackageRegistryApi {
         const body = await this.http.getJson<unknown>(
           `${this.baseUrl}/${encodeURIComponent(id)}`
         );
-        return toPackage(id, body);
+        return parseRegistryPackage(id, body);
       } catch (error) {
         // Only a 404 means the package does not exist. Swallowing a dropped
         // connection here would tell the user their dependency is unknown,

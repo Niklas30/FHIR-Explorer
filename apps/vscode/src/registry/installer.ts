@@ -9,8 +9,8 @@ import {
   type CachedPackage,
 } from "@/adapters/fhir-home-cache";
 import type { GlobalPackageStore } from "@/adapters/global-package-store";
-import type { PlannedPackage } from "@/registry/plan";
-import type { PackageRegistryApi } from "@/registry/types";
+import type { PlannedPackage } from "@fhir-explorer/core/fhir-importer/install-plan";
+import type { PackageRegistryApi } from "@fhir-explorer/core/fhir-importer/registry-api";
 
 /**
  * Downloads and installs the packages a plan calls for.

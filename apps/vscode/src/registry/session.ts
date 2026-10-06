@@ -2,10 +2,15 @@ import * as vscode from "vscode";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { listCachedPackages, type CachedPackage } from "@/adapters/fhir-home-cache";
 import { nodeHttpClient } from "@/adapters/node-http-client";
-import { ChainedRegistry } from "@/registry/chained-registry";
+import {
+  PACKAGES2_REGISTRY_BASE,
+  PACKAGES_CATALOG_BASE,
+  SIMPLIFIER_REGISTRY_BASE,
+} from "@fhir-explorer/core/fhir-importer/registry";
+import { ChainedRegistry } from "@fhir-explorer/core/fhir-importer/chained-registry";
 import { PackageInstaller } from "@/registry/installer";
-import { RegistryClient } from "@/registry/registry-client";
-import type { PackageRegistryApi } from "@/registry/types";
+import { RegistryClient } from "@fhir-explorer/core/fhir-importer/registry-client";
+import type { PackageRegistryApi } from "@fhir-explorer/core/fhir-importer/registry-api";
 
 /**
  * Everything the import commands need, assembled from the current settings.
@@ -41,8 +46,8 @@ export type RegistrySource = {
  * history and whose dependencies are read out of the archive instead.
  */
 const DEFAULT_SOURCES: RegistrySource[] = [
-  { url: "https://packages2.fhir.org/packages", searchUrl: "https://packages.fhir.org" },
-  { url: "https://packages.simplifier.net", searchUrl: "https://packages.simplifier.net" },
+  { url: PACKAGES2_REGISTRY_BASE, searchUrl: PACKAGES_CATALOG_BASE },
+  { url: SIMPLIFIER_REGISTRY_BASE, searchUrl: SIMPLIFIER_REGISTRY_BASE },
 ];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

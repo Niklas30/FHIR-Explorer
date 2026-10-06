@@ -1,6 +1,6 @@
-import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
-import type { PackageRegistryApi } from "@/registry/types";
-import { compareVersions, resolveVersionRange } from "@/registry/version";
+import { buildPackageKey } from "./utils";
+import type { PackageRegistryApi } from "./registry-api";
+import { compareVersions, resolveVersionRange } from "./version";
 
 /**
  * Works out everything that has to be installed, before anything is downloaded.

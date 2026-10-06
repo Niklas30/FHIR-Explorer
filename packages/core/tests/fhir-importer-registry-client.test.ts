@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import type { HttpClient } from "@fhir-explorer/core/ports";
-import { RegistryClient } from "@/registry/registry-client";
+import { RegistryClient } from "@fhir-explorer/core/fhir-importer/registry-client";
 
 /**
  * A package archive carrying nothing but its manifest — enough to prove where

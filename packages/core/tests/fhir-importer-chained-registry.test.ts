@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ChainedRegistry } from "@/registry/chained-registry";
-import type { PackageRegistryApi, RegistryPackage } from "@/registry/types";
+import { ChainedRegistry } from "@fhir-explorer/core/fhir-importer/chained-registry";
+import type { PackageRegistryApi, RegistryPackage } from "@fhir-explorer/core/fhir-importer/registry-api";
 
 /**
  * The two registries the chain exists for, in miniature: one that publishes

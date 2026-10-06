@@ -6,7 +6,7 @@ import {
   removeDependencyFromManifest,
 } from "@/registry/manifest";
 import { createImportSession } from "@/registry/session";
-import { compareVersions, sortVersionsForPicking } from "@/registry/version";
+import { compareVersions, sortVersionsForPicking } from "@fhir-explorer/core/fhir-importer/version";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 
 /**

@@ -1,3 +1,4 @@
+import { parseRegistryPackage } from "./registry-metadata";
 import type { PackageId, PackageVersion } from "./types";
 
 export type RegistryStrategy = {
@@ -36,6 +37,8 @@ export class FhirPackageRegistry implements RegistryStrategy {
 export const DEFAULT_REGISTRY_BASE = "https://r4.terminology.hl7.org";
 export const PACKAGES2_REGISTRY_BASE = "https://packages2.fhir.org/packages";
 export const SIMPLIFIER_REGISTRY_BASE = "https://packages.simplifier.net";
+/** Catalogue answering `/catalog?op=find` for packages2, which has none itself. */
+export const PACKAGES_CATALOG_BASE = "https://packages.fhir.org";
 
 export const registryStrategies = {
   hl7: new FhirPackageRegistry("HL7 Terminology", DEFAULT_REGISTRY_BASE),
@@ -89,34 +92,24 @@ export type PackageAvailability = {
   offline: boolean;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value && typeof value === "object" && !Array.isArray(value));
-
-const asString = (value: unknown): string | undefined =>
-  typeof value === "string" && value.trim() ? value.trim() : undefined;
-
 const readVersions = (
+  id: PackageId,
   raw: unknown,
   registry: FhirPackageRegistry
 ): { versions: RegistryVersionInfo[]; latest?: string } => {
-  if (!isRecord(raw)) return { versions: [] };
-  const versions = isRecord(raw.versions) ? raw.versions : {};
-  const distTags = isRecord(raw["dist-tags"]) ? raw["dist-tags"] : undefined;
+  const parsed = parseRegistryPackage(id, raw);
+  if (!parsed) return { versions: [] };
 
   return {
-    latest: asString(distTags?.latest),
-    versions: Object.entries(versions).map(([version, entry]) => {
-      const record = isRecord(entry) ? entry : {};
-      const dist = isRecord(record.dist) ? record.dist : undefined;
-      return {
-        version,
-        registry: registry.name,
-        fetchable: registry.fetchable,
-        fhirVersion: asString(record.fhirVersion),
-        description: asString(record.description),
-        tarball: asString(dist?.tarball) ?? asString(record.url),
-      };
-    }),
+    latest: parsed.latest,
+    versions: parsed.versions.map((entry) => ({
+      version: entry.version,
+      registry: registry.name,
+      fetchable: registry.fetchable,
+      fhirVersion: entry.fhirVersion,
+      description: entry.description,
+      tarball: entry.tarball,
+    })),
   };
 };
 
@@ -137,7 +130,7 @@ export const fetchPackageAvailability = async (
       try {
         const response = await fetchImpl(registry.buildMetadataUrl(id));
         if (!response.ok) return null;
-        return readVersions(await response.json(), registry);
+        return readVersions(id, await response.json(), registry);
       } catch {
         return null;
       }

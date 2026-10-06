@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { buildPackageKey } from "@fhir-explorer/core/fhir-importer/utils";
 import { resolveAndInstall } from "@/commands/add-dependency";
-import type { PlanRequest } from "@/registry/plan";
+import type { PlanRequest } from "@fhir-explorer/core/fhir-importer/install-plan";
 import { createImportSession } from "@/registry/session";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 

@@ -1,10 +1,10 @@
 /**
- * The slice of the FHIR package registry the extension talks to.
+ * The slice of an npm-shaped FHIR package registry that dependency
+ * resolution needs.
  *
  * The npm-shaped registries answer at `/{id}` with a version map. The ones
  * that carry `dependencies` on every version entry — `packages2.fhir.org` —
- * let the whole tree be resolved before a single tarball is downloaded,
- * instead of the web app's "download, discover something is missing, repeat".
+ * let the whole tree be resolved before a single tarball is downloaded.
  * Registries that omit them, such as `packages.simplifier.net`, are still
  * usable: `dependencies()` falls back to the manifest inside the tarball.
  */

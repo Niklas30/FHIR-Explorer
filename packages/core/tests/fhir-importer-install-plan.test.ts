@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { planInstall } from "@/registry/plan";
-import type { PackageRegistryApi, RegistryPackage } from "@/registry/types";
+import { planInstall } from "@fhir-explorer/core/fhir-importer/install-plan";
+import type { PackageRegistryApi, RegistryPackage } from "@fhir-explorer/core/fhir-importer/registry-api";
 
 /**
  * A registry built from a literal, shaped like the real one: every version

@@ -4,10 +4,10 @@ import {
   ManifestNotWritable,
   addDependencyToManifest,
 } from "@/registry/manifest";
-import { planInstall, type InstallPlan, type PlanRequest } from "@/registry/plan";
+import { planInstall, type InstallPlan, type PlanRequest } from "@fhir-explorer/core/fhir-importer/install-plan";
 import { createImportSession, type ImportSession } from "@/registry/session";
-import type { PackageRegistryApi } from "@/registry/types";
-import { sortVersionsForPicking } from "@/registry/version";
+import type { PackageRegistryApi } from "@fhir-explorer/core/fhir-importer/registry-api";
+import { sortVersionsForPicking } from "@fhir-explorer/core/fhir-importer/version";
 import type { WorkspaceProject } from "@/workspace/project-discovery";
 
 /**

@@ -1,10 +1,10 @@
-import { compareVersions } from "@/registry/version";
+import { compareVersions } from "./version";
 import type {
   PackageRegistryApi,
   RegistryPackage,
   RegistrySearchHit,
   RegistryVersion,
-} from "@/registry/types";
+} from "./registry-api";
 
 /**
  * Several registries behind one `PackageRegistryApi`.
