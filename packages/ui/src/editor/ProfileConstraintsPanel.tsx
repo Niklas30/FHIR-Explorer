@@ -13,7 +13,6 @@ import {
   type SchemaNode,
 } from "@fhir-explorer/core/fhir-editor/schema";
 import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
-import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import {
   countConstraints,
   formatCardinality,
@@ -23,22 +22,28 @@ import {
   type BindingStrength,
   type ConstraintPatch,
 } from "@fhir-explorer/core/projects/profile-constraints";
-import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
+import {
+  useProfileConstraintsText,
+  type ProfileConstraintsText,
+} from "@fhir-explorer/ui/editor/profile-constraints/text";
 
 const STRENGTHS: BindingStrength[] = ["required", "extensible", "preferred", "example"];
 
-type ValueSetOption = { url: string; label: string };
+export type ValueSetOption = { url: string; label: string };
 
-type Props = {
-  text: ProjectEditorText;
-  resource: AuthoredResource;
+/** Something that builds on this profile, shown as a link below the elements. */
+export type ProfileUsage = { id: string; label: string };
+
+export type ProfileConstraintsPanelProps = {
+  /** The profile's StructureDefinition; only its differential is written. */
+  content: Record<string, unknown>;
   readOnly: boolean;
   schemaCtx: SchemaContext | null;
   resolveStructureDefinition: (canonical: string) => StructureDefinition | null;
   valueSetOptions: ValueSetOption[];
-  usedBy: AuthoredResource[];
+  usedBy?: ProfileUsage[];
   onContentChange: (content: Record<string, unknown>) => void;
-  onSelectResource: (resourceId: string) => void;
+  onSelectResource?: (resourceId: string) => void;
 };
 
 const ElementRow = ({
@@ -59,7 +64,7 @@ const ElementRow = ({
   schemaCtx: SchemaContext;
   ownerTree: ReturnType<typeof buildSchemaTree>;
   valueSetOptions: ValueSetOption[];
-  text: ProjectEditorText;
+  text: ProfileConstraintsText;
   onPatch: (path: string, patch: ConstraintPatch) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -102,7 +107,7 @@ const ElementRow = ({
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
                 className="text-muted-foreground hover:text-foreground"
-                aria-label={expanded ? "collapse" : "expand"}
+                aria-label={expanded ? text.collapse : text.expand}
               >
                 {expanded ? (
                   <ChevronDown className="size-3.5" />
@@ -255,18 +260,23 @@ const ElementRow = ({
   );
 };
 
+/**
+ * Constraints of a profile against its base: cardinality, must-support and
+ * value set bindings, edited element by element over the base definition's
+ * tree and written to the differential. Shared by the web project editor and
+ * the VS Code form editor.
+ */
 export const ProfileConstraintsPanel = ({
-  text,
-  resource,
+  content,
   readOnly,
   schemaCtx,
   resolveStructureDefinition,
   valueSetOptions,
-  usedBy,
+  usedBy = [],
   onContentChange,
   onSelectResource,
-}: Props) => {
-  const content = resource.content as Record<string, unknown>;
+}: ProfileConstraintsPanelProps) => {
+  const text = useProfileConstraintsText();
   const baseDefinition = typeof content.baseDefinition === "string" ? content.baseDefinition : undefined;
   const baseType = typeof content.type === "string" ? content.type : undefined;
 
@@ -334,10 +344,10 @@ export const ProfileConstraintsPanel = ({
                 <button
                   key={r.id}
                   type="button"
-                  onClick={() => onSelectResource(r.id)}
+                  onClick={() => onSelectResource?.(r.id)}
                   className="rounded-md border border-foreground/15 px-2 py-1 text-xs hover:bg-muted/60"
                 >
-                  {r.title || (r.content.name as string) || r.resourceType}
+                  {r.label}
                 </button>
               ))}
             </div>

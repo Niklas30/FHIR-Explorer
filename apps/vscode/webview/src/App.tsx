@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { buildRegistry } from "@fhir-explorer/core/fhir-editor/registry";
+import {
+  buildRegistry,
+  getStructureDefinitionByCanonical,
+} from "@fhir-explorer/core/fhir-editor/registry";
 import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles/resolve";
 import {
   buildSchemaTree,
@@ -12,6 +15,8 @@ import {
   ResourceDetailPanel,
   TerminologyProvider,
 } from "@fhir-explorer/ui";
+import { ProfileConstraintsPanel } from "@fhir-explorer/ui/editor/ProfileConstraintsPanel";
+import { cn } from "@fhir-explorer/ui/lib/utils";
 import { hostHttpClient, onHostMessage, resolveExpansion, vscode } from "@webview/host";
 
 type State = {
@@ -21,6 +26,7 @@ type State = {
   locale: Locale;
   terminologyServerUrl: string | null;
   references: Set<string>;
+  valueSetOptions: { url: string; label: string }[];
   documentVersion: number;
   error: string | null;
 };
@@ -32,6 +38,7 @@ const EMPTY: State = {
   locale: "en",
   terminologyServerUrl: null,
   references: new Set(),
+  valueSetOptions: [],
   documentVersion: 0,
   error: null,
 };
@@ -60,6 +67,14 @@ const sameValue = (a: unknown, b: unknown): boolean => {
   return false;
 };
 
+type View = "constraints" | "form";
+
+/** Same rule as the host: a StructureDefinition that constrains a base. */
+const isConstraintProfile = (content: Record<string, unknown>): boolean =>
+  content.resourceType === "StructureDefinition" &&
+  content.derivation !== "specialization" &&
+  typeof content.baseDefinition === "string";
+
 const parse = (text: string): Record<string, unknown> | null => {
   try {
     const value: unknown = JSON.parse(text);
@@ -73,6 +88,9 @@ const parse = (text: string): Record<string, unknown> | null => {
 
 export const App = () => {
   const [state, setState] = useState<State>(EMPTY);
+  // A profile opens on its constraints: that is what authoring one means.
+  // The form stays one click away for metadata like name, status and url.
+  const [view, setView] = useState<View>("constraints");
 
   useEffect(() => {
     const dispose = onHostMessage((message) => {
@@ -85,6 +103,7 @@ export const App = () => {
           locale: message.locale,
           terminologyServerUrl: message.terminologyServerUrl,
           references: new Set(message.references),
+          valueSetOptions: message.valueSetOptions,
           documentVersion: message.documentVersion,
           error: content ? null : "This file is not valid JSON. Edit it as text to fix it.",
         });
@@ -146,17 +165,29 @@ export const App = () => {
     [state.content, state.documentVersion]
   );
 
-  const handleUpdate = useCallback(
-    (next: DatasetResource) => {
-      setState((previous) => ({ ...previous, content: next.content }));
+  const handleContentChange = useCallback(
+    (content: Record<string, unknown>) => {
+      setState((previous) => ({ ...previous, content }));
       vscode.postMessage({
         type: "edit",
-        content: next.content,
+        content,
         documentVersion: state.documentVersion,
       });
     },
     [state.documentVersion]
   );
+
+  const handleUpdate = useCallback(
+    (next: DatasetResource) => handleContentChange(next.content),
+    [handleContentChange]
+  );
+
+  const resolveStructureDefinition = useCallback(
+    (canonical: string) => getStructureDefinitionByCanonical(registry, canonical) ?? null,
+    [registry]
+  );
+
+  const isProfile = isConstraintProfile(state.content);
 
   const i18n = useMemo(
     () => ({
@@ -181,7 +212,73 @@ export const App = () => {
     return <div className="p-4 text-sm text-destructive">{state.error}</div>;
   }
 
-  if (!tree) {
+  const constraints = (
+    <ProfileConstraintsPanel
+      content={state.content}
+      readOnly={false}
+      schemaCtx={ctx}
+      resolveStructureDefinition={resolveStructureDefinition}
+      valueSetOptions={state.valueSetOptions}
+      onContentChange={handleContentChange}
+    />
+  );
+
+  const form = tree ? (
+    <ResourceDetailPanel
+      resource={resource}
+      schemaTree={tree}
+      schemaCtx={ctx}
+      datasetResources={[resource]}
+      onSelectResource={() => {}}
+      onUpdateResource={handleUpdate}
+      onRemoveResource={() => {}}
+    />
+  ) : null;
+
+  // Without core's StructureDefinition for StructureDefinition there is no
+  // form for the profile's own metadata, but its constraints still edit.
+  if (isProfile && !form) {
+    return (
+      <I18nContextProvider value={i18n}>
+        <div className="h-screen overflow-hidden">{constraints}</div>
+      </I18nContextProvider>
+    );
+  }
+
+  if (isProfile) {
+    return (
+      <I18nContextProvider value={i18n}>
+        <TerminologyProvider value={terminology}>
+          <div className="flex h-screen flex-col overflow-hidden">
+            <div role="tablist" className="flex shrink-0 gap-1 border-b border-border px-3 pt-2">
+              {(["constraints", "form"] as const).map((entry) => (
+                <button
+                  key={entry}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === entry}
+                  onClick={() => setView(entry)}
+                  className={cn(
+                    "-mb-px border-b-2 px-3 py-1.5 text-sm",
+                    view === entry
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {entry === "constraints" ? "Constraints" : "Form"}
+                </button>
+              ))}
+            </div>
+            <div className="min-h-0 flex-1">
+              {view === "constraints" ? constraints : form}
+            </div>
+          </div>
+        </TerminologyProvider>
+      </I18nContextProvider>
+    );
+  }
+
+  if (!form) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
         No StructureDefinition found for{" "}
@@ -194,17 +291,7 @@ export const App = () => {
   return (
     <I18nContextProvider value={i18n}>
       <TerminologyProvider value={terminology}>
-        <div className="h-screen overflow-hidden">
-          <ResourceDetailPanel
-            resource={resource}
-            schemaTree={tree}
-            schemaCtx={ctx}
-            datasetResources={[resource]}
-            onSelectResource={() => {}}
-            onUpdateResource={handleUpdate}
-            onRemoveResource={() => {}}
-          />
-        </div>
+        <div className="h-screen overflow-hidden">{form}</div>
       </TerminologyProvider>
     </I18nContextProvider>
   );

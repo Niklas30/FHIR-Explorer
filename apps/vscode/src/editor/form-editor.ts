@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { collectProfileClosure } from "@fhir-explorer/core/fhir-editor/closure";
 import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles/resolve";
+import type { ResourcePayload } from "@fhir-explorer/core/fhir-importer/types";
 import { isLocale, type Locale } from "@fhir-explorer/core/i18n/types";
 import { nodeHttpClient } from "@/adapters/node-http-client";
-import type { FhirIndex } from "@/language/fhir-index";
+import type { FhirIndex, FhirIndexSnapshot } from "@/language/fhir-index";
 import { renderWebviewHtml } from "@/webview/html";
 import {
   isGeneratedResource,
@@ -43,6 +44,52 @@ const parseResource = (text: string): Record<string, unknown> | null => {
 const hostLocale = (): Locale => {
   const language = vscode.env.language.split("-")[0];
   return isLocale(language) ? language : "en";
+};
+
+/**
+ * A profile the constraints view can edit: a StructureDefinition that
+ * constrains a base. Specialisations and logical models define elements of
+ * their own, which the constraints view has no tree for.
+ */
+const constrainedBase = (content: Record<string, unknown> | null): string | undefined =>
+  content?.resourceType === "StructureDefinition" &&
+  content.derivation !== "specialization" &&
+  typeof content.baseDefinition === "string"
+    ? content.baseDefinition
+    : undefined;
+
+/**
+ * Value sets a binding in this project can point at: the ones the project
+ * authors itself, as in the web editor. Every value set of every dependency
+ * would make a list nobody can pick from.
+ */
+const projectValueSets = (
+  snapshot: FhirIndexSnapshot,
+  uri: vscode.Uri
+): { url: string; label: string }[] => {
+  const project = projectForUri(snapshot.projects, uri);
+  if (!project) return [];
+  return [...snapshot.definitions.values()]
+    .filter(
+      (definition) =>
+        definition.resourceType === "ValueSet" &&
+        projectForUri(snapshot.projects, definition.uri) === project
+    )
+    .map((definition) => {
+      const valueSet = snapshot.registry.valueSetsByUrl.get(definition.canonical);
+      const label =
+        (typeof valueSet?.title === "string" && valueSet.title) ||
+        (typeof valueSet?.name === "string" && valueSet.name) ||
+        definition.canonical;
+      return { url: definition.canonical, label };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+};
+
+const mergePayloads = (...lists: ResourcePayload[][]): ResourcePayload[] => {
+  const byKey = new Map<string, ResourcePayload>();
+  for (const payload of lists.flat()) byKey.set(payload.key, payload);
+  return [...byKey.values()];
 };
 
 /** Match the file's own indentation instead of imposing ours. */
@@ -102,9 +149,12 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
 
       // Only the closure of this one profile — the full registry would be
       // tens of megabytes across the message channel.
-      const payloads = profile?.url
-        ? collectProfileClosure(profile.url, snapshot.registry)
-        : [];
+      const base = constrainedBase(content);
+      const payloads = mergePayloads(
+        profile?.url ? collectProfileClosure(profile.url, snapshot.registry) : [],
+        // A profile is edited against its base, so that closure travels too.
+        base ? collectProfileClosure(base, snapshot.registry) : []
+      );
 
       await panel.webview.postMessage({
         type: "init",
@@ -118,6 +168,7 @@ export class FormEditorProvider implements vscode.CustomTextEditorProvider {
             .get<string>("terminologyServer.url")
             ?.trim() || null,
         references: [...snapshot.references],
+        valueSetOptions: base ? projectValueSets(snapshot, document.uri) : [],
       });
     };
 

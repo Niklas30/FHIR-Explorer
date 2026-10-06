@@ -22,6 +22,8 @@ export type HostToWebview =
       terminologyServerUrl: string | null;
       /** `ResourceType/id` of everything in the project, for reference checks. */
       references: string[];
+      /** Value sets a profile's bindings can point at; empty for anything else. */
+      valueSetOptions: { url: string; label: string }[];
     }
   | {
       type: "documentChanged";

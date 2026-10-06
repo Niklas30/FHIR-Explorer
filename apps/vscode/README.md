@@ -56,6 +56,10 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
   an editor tab. The file stays the source of truth: undo, dirty state and
   *Reopen with… Text Editor* behave normally, and writes are minimal edits, so
   untouched lines stay byte-identical.
+- **Profile constraints** — a profile opens on its constraints: every element
+  of the base definition with its cardinality, must-support and value set
+  binding, edited in place and written to the differential. The same editor
+  the web app uses; the form for the profile's metadata is one tab over.
 - **Dependencies, resolved for you** — *Add Dependency* searches the registry,
   lists the published versions and works out the whole dependency tree from
   registry metadata *before* downloading anything. You confirm one plan; version

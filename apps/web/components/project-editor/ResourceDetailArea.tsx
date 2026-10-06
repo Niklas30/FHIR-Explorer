@@ -8,7 +8,7 @@ import type { SchemaContext, SchemaTree } from "@fhir-explorer/core/fhir-editor/
 import type { StructureDefinition } from "@fhir-explorer/core/fhir-editor/registry";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 import { ReadOnlyResourcePanel } from "@/components/project-editor/ReadOnlyResourcePanel";
-import { ProfileConstraintsPanel } from "@/components/project-editor/ProfileConstraintsPanel";
+import { ProfileConstraintsPanel } from "@fhir-explorer/ui/editor/ProfileConstraintsPanel";
 import type { ProjectEditorText } from "@/components/project-editor/project-editor/text";
 
 export type DetailMode = "constraints" | "form" | "summary" | "json";
@@ -63,13 +63,15 @@ export const ResourceDetailArea = ({
     if (detailMode === "constraints" && isProfileLike) {
       return (
         <ProfileConstraintsPanel
-          text={text}
-          resource={resource}
+          content={resource.content as Record<string, unknown>}
           readOnly={readOnly}
           schemaCtx={schemaCtx}
           resolveStructureDefinition={resolveStructureDefinition}
           valueSetOptions={valueSetOptions}
-          usedBy={usedBy}
+          usedBy={usedBy.map((r) => ({
+            id: r.id,
+            label: r.title || (r.content.name as string) || r.resourceType,
+          }))}
           onContentChange={onContentChange}
           onSelectResource={onSelectResource}
         />

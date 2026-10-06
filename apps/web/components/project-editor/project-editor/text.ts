@@ -140,17 +140,6 @@ const enText = {
   viewForm: "Form",
   viewJson: "JSON",
 
-  // Constraints editor
-  constraintsOn: "Constraints on",
-  noBaseDefinition: "No base definition",
-  baseNotResolved:
-    "Base type not resolvable — import the dependency that defines it (e.g. hl7.fhir.r4.core).",
-  constraintsBadge: "constraints",
-  cardMin: "min",
-  cardMax: "max",
-  mustSupport: "Must-support",
-  bindingNone: "No binding",
-  usedBy: "Used by",
 
   // Relationship map
   mapTitle: "Project relationships",
@@ -295,16 +284,6 @@ const deText: ProjectEditorText = {
   viewForm: "Formular",
   viewJson: "JSON",
 
-  constraintsOn: "Constraints auf",
-  noBaseDefinition: "Keine Basisdefinition",
-  baseNotResolved:
-    "Basistyp nicht auflösbar — importiere die Dependency, die ihn definiert (z. B. hl7.fhir.r4.core).",
-  constraintsBadge: "Constraints",
-  cardMin: "min",
-  cardMax: "max",
-  mustSupport: "Must-Support",
-  bindingNone: "Kein Binding",
-  usedBy: "Verwendet von",
 
   mapTitle: "Projekt-Beziehungen",
   mapEmpty: "Noch keine Bausteine vorhanden.",
