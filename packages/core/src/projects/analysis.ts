@@ -1,6 +1,10 @@
 import type { AuthoredResource, AuthoredResourceKind } from "@fhir-explorer/core/projects/types";
 import type { PackageManifest } from "@fhir-explorer/core/fhir-importer/types";
 import { resourceLabel } from "@fhir-explorer/core/projects/content";
+import {
+  getStructureDefinitionByCanonical,
+  type FhirRegistry,
+} from "@fhir-explorer/core/fhir-editor/registry";
 
 export type ProjectNodeKind = AuthoredResourceKind | "external";
 
@@ -61,6 +65,27 @@ export type CanonicalResolvers = {
   hasValueSet: (url: string) => boolean;
   hasCore: boolean;
 };
+
+const CORE_PATIENT = "http://hl7.org/fhir/StructureDefinition/Patient";
+
+/**
+ * Resolvers over a built registry. Core counts as present when the manifest
+ * declares it or when its resources are loaded anyway, as from a shared cache.
+ */
+export const createCanonicalResolvers = (
+  registry: FhirRegistry | null,
+  manifest: PackageManifest
+): CanonicalResolvers => ({
+  hasStructureDefinition: (url) =>
+    registry ? Boolean(getStructureDefinitionByCanonical(registry, url)) : false,
+  hasValueSet: (url) =>
+    registry
+      ? registry.valueSetsByUrl.has(url) || registry.valueSetsByUrl.has(url.replace(/\/+$/, ""))
+      : false,
+  hasCore:
+    Boolean(manifest.dependencies?.["hl7.fhir.r4.core"]) ||
+    (registry ? Boolean(getStructureDefinitionByCanonical(registry, CORE_PATIENT)) : false),
+});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value));

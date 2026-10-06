@@ -28,7 +28,7 @@ import type {
   AuthoredResourceKind,
 } from "@fhir-explorer/core/projects/types";
 import { resourceLabel } from "@fhir-explorer/core/projects/content";
-import { analyzeProject, type CanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
+import { analyzeProject, createCanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
 import { buildProjectMermaid } from "@fhir-explorer/core/projects/project-mermaid";
 import { projectEditorText } from "@/components/project-editor/project-editor/text";
 import type { ProjectNodeSelection } from "@/components/project-editor/project-editor/useProjectState";
@@ -42,7 +42,6 @@ import { ProjectIssuesPanel } from "@/components/project-editor/ProjectIssuesPan
 import { ResourceDetailArea, type DetailMode } from "@/components/project-editor/ResourceDetailArea";
 import { saveDatasetResources, upsertDataset } from "@fhir-explorer/core/adapters/browser";
 
-const CORE_PATIENT = "http://hl7.org/fhir/StructureDefinition/Patient";
 
 type Props = {
   record: AuthoredProjectRecord;
@@ -111,20 +110,9 @@ export const ProjectWorkspace = ({
     getResourcePayloadsByPackageKeys,
   });
 
-  const resolvers = useMemo<CanonicalResolvers>(
-    () => ({
-      hasStructureDefinition: (url) =>
-        registryState ? Boolean(getStructureDefinitionByCanonical(registryState, url)) : false,
-      hasValueSet: (url) =>
-        registryState
-          ? registryState.valueSetsByUrl.has(url) ||
-            registryState.valueSetsByUrl.has(url.replace(/\/+$/, ""))
-          : false,
-      hasCore:
-        Boolean(record.manifest.dependencies?.["hl7.fhir.r4.core"]) ||
-        (registryState ? Boolean(getStructureDefinitionByCanonical(registryState, CORE_PATIENT)) : false),
-    }),
-    [registryState, record.manifest.dependencies]
+  const resolvers = useMemo(
+    () => createCanonicalResolvers(registryState, record.manifest),
+    [registryState, record.manifest]
   );
 
   const resolveStructureDefinition = useMemo(

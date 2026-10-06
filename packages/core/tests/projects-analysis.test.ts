@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { analyzeProject, type CanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
+import {
+  analyzeProject,
+  createCanonicalResolvers,
+  type CanonicalResolvers,
+} from "@fhir-explorer/core/projects/analysis";
 import { formatProjectIssue } from "@fhir-explorer/core/projects/issue-text";
 import { buildProjectMermaid } from "@fhir-explorer/core/projects/project-mermaid";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
@@ -100,6 +104,17 @@ describe("analyzeProject", () => {
     expect(byCode.get("binding-unresolved")?.path).toBe(
       "differential.element[0].binding.valueSet"
     );
+  });
+
+  it("counts core as present when the manifest declares it, even before it is loaded", () => {
+    expect(
+      createCanonicalResolvers(null, {
+        name: "x",
+        version: "1.0.0",
+        dependencies: { "hl7.fhir.r4.core": "4.0.1" },
+      }).hasCore
+    ).toBe(true);
+    expect(createCanonicalResolvers(null, { name: "x", version: "1.0.0" }).hasCore).toBe(false);
   });
 
   it("renders issues in the requested locale", () => {
