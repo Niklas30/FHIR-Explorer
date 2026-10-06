@@ -45,7 +45,8 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
 
 - **Problems** — profile-driven validation of every resource in the workspace:
   cardinalities, required elements, fixed and pattern values, bindings,
-  primitive formats, unknown elements and broken local references.
+  primitive formats, unknown elements, broken local references and the
+  profile's FHIRPath invariants.
 - **Hover** on a canonical url resolves it to the profile, value set or code
   system it names, and says which package it came from.
 - **Go to definition** from a canonical or a `ResourceType/id` reference to the

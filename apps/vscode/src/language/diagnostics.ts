@@ -3,6 +3,7 @@ import { parseTree, type Node, type ParseError } from "jsonc-parser";
 import { resolveProfileForResource } from "@fhir-explorer/core/fhir-editor/profiles/resolve";
 import {
   buildSchemaTree,
+  evaluateInvariants,
   validateResource,
   type ValidationIssue,
 } from "@fhir-explorer/core/fhir-editor/schema";
@@ -13,7 +14,8 @@ import { isProjectResource, projectForUri } from "@/workspace/project-discovery"
 /**
  * Live validation into the Problems panel.
  *
- * This is the same `validateResource` the web app runs behind its form — the
+ * This is the same `validateResource` the web app runs behind its form, plus
+ * the profile's FHIRPath invariants the form shows next to it — the
  * difference is only where the result goes. Here every issue gets a real file
  * and range, so it participates in Problems, the editor gutter, `F8` and the
  * file decorations, none of which a web app can offer.
@@ -61,12 +63,12 @@ const syntaxDiagnostics = (
     return diagnostic;
   });
 
-const validationDiagnostics = (
+const validationDiagnostics = async (
   document: vscode.TextDocument,
   root: Node | undefined,
   snapshot: FhirIndexSnapshot,
   content: Record<string, unknown>
-): vscode.Diagnostic[] => {
+): Promise<vscode.Diagnostic[]> => {
   const profile = resolveProfileForResource(content, snapshot.registry);
   if (!profile) {
     // Without the defining package there is nothing to validate against.
@@ -86,9 +88,14 @@ const validationDiagnostics = (
   const tree = buildSchemaTree(profile, snapshot.ctx);
   if (!tree) return [];
 
-  const issues = validateResource(content, tree, snapshot.ctx, {
-    existingReferences: snapshot.references,
-  });
+  const issues = [
+    ...validateResource(content, tree, snapshot.ctx, {
+      existingReferences: snapshot.references,
+    }),
+    // Async because the fhirpath engine is loaded on first use. An expression
+    // the engine cannot evaluate is skipped rather than reported.
+    ...(await evaluateInvariants(content, tree)),
+  ];
 
   return issues.map((issue) => {
     const diagnostic = new vscode.Diagnostic(
@@ -160,10 +167,12 @@ export class FhirDiagnostics {
     }
 
     try {
-      this.collection.set(
-        document.uri,
-        validationDiagnostics(document, root, snapshot, content)
-      );
+      const version = document.version;
+      const diagnostics = await validationDiagnostics(document, root, snapshot, content);
+      // Invariants resolve asynchronously; a pass started for an older edit
+      // must not overwrite the result of the one started after it.
+      if (document.version !== version) return;
+      this.collection.set(document.uri, diagnostics);
     } catch (error) {
       // A schema we cannot resolve must not take down the whole pass.
       const diagnostic = new vscode.Diagnostic(
