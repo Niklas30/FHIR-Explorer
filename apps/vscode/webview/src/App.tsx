@@ -18,6 +18,7 @@ import {
 import { ProfileConstraintsPanel } from "@fhir-explorer/ui/editor/ProfileConstraintsPanel";
 import { cn } from "@fhir-explorer/ui/lib/utils";
 import { hostHttpClient, onHostMessage, resolveExpansion, vscode } from "@webview/host";
+import { fill, formText, webviewLocale } from "@webview/text";
 
 type State = {
   ready: boolean;
@@ -28,14 +29,14 @@ type State = {
   references: Set<string>;
   valueSetOptions: { url: string; label: string }[];
   documentVersion: number;
-  error: string | null;
+  error: "invalid-json" | null;
 };
 
 const EMPTY: State = {
   ready: false,
   content: {},
   registryPayloads: [],
-  locale: "en",
+  locale: webviewLocale(),
   terminologyServerUrl: null,
   references: new Set(),
   valueSetOptions: [],
@@ -105,7 +106,7 @@ export const App = () => {
           references: new Set(message.references),
           valueSetOptions: message.valueSetOptions,
           documentVersion: message.documentVersion,
-          error: content ? null : "This file is not valid JSON. Edit it as text to fix it.",
+          error: content ? null : "invalid-json",
         });
         return;
       }
@@ -121,9 +122,7 @@ export const App = () => {
             ...previous,
             documentVersion: message.documentVersion,
             content: content ?? previous.content,
-            error: content
-              ? null
-              : "This file is not valid JSON. Edit it as text to fix it.",
+            error: content ? null : "invalid-json",
           };
         });
         return;
@@ -204,12 +203,14 @@ export const App = () => {
     [state.terminologyServerUrl]
   );
 
+  const text = formText(state.locale);
+
   if (!state.ready) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading resource…</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{text.loading}</div>;
   }
 
   if (state.error) {
-    return <div className="p-4 text-sm text-destructive">{state.error}</div>;
+    return <div className="p-4 text-sm text-destructive">{text.invalidJson}</div>;
   }
 
   const constraints = (
@@ -265,7 +266,7 @@ export const App = () => {
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {entry === "constraints" ? "Constraints" : "Form"}
+                  {entry === "constraints" ? text.constraints : text.form}
                 </button>
               ))}
             </div>
@@ -281,9 +282,14 @@ export const App = () => {
   if (!form) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        No StructureDefinition found for{" "}
-        <code>{String(state.content.resourceType ?? "this resource")}</code>. Import the
-        package that defines it, then reopen this file.
+        {fill(text.noProfile, {
+          type:
+            typeof state.content.resourceType === "string" ? (
+              <code>{state.content.resourceType}</code>
+            ) : (
+              text.thisResource
+            ),
+        })}
       </div>
     );
   }

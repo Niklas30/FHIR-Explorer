@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { buildDependencyGraph } from "@fhir-explorer/core/fhir-importer/dependency-graph";
 import type { PackageRecord } from "@fhir-explorer/core/fhir-importer/types";
 import { DependencyGraphView } from "@fhir-explorer/ui/graph/DependencyGraphView";
+import { graphText, webviewLocale } from "@webview/text";
 import "@webview/theme.css";
 
 /**
@@ -31,13 +32,7 @@ type VsCodeApi = {
 declare function acquireVsCodeApi(): VsCodeApi;
 const vscode = acquireVsCodeApi();
 
-const LABELS = {
-  target: "Project",
-  resolved: "Installed",
-  missing: "Missing",
-  add: "Install",
-  empty: "This project declares no dependencies.",
-};
+const text = graphText(webviewLocale());
 
 const App = () => {
   const [state, setState] = useState<GraphMessage | null>(null);
@@ -59,19 +54,19 @@ const App = () => {
   );
 
   if (!state || !graph) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading dependencies…</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{text.loading}</div>;
   }
 
   return (
     <div className="p-4">
       <h1 className="mb-1 text-base font-semibold">{state.rootLabel}</h1>
       <p className="mb-4 text-sm text-muted-foreground">
-        Dependency closure. Select a missing package to install it.
+        {text.intro}
       </p>
       <DependencyGraphView
         graph={graph}
         rootKey={state.rootKey}
-        labels={LABELS}
+        labels={text.labels}
         onResolveMissing={(dependencyId, requirement) =>
           vscode.postMessage({ type: "resolveMissing", dependencyId, requirement })
         }

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Button } from "@fhir-explorer/ui/ui/button";
 import { Input } from "@fhir-explorer/ui/ui/input";
 import { Label } from "@fhir-explorer/ui/ui/label";
+import { fill, projectFormText, webviewLocale } from "@webview/text";
 import "@webview/theme.css";
 
 /**
@@ -70,6 +71,7 @@ const vscode = acquireVsCodeApi();
 
 const PACKAGE_ID = /^[a-z0-9]+(\.[a-z0-9-]+)+$/;
 const FHIR_VERSIONS = ["4.0.1", "4.3.0", "5.0.0"];
+const text = projectFormText(webviewLocale());
 
 const Field = ({
   label,
@@ -170,20 +172,20 @@ const App = () => {
   const errors = useMemo(() => {
     const found: Record<string, string> = {};
     if (!PACKAGE_ID.test(name)) {
-      found.name = "Lowercase, dot-separated, at least two segments (de.example.project)";
+      found.name = text.errorName;
     }
-    if (!/^\d+\.\d+\.\d+/.test(version)) found.version = "A semantic version, e.g. 0.1.0";
+    if (!/^\d+\.\d+\.\d+/.test(version)) found.version = text.errorVersion;
     if (canonical && !/^https?:\/\//.test(canonical)) {
-      found.canonical = "Must be an http or https url";
+      found.canonical = text.errorCanonical;
     }
-    if (!folder) found.folder = "Pick where the project folder is created";
+    if (!folder) found.folder = text.errorFolder;
     return found;
   }, [name, version, canonical, folder]);
 
   const valid = Object.keys(errors).length === 0;
   const show = (key: string) => (submitted ? errors[key] : undefined);
 
-  if (!init) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  if (!init) return <div className="p-6 text-sm text-muted-foreground">{text.loading}</div>;
 
   const basis = init.preset?.basedOn;
   const editing = init.editing;
@@ -210,37 +212,35 @@ const App = () => {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-1 text-lg font-semibold">
-        {editing ? editing.name : cloning ? `Clone ${cloning.sourceId}` : "New FHIR project"}
+        {editing
+          ? editing.name
+          : cloning
+            ? fill(text.cloneTitle, { id: cloning.sourceId })
+            : text.newTitle}
       </h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {editing ? (
-          <>
-            Editing <code>{editing.manifestFile ?? "the manifest"}</code> in{" "}
-            <code>{editing.root}</code>. Changes are written in place, keeping
-            formatting and comments.
-          </>
+          fill(text.editingIntro, {
+            file: <code>{editing.manifestFile ?? text.theManifest}</code>,
+            root: <code>{editing.root}</code>,
+          })
         ) : cloning ? (
-          <>
-            Copies every resource of{" "}
-            <code>
-              {cloning.sourceId}@{cloning.sourceVersion}
-            </code>{" "}
-            into a new editable project. Canonicals are kept as they are — a
-            fork that rewrote them would break the references between the copied
-            resources.
-          </>
+          fill(text.cloningIntro, {
+            package: (
+              <code>
+                {cloning.sourceId}@{cloning.sourceVersion}
+              </code>
+            ),
+          })
         ) : (
-          <>
-            Creates a folder with a FHIR <code>package.json</code> and the IG
-            Publisher input directories. Dependencies are installed right after.
-          </>
+          fill(text.newIntro, { file: <code>package.json</code> })
         )}
       </p>
 
       {basis ? (
         <div className="mb-6 rounded-md border border-input p-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Built on
+            {text.builtOn}
           </p>
           <p className="mt-1 text-sm font-medium">
             {basis.title ?? basis.id}{" "}
@@ -248,17 +248,18 @@ const App = () => {
           </p>
           {Object.keys(basis.dependencies).length > 0 ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              Brings {Object.entries(basis.dependencies)
-                .map(([id, dependencyVersion]) => `${id} ${dependencyVersion}`)
-                .join(", ")}
-              {" "}— installed with it, whether or not you add anything else.
+              {fill(text.brings, {
+                list: Object.entries(basis.dependencies)
+                  .map(([id, dependencyVersion]) => `${id} ${dependencyVersion}`)
+                  .join(", "),
+              })}
             </p>
           ) : null}
         </div>
       ) : null}
 
       {!editing && init.folders.length > 1 && (
-        <Field label="Workspace folder" error={show("folder")}>
+        <Field label={text.workspaceFolder} error={show("folder")}>
           <select
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             value={folder}
@@ -275,11 +276,11 @@ const App = () => {
 
       <div className="grid grid-cols-[2fr_1fr] gap-4">
         <Field
-          label="Package id"
+          label={text.packageId}
           hint={
             editing
-              ? "Renaming a package moves its canonicals and everyone else's dependency entry — not a field edit"
-              : "Becomes the folder name and the published package name"
+              ? text.packageIdEditingHint
+              : text.packageIdHint
           }
           error={show("name")}
         >
@@ -291,20 +292,20 @@ const App = () => {
             autoFocus={!editing}
           />
         </Field>
-        <Field label="Version" error={show("version")}>
+        <Field label={text.version} error={show("version")}>
           <Input value={version} onChange={(event) => setVersion(event.target.value)} />
         </Field>
       </div>
 
-      <Field label="Title" hint="Human-readable name, optional">
+      <Field label={text.title} hint={text.titleHint}>
         <Input
           value={title}
-          placeholder="Example Implementation Guide"
+          placeholder={text.titlePlaceholder}
           onChange={(event) => setTitle(event.target.value)}
         />
       </Field>
 
-      <Field label="Description" hint="Optional">
+      <Field label={text.description} hint={text.optional}>
         <Input
           value={description}
           onChange={(event) => setDescription(event.target.value)}
@@ -313,8 +314,8 @@ const App = () => {
 
       <div className="grid grid-cols-[2fr_1fr] gap-4">
         <Field
-          label="Canonical URL"
-          hint="Base for every canonical your resources define"
+          label={text.canonical}
+          hint={text.canonicalHint}
           error={show("canonical")}
         >
           <Input
@@ -325,7 +326,7 @@ const App = () => {
             }}
           />
         </Field>
-        <Field label="FHIR version">
+        <Field label={text.fhirVersion}>
           <select
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             value={fhirVersion}
@@ -341,19 +342,19 @@ const App = () => {
       </div>
 
       <Label className="mb-1 mt-2 block text-sm font-medium">
-        {basis ? "Additional dependencies" : "Dependencies"}
+        {basis ? text.additionalDependencies : text.dependencies}
       </Label>
       <p className="mb-2 text-xs text-muted-foreground">
         {basis
-          ? "Anything else this project should depend on, beyond what the package above already brings."
+          ? text.basisDependenciesHint
           : editing
-            ? "Ticked entries are what the manifest declares. Unticking removes the declaration; the download stays in the local cache."
-            : "Already-imported packages are listed. Anything not installed yet is fetched when the project is created."}
+            ? text.editingDependenciesHint
+            : text.newDependenciesHint}
       </p>
       <div className="mb-6 rounded-md border border-input">
         {init.installed.length === 0 && dependencies.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">
-            Nothing imported yet — hl7.fhir.r4.core will be fetched.
+            {text.nothingImported}
           </p>
         ) : null}
         {[
@@ -389,7 +390,7 @@ const App = () => {
               <span className="text-sm">{installed?.title ?? key.split("@")[0]}</span>
               <span className="ml-auto text-xs text-muted-foreground">
                 {key.split("@")[1]}
-                {installed ? "" : " · will be downloaded"}
+                {installed ? "" : text.willDownload}
               </span>
             </label>
           );
@@ -398,10 +399,10 @@ const App = () => {
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={() => vscode.postMessage({ type: "cancel" })}>
-          Cancel
+          {text.cancel}
         </Button>
         <Button onClick={submit}>
-          {editing ? "Save changes" : cloning ? "Clone project" : "Create project"}
+          {editing ? text.save : cloning ? text.clone : text.create}
         </Button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import {
   WEBVIEW_STYLESHEET,
   type WebviewEntry,
 } from "@/webview/assets";
+import { hostLocale } from "@/l10n/locale";
 
 /**
  * The HTML shell every webview gets.
@@ -24,6 +25,17 @@ const nonce = (): string => {
   return value;
 };
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+/**
+ * `lang` carries the host locale; webviews read it from there instead of
+ * each protocol growing its own field for it.
+ */
 export const renderWebviewHtml = (
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
@@ -47,12 +59,12 @@ export const renderWebviewHtml = (
   ].join("; ");
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${hostLocale()}">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="${csp}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${title}</title>
+    <title>${escapeHtml(title)}</title>
     <link rel="stylesheet" href="${asset(WEBVIEW_STYLESHEET)}" />
   </head>
   <body>
