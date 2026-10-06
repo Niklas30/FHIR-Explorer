@@ -18,11 +18,32 @@ export type ProjectEdge = { from: string; to: string; kind: ProjectEdgeKind };
 
 export type IssueSeverity = "error" | "warning";
 
+export type ProjectIssueCode =
+  | "canonical-mismatch"
+  | "base-unresolved"
+  | "binding-unresolved"
+  | "example-profile-unresolved"
+  | "duplicate-canonical"
+  | "missing-core";
+
+/**
+ * A consistency finding, as data rather than a sentence.
+ *
+ * The analysis runs in core, below any locale: the web app and the VS Code
+ * extension each render it in their own language through
+ * `formatProjectIssue`, and the extension anchors it in the file at `path`.
+ */
 export type ProjectIssue = {
   severity: IssueSeverity;
-  code: string;
-  message: string;
+  code: ProjectIssueCode;
   resourceId?: string;
+  /** Label of the resource the issue is about. */
+  subject?: string;
+  /** The canonical, base url or count the issue names. */
+  target?: string;
+  count?: number;
+  /** JSON path inside the resource where the issue sits, e.g. `meta.profile[0]`. */
+  path?: string;
 };
 
 export type ProjectAnalysis = {
@@ -52,12 +73,16 @@ const canonicalTail = (url: string): string => {
   return seg ?? url;
 };
 
-const collectElements = (content: Record<string, unknown>): Record<string, unknown>[] => {
-  const out: Record<string, unknown>[] = [];
+type LocatedElement = { el: Record<string, unknown>; path: string };
+
+const collectElements = (content: Record<string, unknown>): LocatedElement[] => {
+  const out: LocatedElement[] = [];
   for (const key of ["differential", "snapshot"] as const) {
     const section = content[key];
     if (isRecord(section) && Array.isArray(section.element)) {
-      for (const el of section.element) if (isRecord(el)) out.push(el);
+      section.element.forEach((el, index) => {
+        if (isRecord(el)) out.push({ el, path: `${key}.element[${index}]` });
+      });
     }
   }
   return out;
@@ -87,8 +112,8 @@ class Accumulator {
     this.edges.push({ from, to, kind });
   }
 
-  issue(severity: IssueSeverity, code: string, message: string, resourceId?: string) {
-    this.issues.push({ severity, code, message, resourceId });
+  issue(severity: IssueSeverity, code: ProjectIssueCode, details: Omit<ProjectIssue, "severity" | "code"> = {}) {
+    this.issues.push({ severity, code, ...details });
   }
 
   private recordUsedBy(targetResourceId: string, sourceResourceId: string) {
@@ -127,32 +152,37 @@ const processProfileLike = (resource: AuthoredResource, acc: Accumulator) => {
   if (baseDefinition) {
     const resolved = acc.link(resource, baseDefinition, "derives", resource.kind, "sd");
     if (!resolved) {
-      acc.issue(
-        "error",
-        "base-unresolved",
-        `${resourceLabel(resource)}: Basisdefinition ${canonicalTail(baseDefinition)} ist nicht auflösbar (fehlende Dependency?).`,
-        resource.id
-      );
+      acc.issue("error", "base-unresolved", {
+        resourceId: resource.id,
+        subject: resourceLabel(resource),
+        target: canonicalTail(baseDefinition),
+        path: "baseDefinition",
+      });
     }
   }
-  for (const el of collectElements(content)) {
-    processElement(resource, el, acc);
+  for (const { el, path } of collectElements(content)) {
+    processElement(resource, el, path, acc);
   }
 };
 
-const processElement = (resource: AuthoredResource, el: Record<string, unknown>, acc: Accumulator) => {
+const processElement = (
+  resource: AuthoredResource,
+  el: Record<string, unknown>,
+  path: string,
+  acc: Accumulator
+) => {
   const binding = el.binding;
   if (isRecord(binding)) {
     const vs = stringUrl(binding.valueSet);
     if (vs) {
       const resolved = acc.link(resource, vs, "binds", "valueset", "vs");
       if (!resolved) {
-        acc.issue(
-          "warning",
-          "binding-unresolved",
-          `${resourceLabel(resource)}: gebundenes ValueSet ${canonicalTail(vs)} ist nicht auflösbar.`,
-          resource.id
-        );
+        acc.issue("warning", "binding-unresolved", {
+          resourceId: resource.id,
+          subject: resourceLabel(resource),
+          target: canonicalTail(vs),
+          path: `${path}.binding.valueSet`,
+        });
       }
     }
   }
@@ -183,12 +213,12 @@ const processExample = (resource: AuthoredResource, acc: Accumulator) => {
   if (!profile) return;
   const resolved = acc.link(resource, profile, "conforms", "profile", "sd");
   if (!resolved) {
-    acc.issue(
-      "warning",
-      "example-profile-unresolved",
-      `${resourceLabel(resource)}: Profil ${canonicalTail(profile)} ist nicht auflösbar.`,
-      resource.id
-    );
+    acc.issue("warning", "example-profile-unresolved", {
+      resourceId: resource.id,
+      subject: resourceLabel(resource),
+      target: canonicalTail(profile),
+      path: "meta.profile[0]",
+    });
   }
 };
 
@@ -239,12 +269,12 @@ export const analyzeProject = ({
     if (url) {
       seenUrls.set(url, (seenUrls.get(url) ?? 0) + 1);
       if (canonicalBase && !url.startsWith(canonicalBase)) {
-        acc.issue(
-          "warning",
-          "canonical-mismatch",
-          `${resourceLabel(resource)}: URL passt nicht zur Canonical-Basis (${canonicalBase}).`,
-          resource.id
-        );
+        acc.issue("warning", "canonical-mismatch", {
+          resourceId: resource.id,
+          subject: resourceLabel(resource),
+          target: canonicalBase,
+          path: "url",
+        });
       }
     }
   }
@@ -257,15 +287,11 @@ export const analyzeProject = ({
 
   for (const [url, count] of seenUrls) {
     if (count > 1) {
-      acc.issue("error", "duplicate-canonical", `Canonical-URL wird von ${count} Ressourcen verwendet: ${url}`);
+      acc.issue("error", "duplicate-canonical", { target: url, count });
     }
   }
   if (!resolvers.hasCore && resources.length > 0) {
-    acc.issue(
-      "warning",
-      "missing-core",
-      "hl7.fhir.r4.core ist nicht als Abhängigkeit importiert — Profile/Bindings können nicht vollständig validiert werden."
-    );
+    acc.issue("warning", "missing-core");
   }
 
   return {

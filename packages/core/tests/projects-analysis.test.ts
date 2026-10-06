@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { analyzeProject, type CanonicalResolvers } from "@fhir-explorer/core/projects/analysis";
+import { formatProjectIssue } from "@fhir-explorer/core/projects/issue-text";
 import { buildProjectMermaid } from "@fhir-explorer/core/projects/project-mermaid";
 import type { AuthoredResource } from "@fhir-explorer/core/projects/types";
 
@@ -92,6 +93,28 @@ describe("analyzeProject", () => {
     expect(codes).toContain("base-unresolved");
     expect(codes).toContain("binding-unresolved");
     expect(codes).toContain("missing-core");
+
+    // Where each issue sits, so an editor can underline it in the file.
+    const byCode = new Map(analysis.issues.map((issue) => [issue.code, issue]));
+    expect(byCode.get("base-unresolved")?.path).toBe("baseDefinition");
+    expect(byCode.get("binding-unresolved")?.path).toBe(
+      "differential.element[0].binding.valueSet"
+    );
+  });
+
+  it("renders issues in the requested locale", () => {
+    const issue = {
+      severity: "error" as const,
+      code: "base-unresolved" as const,
+      subject: "MyPatient",
+      target: "Patient",
+    };
+    expect(formatProjectIssue(issue, "de")).toBe(
+      "MyPatient: Basisdefinition Patient ist nicht auflösbar (fehlende Dependency?)."
+    );
+    expect(formatProjectIssue(issue, "en")).toBe(
+      "MyPatient: base definition Patient cannot be resolved (missing dependency?)."
+    );
   });
 
   it("flags duplicate canonical urls and canonical-base mismatch", () => {
