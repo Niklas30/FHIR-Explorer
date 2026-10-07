@@ -25,8 +25,9 @@ export default function RootLayout({
         <I18nProvider>
           {children}
           <footer className="px-4 pb-3 text-center text-[11px] text-muted-foreground/80">
-            FHIR® is a registered trademark of Health Level Seven International (HL7). Use of this
-            trademark does not constitute endorsement by HL7.
+            HL7® and FHIR® are registered trademarks of Health Level Seven International,
+            registered with the U.S. Patent and Trademark Office. Use of these trademarks does not
+            constitute endorsement by HL7.
           </footer>
           <FloatingLanguageSwitcher />
           <Toaster />
