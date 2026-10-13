@@ -157,6 +157,6 @@ If you contribute internally:
 
 ## Legal
 
-FHIR® is a registered trademark of Health Level Seven International (HL7).
-Use of this trademark does not constitute endorsement by HL7.
+FHIR® is the registered trademark of HL7 and is used with the permission of HL7.
+Use of the FHIR trademark does not constitute endorsement of this implementation guide by HL7.
 This project is not affiliated with or endorsed by HL7.
