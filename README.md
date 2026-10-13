@@ -60,7 +60,7 @@ expand on their own.
 
 ### Prerequisites
 
-- Node.js (recommended: **Node 20 LTS**)
+- Node.js (recommended: **Node 22 LTS**)
 - npm
 
 ### Install
