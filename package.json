@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @fhir-explorer/web --",
     "build": "npm run build --workspaces --if-present",
-    "start": "npm run start --workspace @fhir-explorer/web",
+    "start": "npm run start --workspace @fhir-explorer/web --",
     "lint": "eslint --max-warnings=0",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
