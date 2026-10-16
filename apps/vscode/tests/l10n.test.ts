@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createSourceFile, isExpressionStatement, isStringLiteral, ScriptTarget } from "typescript";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -22,10 +23,13 @@ const sourceFiles = (directory: string): string[] =>
   });
 
 /** The value of a "…" or '…' literal. */
-const literal = (code: string): string =>
-  code.startsWith("'")
-    ? (JSON.parse(`"${code.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"')}"`) as string)
-    : (JSON.parse(code) as string);
+const literal = (code: string): string => {
+  const statement = createSourceFile("literal.ts", code, ScriptTarget.Latest).statements[0];
+  if (!statement || !isExpressionStatement(statement) || !isStringLiteral(statement.expression)) {
+    throw new Error(`Expected a string literal: ${code}`);
+  }
+  return statement.expression.text;
+};
 
 const placeholders = (text: string) => [...text.matchAll(/\{\d+\}/g)].map(String).sort();
 

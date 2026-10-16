@@ -101,7 +101,7 @@ describe("registry chain", () => {
 
   it("answers from the registries that are up when one is unreachable", async () => {
     const failing = vi.fn(async (url: string | URL | Request) => {
-      if (String(url).startsWith("https://mirror.example")) throw new Error("network down");
+      if (new URL(String(url)).origin === "https://mirror.example") throw new Error("network down");
       return new Response(JSON.stringify(metadata({ "1.3.2": {} })), { status: 200 });
     }) as unknown as typeof fetch;
 

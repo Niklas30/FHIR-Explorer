@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 import {
   WEBVIEW_STYLESHEET,
@@ -14,16 +15,7 @@ import { hostLocale } from "@/l10n/locale";
  * extension host, where the user's proxy and certificate settings apply.
  */
 
-const NONCE_ALPHABET =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-const nonce = (): string => {
-  let value = "";
-  for (const byte of crypto.getRandomValues(new Uint8Array(32))) {
-    value += NONCE_ALPHABET[byte % NONCE_ALPHABET.length];
-  }
-  return value;
-};
+const nonce = (): string => randomBytes(32).toString("base64");
 
 const escapeHtml = (value: string): string =>
   value
