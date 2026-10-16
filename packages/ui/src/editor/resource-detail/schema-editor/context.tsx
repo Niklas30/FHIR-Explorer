@@ -1,0 +1,46 @@
+"use client";
+
+import { createContext, useContext, type ReactNode } from "react";
+import type { DatasetResource } from "@fhir-explorer/core/datasets/content";
+import type { SchemaContext, SchemaTree } from "@fhir-explorer/core/fhir-editor/schema";
+import type { ValidationIssue } from "@fhir-explorer/core/fhir-editor/schema";
+import type { ReferenceCreationTarget } from "@fhir-explorer/core/fhir-editor/reference-targets";
+
+export type SchemaEditorContextValue = {
+  ctx: SchemaContext;
+  tree: SchemaTree;
+  datasetResources: DatasetResource[];
+  referenceIndex: Set<string>;
+  validationIssues: ValidationIssue[];
+  onSelectResource: (resourceId: string) => void;
+  /**
+   * Creates a new resource in the dataset for a reference field and returns
+   * the local reference string ("Type/id"), or null when creation failed.
+   */
+  onCreateReferenceTarget?: (target: ReferenceCreationTarget) => string | null;
+};
+
+const SchemaEditorReactContext = createContext<SchemaEditorContextValue | null>(null);
+
+export const SchemaEditorProvider = ({
+  value,
+  children,
+}: {
+  value: SchemaEditorContextValue;
+  children: ReactNode;
+}) => (
+  <SchemaEditorReactContext.Provider value={value}>
+    {children}
+  </SchemaEditorReactContext.Provider>
+);
+
+export const useSchemaEditor = () => {
+  const value = useContext(SchemaEditorReactContext);
+  if (!value) {
+    throw new Error("useSchemaEditor must be used within a SchemaEditorProvider");
+  }
+  return value;
+};
+
+/** Maximum recursion depth before the editor falls back to raw JSON. */
+export const MAX_EDITOR_DEPTH = 10;

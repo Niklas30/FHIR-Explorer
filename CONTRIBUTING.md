@@ -15,7 +15,7 @@ If you’re unsure where to start, open an issue describing what you want to do.
 
 ### Prerequisites
 
-- Node.js **20 LTS**
+- Node.js **22.12 or newer** (Node 22 LTS recommended)
 - npm
 
 ### Install
@@ -32,17 +32,35 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Shared web and extension development
+
+The public `main` branch is the source of truth. Start feature branches here
+and open pull requests here. Deployment forks should consume upstream changes
+instead of becoming the only home of editor or extension features.
+
+- Put reusable FHIR logic in `packages/core`; use its ports for host I/O.
+- Put reusable React forms and controls in `packages/ui`.
+- Keep browser integration in `apps/web` and VS Code integration in `apps/vscode`.
+- Keep extension strings in the localization bundles, including the five supported languages.
+
+Run `npm run dev` for the web app. To develop the extension, open the repository
+root in VS Code and press **F5**. Run `npm run extension:package` to build an
+installable VSIX in `apps/vscode`. CI runs the same quality gates and uploads
+the VSIX as a build artifact. This does not publish to the Marketplace.
+
 ## Quality gates
 
 Before opening a PR, make sure these are green:
 
 - `npm run lint`
+- `npm run typecheck`
 - `npm test`
 - `npm run build`
+- `npm run extension:package`
 
 ## Logging
 
-Please use the structured logger (`lib/logger.ts`) instead of `console.*`.
+Please use the structured logger (`packages/core/src/logger.ts`) instead of `console.*`.
 
 ## Commit messages
 

@@ -1,0 +1,18 @@
+{
+  "name": "FHIR-Explorer",
+  "version": 2,
+  "colors": {
+    "ink": "#13161A",
+    "paper": "#FFFFFF",
+    "mist": "#EAEDEF",
+    "accent": "#D8452B",
+    "accentText": "#B93620",
+    "accentOnDark": "#FF9C86"
+  },
+  "mark": {
+    "viewBox": "0 0 24 24",
+    "source": "Archivo 700, capital F, normalized to 18 units cap height",
+    "body": "M3.4 21V3H16.3359V5.9125H6.8111V10.7405H15.3918V13.6531H6.8111V21Z",
+    "accent": "M13.25 20.624L17.474 16.4H14.2V14.1H21.4V21.3H19.1V18.026L14.876 22.25Z"
+  }
+}

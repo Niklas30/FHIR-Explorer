@@ -1,0 +1,556 @@
+{
+  "name": "fhir-explorer",
+  "displayName": "FHIR Explorer",
+  "description": "%extension.description%",
+  "version": "0.1.1",
+  "private": true,
+  "license": "Apache-2.0",
+  "publisher": "fhir-explorer",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/sushi-config.yaml",
+    "workspaceContains:**/sushi-config.yml",
+    "workspaceContains:**/ig.ini",
+    "workspaceContains:**/package.json"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fhirExplorer",
+          "title": "FHIR Explorer",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "fhirExplorer": [
+        {
+          "id": "fhirExplorer.projects",
+          "name": "%view.projects%",
+          "icon": "media/activity-bar.svg"
+        },
+        {
+          "id": "fhirExplorer.dependencies",
+          "name": "%view.dependencies%",
+          "icon": "media/activity-bar.svg"
+        },
+        {
+          "id": "fhirExplorer.packages",
+          "name": "%view.packages%",
+          "icon": "media/activity-bar.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "fhirExplorer.projects",
+        "contents": "%viewsWelcome.projects%"
+      },
+      {
+        "view": "fhirExplorer.dependencies",
+        "contents": "%viewsWelcome.dependencies%"
+      },
+      {
+        "view": "fhirExplorer.packages",
+        "contents": "%viewsWelcome.packages%"
+      }
+    ],
+    "commands": [
+      {
+        "command": "fhirExplorer.refresh",
+        "title": "%command.refresh%",
+        "category": "FHIR Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fhirExplorer.createProject",
+        "title": "%command.createProject%",
+        "category": "FHIR Explorer",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "fhirExplorer.newResource",
+        "title": "%command.newResource%",
+        "category": "FHIR Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "fhirExplorer.openResource",
+        "title": "%command.openResource%",
+        "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.deleteResource",
+        "title": "%command.deleteResource%",
+        "category": "FHIR Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "fhirExplorer.revealInExplorer",
+        "title": "%command.revealInExplorer%",
+        "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.openInFormEditor",
+        "title": "%command.openInFormEditor%",
+        "category": "FHIR Explorer",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "fhirExplorer.addDependency",
+        "title": "%command.addDependency%",
+        "category": "FHIR Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "fhirExplorer.installDependencies",
+        "title": "%command.installDependencies%",
+        "category": "FHIR Explorer",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "fhirExplorer.importPackageFile",
+        "title": "%command.importPackageFile%",
+        "category": "FHIR Explorer",
+        "icon": "$(file-zip)"
+      },
+      {
+        "command": "fhirExplorer.showDependencyGraph",
+        "title": "%command.showDependencyGraph%",
+        "category": "FHIR Explorer",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "fhirExplorer.installMissingDependency",
+        "title": "%command.installMissingDependency%",
+        "category": "FHIR Explorer",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "fhirExplorer.browsePackages",
+        "title": "%command.browsePackages%",
+        "category": "FHIR Explorer",
+        "icon": "$(library)"
+      },
+      {
+        "command": "fhirExplorer.removeDependency",
+        "title": "%command.removeDependency%",
+        "category": "FHIR Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "fhirExplorer.updateDependency",
+        "title": "%command.updateDependency%",
+        "category": "FHIR Explorer",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "fhirExplorer.createProjectFromPackage",
+        "title": "%command.createProjectFromPackage%",
+        "category": "FHIR Explorer",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "fhirExplorer.focusPackages",
+        "title": "%command.focusPackages%",
+        "category": "FHIR Explorer"
+      },
+      {
+        "command": "fhirExplorer.projectSettings",
+        "title": "%command.projectSettings%",
+        "category": "FHIR Explorer",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "fhirExplorer.clonePackageAsProject",
+        "title": "%command.clonePackageAsProject%",
+        "category": "FHIR Explorer",
+        "icon": "$(repo-forked)"
+      },
+      {
+        "command": "fhirExplorer.deletePackage",
+        "title": "%command.deletePackage%",
+        "category": "FHIR Explorer",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fhirExplorer.addDependency",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fhirExplorer.createProject",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fhirExplorer.refresh",
+          "when": "view == fhirExplorer.projects",
+          "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.installDependencies",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
+        },
+        {
+          "command": "fhirExplorer.importPackageFile",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
+        },
+        {
+          "command": "fhirExplorer.showDependencyGraph",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fhirExplorer.addDependency",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fhirExplorer.installDependencies",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.browsePackages",
+          "when": "view == fhirExplorer.dependencies",
+          "group": "1_browse"
+        },
+        {
+          "command": "fhirExplorer.addDependency",
+          "when": "view == fhirExplorer.packages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fhirExplorer.importPackageFile",
+          "when": "view == fhirExplorer.packages",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fhirExplorer.refresh",
+          "when": "view == fhirExplorer.packages",
+          "group": "navigation@3"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.projects",
+          "group": "1_install"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "fhirExplorer.newResource",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.category",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.deleteResource",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.revealInExplorer",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.resource",
+          "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.installMissingDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.missingDependency",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.showDependencyGraph",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.updateDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.directDependency",
+          "group": "inline@1"
+        },
+        {
+          "command": "fhirExplorer.removeDependency",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.directDependency",
+          "group": "inline@2"
+        },
+        {
+          "command": "fhirExplorer.createProjectFromPackage",
+          "when": "view == fhirExplorer.packages && viewItem == fhirExplorer.installedPackage",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.projects && viewItem == fhirExplorer.project",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.projectSettings",
+          "when": "view == fhirExplorer.dependencies && viewItem == fhirExplorer.dependencyRoot",
+          "group": "navigation"
+        },
+        {
+          "command": "fhirExplorer.clonePackageAsProject",
+          "when": "view == fhirExplorer.packages && viewItem == fhirExplorer.installedPackage",
+          "group": "inline"
+        },
+        {
+          "command": "fhirExplorer.deletePackage",
+          "when": "view == fhirExplorer.packages && viewItem == fhirExplorer.installedPackage",
+          "group": "inline@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fhirExplorer.openResource",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.deleteResource",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "resourceExtname == .json"
+        },
+        {
+          "command": "fhirExplorer.installMissingDependency",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.removeDependency",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.updateDependency",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.createProjectFromPackage",
+          "when": "false"
+        },
+        {
+          "command": "fhirExplorer.clonePackageAsProject",
+          "when": "false"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "fhirExplorer.openInFormEditor",
+          "when": "resourceExtname == .json && resourceDirname =~ /input\\\\/(capabilities|examples|extensions|models|operations|profiles|resources|testing|vocabulary)$/",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FHIR Explorer",
+      "properties": {
+        "fhirExplorer.packageCache.useFhirHome": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.packageCache.useFhirHome%"
+        },
+        "fhirExplorer.registry.sources": {
+          "type": "array",
+          "markdownDescription": "%config.registry.sources%",
+          "items": {
+            "type": "object",
+            "required": [
+              "url"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "markdownDescription": "%config.registry.sources.url%"
+              },
+              "searchUrl": {
+                "type": "string",
+                "markdownDescription": "%config.registry.sources.searchUrl%"
+              }
+            },
+            "additionalProperties": false
+          },
+          "default": [
+            {
+              "url": "https://packages2.fhir.org/packages",
+              "searchUrl": "https://packages.fhir.org"
+            },
+            {
+              "url": "https://packages.simplifier.net",
+              "searchUrl": "https://packages.simplifier.net"
+            }
+          ]
+        },
+        "fhirExplorer.terminologyServer.url": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.terminologyServer.url%"
+        }
+      }
+    },
+    "customEditors": [
+      {
+        "viewType": "fhirExplorer.formEditor",
+        "displayName": "%customEditor.formEditor%",
+        "selector": [
+          {
+            "filenamePattern": "**/input/capabilities/*.json"
+          },
+          {
+            "filenamePattern": "**/input/examples/*.json"
+          },
+          {
+            "filenamePattern": "**/input/extensions/*.json"
+          },
+          {
+            "filenamePattern": "**/input/models/*.json"
+          },
+          {
+            "filenamePattern": "**/input/operations/*.json"
+          },
+          {
+            "filenamePattern": "**/input/profiles/*.json"
+          },
+          {
+            "filenamePattern": "**/input/resources/*.json"
+          },
+          {
+            "filenamePattern": "**/input/testing/*.json"
+          },
+          {
+            "filenamePattern": "**/input/vocabulary/*.json"
+          },
+          {
+            "filenamePattern": "**/fsh-generated/resources/*.json"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "fhirExplorer.gettingStarted",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "import",
+            "title": "%walkthrough.import.title%",
+            "description": "%walkthrough.import.description%",
+            "media": {
+              "markdown": "media/walkthrough/import.md"
+            },
+            "completionEvents": [
+              "onContext:fhirExplorer.hasPackages"
+            ]
+          },
+          {
+            "id": "project",
+            "title": "%walkthrough.project.title%",
+            "description": "%walkthrough.project.description%",
+            "media": {
+              "markdown": "media/walkthrough/project.md"
+            },
+            "completionEvents": [
+              "onContext:fhirExplorer.hasProjects"
+            ]
+          },
+          {
+            "id": "author",
+            "title": "%walkthrough.author.title%",
+            "description": "%walkthrough.author.description%",
+            "media": {
+              "markdown": "media/walkthrough/author.md"
+            },
+            "completionEvents": [
+              "onCommand:fhirExplorer.newResource"
+            ]
+          },
+          {
+            "id": "validate",
+            "title": "%walkthrough.validate.title%",
+            "description": "%walkthrough.validate.description%",
+            "media": {
+              "markdown": "media/walkthrough/validate.md"
+            },
+            "completionEvents": [
+              "onCommand:fhirExplorer.showDependencyGraph"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.mjs --production && vite build",
+    "watch": "node build.mjs --watch",
+    "package": "vsce package --no-dependencies",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build:webview": "vite build",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "@fhir-explorer/core": "*",
+    "@fhir-explorer/ui": "*",
+    "jsonc-parser": "^3.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/vscode": "~1.96.0",
+    "@vitejs/plugin-react": "^5",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4",
+    "vite": "^8.3.4",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^4.1.11",
+    "@vscode/vsce": "4.0.0"
+  },
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Niklas30/FHIR-Explorer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Niklas30/FHIR-Explorer/issues"
+  },
+  "homepage": "https://github.com/Niklas30/FHIR-Explorer#readme",
+  "keywords": [
+    "fhir",
+    "hl7",
+    "healthcare",
+    "structuredefinition",
+    "implementation guide"
+  ],
+  "l10n": "./l10n",
+  "galleryBanner": {
+    "color": "#13161A",
+    "theme": "dark"
+  }
+}

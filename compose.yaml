@@ -24,7 +24,11 @@ services:
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+      - web_node_modules:/app/apps/web/node_modules
+      - core_node_modules:/app/packages/core/node_modules
 
 volumes:
   node_modules:
+  web_node_modules:
+  core_node_modules:
 

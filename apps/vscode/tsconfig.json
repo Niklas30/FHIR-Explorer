@@ -1,0 +1,50 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "node",
+      "vscode"
+    ],
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@fhir-explorer/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@fhir-explorer/core/*": [
+        "../../packages/core/src/*"
+      ],
+      "@webview/*": [
+        "./webview/src/*"
+      ],
+      "@fhir-explorer/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@fhir-explorer/ui/*": [
+        "../../packages/ui/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "webview/**/*.ts",
+    "webview/**/*.tsx",
+    "build.mjs",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

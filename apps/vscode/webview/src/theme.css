@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/**
+ * The shared components live in another workspace package, reached through a
+ * node_modules symlink — and Tailwind's automatic source detection skips
+ * node_modules, so none of their classes were ever generated. The webviews
+ * rendered with only the utilities their own files happened to use.
+ *
+ * It failed loudest in the dependency graph: an SVG with no `fill` rule falls
+ * back to black, so every node was a black box with black text on a dark
+ * theme. Nothing errored, and the build was green throughout.
+ */
+@source "../../../../packages/ui/src";
+@source "../../src";
+@source ".";
+
+/**
+ * Theme bridge.
+ *
+ * The shared components are styled with the shadcn token set. Instead of
+ * shipping our own palette — which would look like a web page pasted into the
+ * editor and would ignore the user's theme entirely — every token is mapped
+ * onto the `--vscode-*` variables the webview host injects. Light, dark and
+ * high contrast then all follow whatever theme the user picked, live.
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--vscode-font-family);
+  --font-mono: var(--vscode-editor-font-family);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  /* VS Code uses a smaller radius than the web app; matching it matters more
+     than matching our own site. */
+  --radius: 4px;
+
+  --background: var(--vscode-editor-background);
+  --foreground: var(--vscode-editor-foreground);
+
+  --card: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --card-foreground: var(--vscode-editorWidget-foreground, var(--vscode-editor-foreground));
+  --popover: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --popover-foreground: var(--vscode-editorWidget-foreground, var(--vscode-editor-foreground));
+
+  --primary: var(--vscode-button-background);
+  --primary-foreground: var(--vscode-button-foreground);
+  --secondary: var(--vscode-button-secondaryBackground, var(--vscode-editorWidget-background));
+  --secondary-foreground: var(
+    --vscode-button-secondaryForeground,
+    var(--vscode-editor-foreground)
+  );
+
+  --muted: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  --muted-foreground: var(--vscode-descriptionForeground);
+
+  --accent: var(--vscode-list-hoverBackground);
+  --accent-foreground: var(--vscode-list-hoverForeground, var(--vscode-editor-foreground));
+
+  --destructive: var(--vscode-errorForeground);
+
+  --border: var(--vscode-widget-border, var(--vscode-panel-border, transparent));
+  --input: var(--vscode-input-border, var(--vscode-widget-border, transparent));
+  --ring: var(--vscode-focusBorder);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  padding: 0;
+  margin: 0;
+}
+
+/* Native form controls: the shared components render plain inputs, and the
+   editor's own colours read as part of the workbench where a white box does
+   not. */
+input,
+textarea,
+select {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+/* Match the workbench scrollbar instead of the platform default. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
