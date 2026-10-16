@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/Niklas30/FHIR-Explorer/HEAD/apps/vscode/media/icon.png" alt="FHIR-Explorer" width="80" height="80">
+
 # FHIR Explorer for VS Code
 
 Author FHIR profiles, value sets and example instances in the editor you
@@ -82,6 +84,11 @@ uses — `sushi-config.yaml`, the ImplementationGuide's `dependsOn`, or
   from a dependency is no longer a dead end. *Create Project Using This
   Package* turns an import into a project that depends on it, and *Clone as
   Editable Project* forks its resources into one you own.
+- **Delete imported packages** — use the trash action or context menu on a package,
+  or run *Delete Imported Package* from the Command Palette. Only the selected
+  version is removed from FHIR Explorer across all workspaces after confirmation.
+  Project files, other packages and the shared FHIR cache are kept; projects
+  depending on that version show it as missing until it is installed again.
 - **Create FHIR Project** is a form, not a chain of prompts: id, version,
   canonical and the dependencies to start with, all visible at once, installed
   as soon as you confirm.
@@ -129,3 +136,18 @@ the configured registry and, if you set one, value set expansions from your
 terminology server.
 
 Licensed under Apache-2.0.
+
+## Building from source
+
+Use Node.js 22.12 or newer and run these commands from the repository root:
+
+```sh
+npm ci
+npm run extension:package
+```
+
+The command builds the extension host and all webviews before creating
+`apps/vscode/fhir-explorer-<version>.vsix`. Install it with **Extensions → … →
+Install from VSIX…**. Press **F5** in the repository for an Extension Development
+Host. Contributions and issues belong in the public
+[FHIR-Explorer repository](https://github.com/Niklas30/FHIR-Explorer).

@@ -1,9 +1,12 @@
+<img src="branding/assets/icon-512.png" alt="FHIR-Explorer" width="80" height="80">
+
 # FHIR-Explorer
 
 Local‑first HL7 FHIR® R4 **package importer**, **project/dataset manager**, and **resource editor**.
-FHIR-Explorer runs entirely in the browser: no backend required.
+FHIR-Explorer runs in the browser and as a VS Code extension, sharing the same
+FHIR logic and form components. No backend is required.
 
-> Status: work in progress (internal tooling). APIs and UX may change.
+> Status: preview. APIs and UX may change.
 
 ## What it does
 
@@ -21,7 +24,7 @@ FHIR-Explorer runs entirely in the browser: no backend required.
 
 ## Data model & privacy
 
-This application is designed for **local-first** usage:
+The web app is designed for **local-first** usage:
 
 - Imported packages, cached resources, and datasets are stored **locally in your browser**.
 - There is **no server component** in the default setup.
@@ -82,7 +85,7 @@ bundler. `apps/web` keeps `@/*` for its own files.
 
 ### Prerequisites
 
-- Node.js (recommended: **Node 20 LTS**)
+- Node.js **22.12 or newer** (Node 22 LTS recommended)
 - npm
 
 ### Install
@@ -102,7 +105,7 @@ Then open `http://localhost:3000`.
 Tip: There are alternate scripts using Turbo mode:
 
 ```bash
-npm run dev:turbo
+npm run dev:turbo --workspace @fhir-explorer/web
 ```
 
 ## VS Code extension
@@ -125,9 +128,10 @@ Run it from the repository root:
 Dependencies are resolved the way a package manager should: *Add Dependency*
 searches the registry, then walks the whole dependency tree from registry
 metadata before downloading a single byte, so the user confirms one plan instead
-of discovering missing packages one at a time. The browser build cannot do this
-— CORS stops it downloading at all. Packages are shared through
-`~/.fhir/packages`, so the IG Publisher and Sushi reuse the same files.
+of discovering missing packages one at a time. The extension also supports
+configurable registries without browser CORS restrictions. Installed packages
+are shared through `~/.fhir/packages`, so the IG Publisher and Sushi reuse the
+same files. The web app downloads from registries that allow browser access.
 
 Because the resources are ordinary JSON files, the editor features work on them
 without opening anything FHIR-specific:
@@ -192,6 +196,8 @@ Run from the repository root; they fan out over the workspaces.
 - `npm run lint` – ESLint over the whole repository
 - `npm run typecheck` – `tsc --noEmit` per workspace
 - `npm test` – unit tests (Vitest)
+- `npm run extension:package` – build and package the VS Code extension as a VSIX
+- `npm run brand:build` – regenerate shared logo and icon assets
 
 Turbo-mode variants live on the web app: `npm run dev:turbo -w @fhir-explorer/web`.
 
@@ -206,25 +212,32 @@ npm test
 Run tests in watch mode:
 
 ```bash
-npm run test:watch
+npm run test:watch --workspace @fhir-explorer/core
 ```
 
 ### Test fixtures
 
-Unit tests use committed fixtures under `tests/fixtures/fhir-packages/`.
+Core unit tests use committed fixtures under `packages/core/tests/fixtures/fhir-packages/`.
 At test start, fixtures are copied into a temporary directory and exposed via `FHIR_TEST_FIXTURE_ROOT`.
 
 ## Project structure
 
-- `app/` – Next.js routes (overview, importer, editor)
-- `components/` – UI components (dialogs, editors, layout)
-- `lib/` – importer logic, dependency graph, profile/field building, validation, persistence
-- `tests/` – unit tests and fixture setup
+- `apps/web/app/` – Next.js routes (overview, importer, editor)
+- `apps/web/components/` – browser UI and host integrations
+- `apps/vscode/src/` – extension commands, workspace storage and language features
+- `apps/vscode/webview/` – extension forms and dependency graph
+- `packages/core/src/` – shared FHIR logic and storage/network ports
+- `packages/ui/src/` – shared forms, graph and UI components
+- `branding/` – shared logo, icons and font license
+- `**/tests/` – workspace unit tests and fixture setup
 
 ## Contributing
 
-This repository is being prepared for a broader release.
-If you contribute internally:
+This public repository is the source of truth for the web app, shared packages
+and VS Code extension. Feature work belongs here; deployment forks consume the
+public changes. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workspace workflow.
+
+When contributing:
 
 - Keep changes focused and well-scoped.
 - Add/adjust tests for non-trivial behavior.

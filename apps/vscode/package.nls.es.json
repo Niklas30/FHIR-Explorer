@@ -40,5 +40,6 @@
   "walkthrough.author.title": "Añadir un recurso",
   "walkthrough.author.description": "Elige el perfil al que se ajusta una instancia y edítala como formulario o como JSON.\n[Nuevo recurso](command:fhirExplorer.newResource)",
   "walkthrough.validate.title": "Lo que el editor ya sabe",
-  "walkthrough.validate.description": "Problemas, hover, ir a la definición y autocompletado funcionan en cada archivo de recurso, sin ningún comando.\n[Mostrar grafo de dependencias](command:fhirExplorer.showDependencyGraph)"
+  "walkthrough.validate.description": "Problemas, hover, ir a la definición y autocompletado funcionan en cada archivo de recurso, sin ningún comando.\n[Mostrar grafo de dependencias](command:fhirExplorer.showDependencyGraph)",
+  "command.deletePackage": "Eliminar paquete importado"
 }

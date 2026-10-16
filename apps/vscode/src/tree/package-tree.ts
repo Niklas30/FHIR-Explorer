@@ -63,7 +63,8 @@ export class PackageTreeProvider implements vscode.TreeDataProvider<PackageTreeN
 
   constructor(
     private readonly store: GlobalPackageStore,
-    private readonly index: FhirIndex
+    private readonly index: FhirIndex,
+    private readonly extensionUri: vscode.Uri
   ) {}
 
   refresh(): void {
@@ -96,7 +97,10 @@ export class PackageTreeProvider implements vscode.TreeDataProvider<PackageTreeN
           .filter(Boolean)
           .join("\n\n")
       );
-      item.iconPath = new vscode.ThemeIcon("package");
+      item.iconPath = {
+        light: vscode.Uri.joinPath(this.extensionUri, "media", "package-light.svg"),
+        dark: vscode.Uri.joinPath(this.extensionUri, "media", "package-dark.svg"),
+      };
       item.contextValue = "fhirExplorer.installedPackage";
       return item;
     }

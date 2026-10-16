@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install
@@ -33,3 +33,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Package VS Code extension
+        run: npm run extension:package
+
+      - name: Upload VS Code extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: fhir-explorer-vsix
+          path: apps/vscode/*.vsix
+          if-no-files-found: error

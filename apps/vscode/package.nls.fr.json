@@ -40,5 +40,6 @@
   "walkthrough.author.title": "Ajouter une ressource",
   "walkthrough.author.description": "Choisissez le profil auquel une instance se conforme, puis modifiez-la sous forme de formulaire ou de JSON.\n[Nouvelle ressource](command:fhirExplorer.newResource)",
   "walkthrough.validate.title": "Ce que l'éditeur sait déjà",
-  "walkthrough.validate.description": "Problèmes, survol, accès à la définition et complétion fonctionnent sur chaque fichier de ressource, sans commande.\n[Afficher le graphe des dépendances](command:fhirExplorer.showDependencyGraph)"
+  "walkthrough.validate.description": "Problèmes, survol, accès à la définition et complétion fonctionnent sur chaque fichier de ressource, sans commande.\n[Afficher le graphe des dépendances](command:fhirExplorer.showDependencyGraph)",
+  "command.deletePackage": "Supprimer un paquet importé"
 }

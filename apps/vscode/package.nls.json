@@ -40,5 +40,6 @@
   "walkthrough.author.title": "Add a resource",
   "walkthrough.author.description": "Pick the profile an instance conforms to, then edit it as a form or as JSON.\n[New Resource](command:fhirExplorer.newResource)",
   "walkthrough.validate.title": "See what the editor already knows",
-  "walkthrough.validate.description": "Problems, hover, go to definition and completion work on every resource file — no command needed.\n[Show Dependency Graph](command:fhirExplorer.showDependencyGraph)"
+  "walkthrough.validate.description": "Problems, hover, go to definition and completion work on every resource file — no command needed.\n[Show Dependency Graph](command:fhirExplorer.showDependencyGraph)",
+  "command.deletePackage": "Delete Imported Package"
 }

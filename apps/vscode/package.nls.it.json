@@ -40,5 +40,6 @@
   "walkthrough.author.title": "Aggiungi una risorsa",
   "walkthrough.author.description": "Scegli il profilo a cui un'istanza è conforme, poi modificala come modulo o come JSON.\n[Nuova risorsa](command:fhirExplorer.newResource)",
   "walkthrough.validate.title": "Cosa sa già l'editor",
-  "walkthrough.validate.description": "Problemi, hover, vai alla definizione e completamento funzionano su ogni file di risorsa, senza alcun comando.\n[Mostra grafo delle dipendenze](command:fhirExplorer.showDependencyGraph)"
+  "walkthrough.validate.description": "Problemi, hover, vai alla definizione e completamento funzionano su ogni file di risorsa, senza alcun comando.\n[Mostra grafo delle dipendenze](command:fhirExplorer.showDependencyGraph)",
+  "command.deletePackage": "Elimina pacchetto importato"
 }

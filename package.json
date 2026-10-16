@@ -13,13 +13,19 @@
     "start": "npm run start --workspace @fhir-explorer/web",
     "lint": "eslint --max-warnings=0",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "brand:build": "node scripts/build-brand-icons.mjs",
+    "extension:package": "npm run package --workspace apps/vscode"
   },
   "devDependencies": {
     "@types/node": "^20",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.4.0",
     "eslint-plugin-sonarjs": "^4.0.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

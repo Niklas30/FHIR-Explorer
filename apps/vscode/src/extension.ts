@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { createFsResourceStore } from "@/adapters/fs-resource-store";
 import { GlobalPackageStore } from "@/adapters/global-package-store";
 import { addDependencyCommand } from "@/commands/add-dependency";
+import { deletePackageCommand } from "@/commands/delete-package";
 import { importPackageFileCommand } from "@/commands/import-package-file";
 import {
   installDependenciesCommand,
@@ -71,7 +72,7 @@ export const activate = (context: vscode.ExtensionContext): void => {
   };
 
   const dependencyTree = new DependencyTreeProvider(packageStore, projects);
-  const packageTree = new PackageTreeProvider(packageStore, index);
+  const packageTree = new PackageTreeProvider(packageStore, index, context.extensionUri);
   const statusBar = new FhirStatusBar(packageStore, projects);
   void statusBar.refresh();
 
@@ -191,6 +192,10 @@ export const activate = (context: vscode.ExtensionContext): void => {
       ProjectFormPanel.show(context, undefined, afterPackagesChanged)
     ),
     packageView,
+    vscode.commands.registerCommand(
+      "fhirExplorer.deletePackage",
+      (node?: PackageTreeNode) => deletePackageCommand(packageStore, afterPackagesChanged, node)
+    ),
     statusBar,
     vscode.commands.registerCommand("fhirExplorer.focusPackages", () =>
       vscode.commands.executeCommand("fhirExplorer.packages.focus")

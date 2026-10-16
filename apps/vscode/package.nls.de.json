@@ -40,5 +40,6 @@
   "walkthrough.author.title": "Ressource hinzufügen",
   "walkthrough.author.description": "Das Profil wählen, dem eine Instanz entspricht, und sie dann als Formular oder als JSON bearbeiten.\n[Neue Ressource](command:fhirExplorer.newResource)",
   "walkthrough.validate.title": "Was der Editor schon weiß",
-  "walkthrough.validate.description": "Problems, Hover, Go to Definition und Vervollständigung funktionieren in jeder Ressourcendatei – ganz ohne Befehl.\n[Abhängigkeitsgraph anzeigen](command:fhirExplorer.showDependencyGraph)"
+  "walkthrough.validate.description": "Problems, Hover, Go to Definition und Vervollständigung funktionieren in jeder Ressourcendatei – ganz ohne Befehl.\n[Abhängigkeitsgraph anzeigen](command:fhirExplorer.showDependencyGraph)",
+  "command.deletePackage": "Importiertes Paket löschen"
 }

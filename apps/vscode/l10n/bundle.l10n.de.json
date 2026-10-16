@@ -140,5 +140,12 @@
   "Installing FHIR packages": "FHIR-Packages werden installiert",
   "Installed {0} package(s), {1} failed: {2}": "{0} Package(s) installiert, {1} fehlgeschlagen: {2}",
   "Installed {0} package(s).": "{0} Package(s) installiert.",
-  "Add {0}": "{0} hinzufügen"
+  "Add {0}": "{0} hinzufügen",
+  "No imported packages to delete.": "Keine importierten Pakete zum Löschen vorhanden.",
+  "Delete Imported Package": "Importiertes Paket löschen",
+  "Delete Package": "Paket löschen",
+  "Delete imported package {0}?": "Importiertes Paket {0} löschen?",
+  "This removes this version from FHIR Explorer in all workspaces. Projects that depend on it will report a missing dependency until you import or install it again. Project files, other packages and the shared FHIR cache are kept.": "Diese Version wird in allen Arbeitsbereichen aus FHIR Explorer entfernt. Abhängige Projekte melden eine fehlende Abhängigkeit, bis du sie erneut importierst oder installierst. Projektdateien, andere Pakete und der gemeinsame FHIR-Cache bleiben erhalten.",
+  "Deleted imported package {0}.": "Importiertes Paket {0} gelöscht.",
+  "Could not delete package: {0}": "Paket konnte nicht gelöscht werden: {0}"
 }

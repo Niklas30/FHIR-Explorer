@@ -1,0 +1,28 @@
+@font-face {
+  font-family: "FHIR Archivo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/brand/Archivo-700-latin.woff2") format("woff2");
+}
+.fhir-brand-lockup {
+  --fhir-brand-accent: #B93620;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #13161A;
+  font: 700 24px/1.1 "FHIR Archivo", Arial, sans-serif;
+  letter-spacing: -.045em;
+  text-transform: none;
+  white-space: nowrap;
+}
+.fhir-brand-mark { width: 32px; height: 32px; flex: none; }
+.dark .fhir-brand-lockup { color: #FFFFFF; --fhir-brand-accent: #FF9C86; }
+@media (max-width: 700px) {
+  .fhir-brand-lockup { font-size: 21px; gap: 7px; }
+  .fhir-brand-mark { width: 28px; height: 28px; }
+}
+@media (max-width: 359px) {
+  .fhir-brand-lockup { font-size: 20px; }
+  .fhir-brand-mark { width: 24px; height: 24px; }
+}
