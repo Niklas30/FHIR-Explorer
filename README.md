@@ -3,6 +3,8 @@
 Local‑first HL7 FHIR® R4 **package importer**, **project/dataset manager**, and **resource editor**.
 FHIR-Explorer runs entirely in the browser: no backend required.
 
+**Website:** [fhir-explorer.com](https://fhir-explorer.com) · **Editor:** [editor.fhir-explorer.com](https://editor.fhir-explorer.com)
+
 > Status: work in progress (internal tooling). APIs and UX may change.
 
 ## What it does
@@ -154,6 +156,10 @@ If you contribute internally:
 - Keep changes focused and well-scoped.
 - Add/adjust tests for non-trivial behavior.
 - Ensure `npm test` and `npm run lint` are green.
+
+## Author
+
+Built by [Niklas Wende](https://www.niklaswen.de/projects/fhir-explorer), healthcare IT consultant and software developer.
 
 ## Legal
 
