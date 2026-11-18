@@ -15,7 +15,7 @@ If you’re unsure where to start, open an issue describing what you want to do.
 
 ### Prerequisites
 
-- Node.js **20 LTS**
+- Node.js **22.12 or newer** (Node 22 recommended)
 - npm
 
 ### Install
